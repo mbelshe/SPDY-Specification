@@ -937,7 +937,7 @@ Alternate-Protocol: 443:npn-spdy/2,443:npn-spdy/1
 
         </section>
 
-        section title="Piggybackling HTTP requests over SPDY sessions">
+        <section title="Piggybacking HTTP requests over SPDY sessions">
 <t>SPDY does not introduce a new protocol scheme specific to SPDY.  However, all HTTP requests can "piggyback" on existing SPDY sessions.  So, if a client has successfully negotiated any SPDY session to a port that the server has indicated (via Alternate-Protocol) is an acceptable alternate protocol for the HTTP host port pair, all future http requests to that host port pair should use the SPDY session rather than opening a new HTTP connection.</t>
 
 <t>Note:  If your site does load balancing in such a way that http content would not be available over the SPDY session, your site may not be able to use SPDY.</t>
