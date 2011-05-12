@@ -43,29 +43,6 @@
 
 <t>SPDY attempts to preserve the existing semantics of HTTP. All features such as cookies, ETags, Vary headers, Content-Encoding negotiations, etc work as they do with HTTP; SPDY only replaces the way the data is written to the network.</t>
 
-<t>XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</t>
-<t>XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</t>
-<t>XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</t>
-<t>
-TODO LIST
-<list>
-<t>rename GOAWAY to GOODBYE</t>
-<t>replace PROTOCOL_ERROR with specific errors</t>
-<t>figure out the right way to reference zlib compression</t>
-<t>for duplicate RST_STREAM cases, suppress the multiple, duplicate frames into just one (e.g when multiple data frames are received in a row for the same dead stream</t>
-<t>Require that stream-ids start at 1/2 and always increase by 2 for each new stream?</t>
-<t>Unidirectional streams are half-closed from the start - how to do window-update frames? </t>
-<t>Kinda lame that name/value pair blocks use 32bit values but are confined to a 24bit length frame</t>
-<t>Should we restrict compression settings to avoid clients causing large memory footprints on server decompressors?</t>
-<t>Consider mitigations against DoS attacks by way of huge headers blocks?  Should flow control apply to HEADER frames?</t>
-<t>Eliminate the no-duplicate and lower case header shenanigans</t>
-</list>
-</t>
-<t>XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</t>
-<t>XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</t>
-<t>XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</t>
-
-
       <section title="Document Organization">
 <t>The SPDY Specification is split into two parts: <xref target="FramingLayer">a framing layer</xref>, which multiplexes a TCP connection into independent, length-prefixed frames, and <xref target="HTTPLayer">an HTTP layer</xref>, which specifies the mechanism for overlaying HTTP request/response pairs on top of the framing layer. While some of the framing layer concepts are isolated from the HTTP layer, building a generic framing layer has not been a goal. The framing layer is tailored to the needs of the HTTP protocol and server push.</t>
       </section>
@@ -937,7 +914,7 @@ Alternate-Protocol: 443:npn-spdy/2,443:npn-spdy/1
 
         </section>
 
-        section title="Piggybackling HTTP requests over SPDY sessions">
+        <section title="Piggybacking HTTP requests over SPDY sessions">
 <t>SPDY does not introduce a new protocol scheme specific to SPDY.  However, all HTTP requests can "piggyback" on existing SPDY sessions.  So, if a client has successfully negotiated any SPDY session to a port that the server has indicated (via Alternate-Protocol) is an acceptable alternate protocol for the HTTP host port pair, all future http requests to that host port pair should use the SPDY session rather than opening a new HTTP connection.</t>
 
 <t>Note:  If your site does load balancing in such a way that http content would not be available over the SPDY session, your site may not be able to use SPDY.</t>

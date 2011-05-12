@@ -1,0 +1,28 @@
+TODO LIST
+
+[ ] rename GOAWAY to GOODBYE
+
+[ ] replace PROTOCOL_ERROR with specific errors
+
+[ ] figure out the right way to reference zlib compression
+
+[ ] for duplicate RST_STREAM cases, suppress the multiple, duplicate frames
+    into just one (e.g when multiple data frames are received in a row for the
+    same dead stream
+
+[ ] Require that stream-ids start at 1/2 and always increase by 2 for each new
+    stream?
+
+[ ] Unidirectional streams are half-closed from the start - how to do
+    window-update frames?
+
+[ ] Kinda lame that name/value pair blocks use 32bit values but are confined to
+    a 24bit length frame
+
+[ ] Should we restrict compression settings to avoid clients causing large
+    memory footprints on server decompressors?
+
+[ ] Consider mitigations against DoS attacks by way of huge headers blocks?
+    Should flow control apply to HEADER frames?
+
+[ ] Eliminate the no-duplicate and lower case header shenanigans
