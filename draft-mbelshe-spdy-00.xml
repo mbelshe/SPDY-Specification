@@ -28,11 +28,11 @@
 
   <middle>
     <section anchor="intro" title="Overview">
-<t>One of the bottlenecks of HTTP implementations is that HTTP relies on multiple connections for concurrency. This causes several problems, including additional round trips for connection setup, slow-start delays, and connection rationing by the client, where it tries to avoid opening too many connections to any single server.  HTTP "pipelining" helps some, but only achieves partial multiplexing.  In addition, pipelining has proven non-deployable in existing browsers due to intermediary interference.  </t>
+<t>One of the bottlenecks of HTTP implementations is that HTTP relies on multiple connections for concurrency. This causes several problems, including additional round trips for connection setup, slow-start delays, and connection rationing by the client, where it tries to avoid opening too many connections to any single server.  HTTP pipelining helps some, but only achieves partial multiplexing.  In addition, pipelining has proven non-deployable in existing browsers due to intermediary interference.</t>
 
-<t>To address these problems, SPDY adds a framing layer for multiplexing multiple, concurrent streams across a single TCP connection (or any reliable transport stream).  The framing layer is optimized for HTTP-like request-response streams, such that applications which run over HTTP today can work over SPDY with little or no change on behalf of the web application writer.</t>
+<t>SPDY adds a framing layer for multiplexing multiple, concurrent streams across a single TCP connection (or any reliable transport stream).  The framing layer is optimized for HTTP-like request-response streams, such that applications which run over HTTP today can work over SPDY with little or no change on behalf of the web application writer.</t>
 
-<t>The SPDY session offers four core improvements over HTTP:
+<t>The SPDY session offers four improvements over HTTP:
 <list>
 <t>Multiplexed requests: There is no limit to the number of requests that can be issued concurrently over a single SPDY connection.</t>
 <t>Prioritized requests: Clients can request certain resources to be delivered first.  This avoids the problem of congesting the network channel with non-critical resources when a high-priority request is pending.</t>

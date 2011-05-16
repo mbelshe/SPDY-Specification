@@ -26,3 +26,5 @@ TODO LIST
     Should flow control apply to HEADER frames?
 
 [ ] Eliminate the no-duplicate and lower case header shenanigans
+
+[ ] Discuss IP Pooling
