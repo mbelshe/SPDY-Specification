@@ -233,17 +233,28 @@
 <t>The SYN_STREAM control frame allows the sender to asynchronously create a stream between the endpoints.  See <xref target="StreamCreation">Stream Creation</xref></t>
           <figure>
             <artwork>
-+----------------------------------+
-|1|   version    |         1       |
-+----------------------------------+
-| Flags (8)  |  Length (24 bits)   |
-+----------------------------------+
-|X|          Stream-ID (31bits)    |
-+----------------------------------+
-|X|Associated-To-Stream-ID (31bits)|
-+----------------------------------+
-| Pri | Unused    |
-+------------------
++------------------------------------+
+|1|    version    |         1        |
++------------------------------------+
+|  Flags (8)  |  Length (24 bits)    |
++------------------------------------+
+|X|           Stream-ID (31bits)     |
++------------------------------------+
+|X| Associated-To-Stream-ID (31bits) |
++------------------------------------+
+|  Pri | Unused    |                 |
++------------------+                 |
+| Number of Name/Value pairs (int32) |   &lt;+
++------------------------------------+    |
+|     Length of name (int32)         |    | This section is the "Name/Value
++------------------------------------+    | Header Block", and is compressed.
+|           Name (string)            |    |
++------------------------------------+    |
+|     Length of value  (int32)       |    |
++------------------------------------+    |
+|          Value   (string)          |    |
++------------------------------------+    |
+|           (repeats)                |   &lt;+
             </artwork>
           </figure>
 
@@ -263,19 +274,33 @@
 <t>Priority: A 3-bit <xref target="StreamPriority">priority</xref> field.</t>
 
 <t>Unused: 13 bits of unused space, reserved for future use.</t>
+
+<t>Name/Value Header Block:  A set of name/value pairs carried as part of the SYN_STREAM.  <xref target="HeaderBlock">see Name/Value Header Block</xref>.</t>
+
         </section>
 
         <section anchor="SYN_REPLY" title="SYN_REPLY">
 <t>SYN_REPLY indicates the acceptance of a stream creation by the receiver of a SYN_STREAM frame.</t>
           <figure>
             <artwork>
-+----------------------------------+
-|1|   version    |         2       |
-+----------------------------------+
-| Flags (8)  |  Length (24 bits)   |
-+----------------------------------+
-|X|          Stream-ID (31bits)    |
-+----------------------------------+
++------------------------------------+
+|1|    version    |         2        |
++------------------------------------+
+|  Flags (8)  |  Length (24 bits)    |
++------------------------------------+
+|X|           Stream-ID (31bits)     |
++------------------------------------+
+| Number of Name/Value pairs (int32) |   &lt;+
++------------------------------------+    |
+|     Length of name (int32)         |    | This section is the "Name/Value
++------------------------------------+    | Header Block", and is compressed.
+|           Name (string)            |    |
++------------------------------------+    |
+|     Length of value  (int32)       |    |
++------------------------------------+    |
+|          Value   (string)          |    |
++------------------------------------+    |
+|           (repeats)                |   &lt;+
             </artwork>
           </figure>
 
@@ -292,6 +317,8 @@
 <t>If an endpoint receives multiple SYN_REPLY frames for the same active stream ID, it MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the error code PROTOCOL_ERROR.</t>
 
 <t>If an endpoint receives a SYN_REPLY frame for a stream already in the half-closed state, it MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the error code PROTOCOL_ERROR.</t>
+
+<t>Name/Value Header Block:  A set of name/value pairs carried as part of the SYN_STREAM.  <xref target="HeaderBlock">see Name/Value Header Block</xref>.</t>
         </section>
         <section anchor="RST_STREAM" title="RST_STREAM">
 <t>The RST_STREAM frame allows for abnormal termination of a stream.  When sent by the creator of a stream, it indicates the creator wishes to cancel the stream.  When sent by the receiver of a stream, it indicates an error or that the receiver did not want to accept the stream, so the stream should be closed.</t>
@@ -304,7 +331,7 @@
 +----------------------------------+
 |X|          Stream-ID (31bits)    |
 +----------------------------------+
-|          Status code             | 
+|          Status code             |
 +----------------------------------+
             </artwork>
           </figure>
@@ -490,6 +517,114 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 
 <t>Stream-ID: The stream this HEADER block is associated with.</t>
 
+<t>Name/Value Header Block:  A set of name/value pairs carried as part of the SYN_STREAM.  <xref target="HeaderBlock">see Name/Value Header Block</xref>.</t>
+
+          </section>
+
+          <section anchor="WINDOW_UPDATE" title="WINDOW_UPDATE">
+<t>The WINDOW_UPDATE control frame is used to implement per stream flow control in SPDY. Flow control in SPDY is per hop, that is, only between the two endpoints of a SPDY connection. If there are one or more intermediaries between the client and the origin server, flow control signals are not explicitly forwarded by the intermediaries. (However, throttling of data transfer by any receiver may have the effect of indirectly propagating flow control information upstream back to the original sender.) Flow control only applies to the data portion of data frames. Receivers must buffer all control frames. If a receiver fails to buffer an entire control frame, it MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code FLOW_CONTROL_ERROR for the stream.</t>
+
+<t>Flow control in SPDY is implemented by a data transfer window kept by the sender of each stream. The data transfer window is a simple uint32 that indicates how many bytes of data the sender can transmit. After a stream is created, but before any data frames have been transmitted, the sender begins with the initial window size. This window size is a measure of the buffering capability of the receiver. The sender must not send a data frame with data length greater than the transfer window size. After sending each data frame, the sender decrements its transfer window size by the amount of data transmitted. When the window size becomes less than or equal to 0, the sender must pause transmitting data frames. At the other end of the stream, the receiver sends a WINDOW_UPDATE control back to notify the sender that it has consumed some data and freed up buffer space to receive more data.</t>
+          <figure>
+            <artwork>
++----------------------------------+
+|1|   version    |         9       |
++----------------------------------+ 
+| 0 (Flags)  |  Length (24 bits)   |
++----------------------------------+
+|X|     Stream-ID (31-bits)        |
++----------------------------------+ 
+|X|  Delta-Window-Size (31-bits)   |
++----------------------------------+
+            </artwork>
+          </figure>
+<t>Control bit: The control bit is always 1 for this message.</t>
+
+<t>Version: The SPDY version number.</t>
+
+<t>Type: The message type for a WINDOW_UPDATE message is 9.</t>
+
+<t>Length: This frame is always 8 bytes long.</t>
+
+<t>Stream-ID: The stream ID that this WINDOW_UPDATE control frame is for.</t>
+
+<t>Delta-Window-Size: The additional number of bytes that the sender can transmit in addition to existing remaining window size. The legal range for this field is 1 to 2^31 - 1 (0x7fffffff) bytes.</t>
+
+<t>The window size as kept by the sender must never exceed 231 (although it can become negative in one special case). If a sender receives a WINDOW_UPDATE that causes the its window size to exceed this limit, it must send RST_STREAM with status code FLOW_CONTROL_ERROR to terminate the stream.</t>
+
+<t>When a SPDY connection is first established, the default initial window size for all streams is 64KB. An endpoint can use the SETTINGS control frame to adjust the initial window size for the connection. That is, its peer can start out using the 64KB default initial window size when sending data frames before receiving the SETTINGS. Because SETTINGS  is asynchronous, there may be a race condition if the receiver wants to decrease the initial window size, but its peer immediately sends 64KB on the creation of a new connection, before waiting for the SETTINGS to arrive. This is one case where the window size kept by the sender will become negative. Once the sender detects this condition, it must stop sending data frames and wait for the receiver to catch up. The receiver has two choices:
+<list>
+<t>immediately send RST_STREAM with FLOW_CONTROL_ERROR status code.</t>
+<t>allow the head of line blocking (as there is only one stream for the session and the amount of data in flight is bounded by the default initial window size), and send WINDOW_UPDATE as it consumes data.</t>
+</list>
+</t>
+
+<t>In the case of option 2, both sides must compute the window size based on the initial window size in the SETTINGS. For example, if the receiver sets the initial window size to be 16KB, and the sender sends 64KB immediately on connection establishment, the sender will discover its window size is -48KB on receipt of the SETTINGS. As the receiver consumes the first 16KB, it must send a WINDOW_UPDATE of 16KB back to the sender. This interaction continues until the sender's window size becomes positive again, and it can resume transmitting data frames.</t>
+
+<t>After the receiver reads in a data frame with FLAG_FIN that marks the end of the data stream, it should not send WINDOW_UPDATE frames as it consumes the last data frame. A sender should ignore all the WINDOW_UPDATE frames associated with the stream after it send the last frame for the stream.</t>
+
+<t>The data frames from the sender and the WINDOW_UPDATE frames from the receiver are completely asynchronous with respect to each other. This property allows a receiver to aggressively update the window size kept by the sender to prevent the stream from stalling.</t>
+          </section>
+
+          <section anchor="VERSION" title="VERSION">
+<t>A VERSION frame is sent by an endpoint only when it has received a control frame for a protocol version which is not supported by the endpoint.  The VERSION frame contains the versions which are supported by the endpoint.</t>
+          <figure>
+            <artwork>
++----------------------------------+
+|1| Remote Version  |       10     |
++----------------------------------+
+| Flags (8)  |  Length (24 bits)   |
++----------------------------------+
+|   Number of supported versions   |
++----------------------------------+
+| Supported version 1 (16 bits)    |
++----------------------------------+
+| Supported version 2 (16 bits)    |
+|             ...                  |
+            </artwork>
+          </figure>
+
+<t>Control bit: The control bit is always 1 for this message.</t>
+
+<t>Version: The SPDY version number of the other endpoint.  NOTE: In all other control frames this is the version number of the endpoint sending this frame.  In this case, it is the version previously sent to this endpoint in an unsupported version control frame.</t>
+
+<t>Type: The message type for a VERSION message is 10.</t>
+
+<t>Flags: There are no flags for this frame.</t>
+
+<t>Length: An unsigned 24-bit value representing the number of bytes after the length field. The total size of a VERSION frame is 8 bytes + length.</t>
+
+<t>Number of supported versions: A 32-bit value representing the number of 16 bit versions contained in this message.</t>
+
+<t>Supported Version1,2,3,...N:  A list of 16 bit values for each version supported by the sender of this frame.</t>
+
+<t>An endpoint MUST send a VERSION frame after receiving a frame for a version it does not support.</t>
+
+<t>An endpoint MUST only send one VERSION frame per connection.  After having sent a VERSION frame, it MUST ignore all other frames received for versions it does not recognize.</t>
+
+<t>Upon receipt of a VERSION frame, the receiver MUST recognize that previously sent frames for unsupported versions are invalid.  It must either resend those frames with an appropriate version, or close the connection.</t>
+          </section>
+
+          <section anchor="HeaderBlock" title="Name/Value Header Block">
+            <t>The Name/Value Header Block is found in the SYN_STREAM, SYN_REPLY
+            and HEADERS control frames, and shares a common format:</t>
+          <figure>
+            <artwork>
++------------------------------------+
+| Number of Name/Value pairs (int32) |
++------------------------------------+
+|     Length of name (int32)         |
++------------------------------------+
+|           Name (string)            |
++------------------------------------+
+|     Length of value  (int32)       |
++------------------------------------+
+|          Value   (string)          |
++------------------------------------+
+|           (repeats)                |
+            </artwork>
+          </figure>
+
 <t>Number of Name/Value pairs: The number of repeating name/value pairs following this field.</t>
 
 <t>List of Name/Value pairs:
@@ -534,91 +669,6 @@ ation/xhtmltext/plainpublicmax-agecharset=iso-8859-1utf-8gzipdeflateHTTP/1
 
 <t>Implementation notes: the compression engine can be tuned to favor speed or size. Optimizing for size increases memory use and CPU consumption.  Because header blocks are generally small, implementors may want to reduce the window-size of the compression engine from the default 15bits (a 32KB window) to more like 11bits (a 2KB window).  The exact setting is chosen by the compressor, the decompressor will work with any setting.</t>
           </section>
-
-        </section>
-
-        <section anchor="WINDOW_UPDATE" title="WINDOW_UPDATE">
-<t>The WINDOW_UPDATE control frame is used to implement per stream flow control in SPDY. Flow control in SPDY is per hop, that is, only between the two endpoints of a SPDY connection. If there are one or more intermediaries between the client and the origin server, flow control signals are not explicitly forwarded by the intermediaries. (However, throttling of data transfer by any receiver may have the effect of indirectly propagating flow control information upstream back to the original sender.) Flow control only applies to the data portion of data frames. Receivers must buffer all control frames. If a receiver fails to buffer an entire control frame, it MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code FLOW_CONTROL_ERROR for the stream.</t>
-
-<t>Flow control in SPDY is implemented by a data transfer window kept by the sender of each stream. The data transfer window is a simple uint32 that indicates how many bytes of data the sender can transmit. After a stream is created, but before any data frames have been transmitted, the sender begins with the initial window size. This window size is a measure of the buffering capability of the receiver. The sender must not send a data frame with data length greater than the transfer window size. After sending each data frame, the sender decrements its transfer window size by the amount of data transmitted. When the window size becomes less than or equal to 0, the sender must pause transmitting data frames. At the other end of the stream, the receiver sends a WINDOW_UPDATE control back to notify the sender that it has consumed some data and freed up buffer space to receive more data.</t>
-          <figure>
-            <artwork>
-+----------------------------------+
-|1|   version    |         9       |
-+----------------------------------+ 
-| 0 (Flags)  |  Length (24 bits)   |
-+----------------------------------+
-|X|     Stream-ID (31-bits)        |
-+----------------------------------+ 
-|X|  Delta-Window-Size (31-bits)   |
-+----------------------------------+
-            </artwork>
-          </figure>
-<t>Control bit: The control bit is always 1 for this message.</t>
-
-<t>Version: The SPDY version number.</t>
-
-<t>Type: The message type for a WINDOW_UPDATE message is 9.</t>
-
-<t>Length: This frame is always 8 bytes long.</t>
-
-<t>Stream-ID: The stream ID that this WINDOW_UPDATE control frame is for.</t>
-
-<t>Delta-Window-Size: The additional number of bytes that the sender can transmit in addition to existing remaining window size. The legal range for this field is 1 to 2^31 - 1 (0x7fffffff) bytes.</t>
-
-<t>The window size as kept by the sender must never exceed 231 (although it can become negative in one special case). If a sender receives a WINDOW_UPDATE that causes the its window size to exceed this limit, it must send RST_STREAM with status code FLOW_CONTROL_ERROR to terminate the stream.</t>
-
-<t>When a SPDY connection is first established, the default initial window size for all streams is 64KB. An endpoint can use the SETTINGS control frame to adjust the initial window size for the connection. That is, its peer can start out using the 64KB default initial window size when sending data frames before receiving the SETTINGS. Because SETTINGS  is asynchronous, there may be a race condition if the receiver wants to decrease the initial window size, but its peer immediately sends 64KB on the creation of a new connection, before waiting for the SETTINGS to arrive. This is one case where the window size kept by the sender will become negative. Once the sender detects this condition, it must stop sending data frames and wait for the receiver to catch up. The receiver has two choices:
-<list>
-<t>immediately send RST_STREAM with FLOW_CONTROL_ERROR status code.</t>
-<t>allow the head of line blocking (as there is only one stream for the session and the amount of data in flight is bounded by the default initial window size), and send WINDOW_UPDATE as it consumes data.</t>
-</list>
-</t>
-
-<t>In the case of option 2, both sides must compute the window size based on the initial window size in the SETTINGS. For example, if the receiver sets the initial window size to be 16KB, and the sender sends 64KB immediately on connection establishment, the sender will discover its window size is -48KB on receipt of the SETTINGS. As the receiver consumes the first 16KB, it must send a WINDOW_UPDATE of 16KB back to the sender. This interaction continues until the sender's window size becomes positive again, and it can resume transmitting data frames.</t>
-
-<t>After the receiver reads in a data frame with FLAG_FIN that marks the end of the data stream, it should not send WINDOW_UPDATE frames as it consumes the last data frame. A sender should ignore all the WINDOW_UPDATE frames associated with the stream after it send the last frame for the stream.</t>
-
-<t>The data frames from the sender and the WINDOW_UPDATE frames from the receiver are completely asynchronous with respect to each other. This property allows a receiver to aggressively update the window size kept by the sender to prevent the stream from stalling.</t>
-        </section>
-
-        <section anchor="VERSION" title="VERSION">
-<t>A VERSION frame is sent by an endpoint only when it has received a control frame for a protocol version which is not supported by the endpoint.  The VERSION frame contains the versions which are supported by the endpoint.</t>
-          <figure>
-            <artwork>
-+----------------------------------+
-|1| Remote Version  |       10     |
-+----------------------------------+
-| Flags (8)  |  Length (24 bits)   |
-+----------------------------------+
-|   Number of supported versions   |
-+----------------------------------+
-| Supported version 1 (16 bits)    |
-+----------------------------------+
-| Supported version 2 (16 bits)    |
-|             ...                  |
-            </artwork>
-          </figure>
-
-<t>Control bit: The control bit is always 1 for this message.</t>
-
-<t>Version: The SPDY version number of the other endpoint.  NOTE: In all other control frames this is the version number of the endpoint sending this frame.  In this case, it is the version previously sent to this endpoint in an unsupported version control frame.</t>
-
-<t>Type: The message type for a VERSION message is 10.</t>
-
-<t>Flags: There are no flags for this frame.</t>
-
-<t>Length: An unsigned 24-bit value representing the number of bytes after the length field. The total size of a VERSION frame is 8 bytes + length.</t>
-
-<t>Number of supported versions: A 32-bit value representing the number of 16 bit versions contained in this message.</t>
-
-<t>Supported Version1,2,3,...N:  A list of 16 bit values for each version supported by the sender of this frame.</t>
-
-<t>An endpoint MUST send a VERSION frame after receiving a frame for a version it does not support.</t>
-
-<t>An endpoint MUST only send one VERSION frame per connection.  After having sent a VERSION frame, it MUST ignore all other frames received for versions it does not recognize.</t>
-
-<t>Upon receipt of a VERSION frame, the receiver MUST recognize that previously sent frames for unsupported versions are invalid.  It must either resend those frames with an appropriate version, or close the connection.</t>
         </section>
       </section>
 
