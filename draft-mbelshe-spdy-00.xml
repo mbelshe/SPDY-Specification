@@ -955,7 +955,6 @@ Here is a list of the major changes between this draft and draft #2.
 <t>Removed NOOP frame</t>
 <t>Split the request "url" into "scheme", "host", and "path"</t>
 <t>Added the requirement that POSTs contain content-length.</t>
-<t>Moved the Name/Value blocks out of SYN_STREAM and SYN_REPLY; instead they only exist in HEADERS.</t>
 <t>Removed wasted 16bits of unused space from the end of the SYN_REPLY and HEADERS frames.</t>
 <t>Fixed bug: Priorities were described backward (0 was lowest instead of highest).</t>
 <t>Fixed bug: Name/Value header counts were duplicated in both the Name Value header block and also the containing frame.</t>
