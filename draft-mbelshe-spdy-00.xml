@@ -850,56 +850,6 @@ issue a <xref target="StreamErrorHandler">stream error</xref> with error code CA
         </section>
       </section>
 
-      <section title="Deployment">
-<t>To maintain speed, it is imperative that clients and servers be able to discover that SPDY is available for use without incurring round trips on the network.  Two mechanisms have been implemented to facilitate asynchronous discovery of SPDY availability.</t>
-
-        <section title="TLS Next Protocol Negotiation">
-<t>When a webserver accepts a connection on its HTTPS port, it negotiates the <xref target="RFC5246">TLS protocol</xref>, and assumes that TLS will be used to carry HTTP.  SPDY can be negotiated during the existing TLS handshake by using a <xref target="RFC4366">TLS Extension</xref> called <xref target="TLSNPN">Next Protocol Negotiation (NPN)</xref>. Using NPN, the client advertises support for protocols other than HTTP and the server can acknowledge use of those protocols.</t>
-
-<t>Clients can negotiate SPDY via the TLS/NPN extension by declaring support for the protocol "spdy/2".</t>
-        </section>
-
-        <section title="Alternate Protocol header">
-<t>When a server receives a non-SPDY request which could have been served via SPDY, it should append a Alternate-Protocol header into the response stream.  Note that it is valid to have multiple Alternate-Protocols headers.  The field-value can also be specified as a comma-separated list, as per RFC2616 section 4.2.</t>
-
-<t>Syntax:</t>
-<figure>
-  <artwork>
-Alternate-Protocol: &lt;port>:&lt;protocol>
-  </artwork>
-</figure>
-
-<t>To specify SPDY as an alternate protocol available on port 123, use:</t>
-<figure>
-  <artwork>
-Alternate-Protocol: 123:spdy/1
-  </artwork>
-</figure>
-
-<t>To specify SPDY via TLS/NPN as an alternate protocol available on port 443, use:</t>
-<figure>
-  <artwork>
-Alternate-Protocol: 443:npn-spdy/1
-  </artwork>
-</figure>
-
-<t>To specify support for SPDY versions 1 and 2 (currently non-existent) via TLS/NPN as alternate protocols available on port 443, use:</t>
-<figure>
-  <artwork>
-Alternate-Protocol: 443:npn-spdy/2,443:npn-spdy/1
-  </artwork>
-</figure>
-
-<t>When a client receives a Alternate-Protocol header, it should attempt to piggyback future http requests over SPDY by using the specified port.  Note that the server may reply with multiple field values or a comma-separated field value for Alternate-Protocol (and in this manner indicate the various SPDY versions it supports).  The client may select any protocol it supports and attempt to use that.  If it cannot establish a SPDY connection on that port, it should fallback to standard HTTP and persist the failure for the user-agent session so that it doesn't re-attempt in the near future.</t>
-
-        </section>
-
-        <section title="Piggybacking HTTP requests over SPDY sessions">
-<t>SPDY does not introduce a new protocol scheme specific to SPDY.  However, all HTTP requests can "piggyback" on existing SPDY sessions.  So, if a client has successfully negotiated any SPDY session to a port that the server has indicated (via Alternate-Protocol) is an acceptable alternate protocol for the HTTP host port pair, all future http requests to that host port pair should use the SPDY session rather than opening a new HTTP connection.</t>
-
-<t>Note:  If your site does load balancing in such a way that http content would not be available over the SPDY session, your site may not be able to use SPDY.</t>
-        </section>
-      </section>
     </section>
 
     <section title="Design Rationale and Notes">
