@@ -963,14 +963,6 @@ Here is a list of the major changes between this draft and draft #2.
       </t>
     </section>
 
-    <section title="SPDY Session State Machine">
-<t>TODO(mbelshe): draw me</t>
-    </section>
-
-    <section title="SPDY Stream State Machine">
-<t>TODO(mbelshe): draw me</t>
-    </section>
-
     <section title="Requirements Notation">
       <t>
         The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
