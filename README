@@ -6,6 +6,18 @@ which uses the syntax defined in RFC2629:  http://www.ietf.org/rfc/rfc2629.txt.
 The file rfc2629.xml is a XSLT file which enables the browser to take the
 draft-mbelshe-spdy-00.xml and render it.
 
+License: downloading these files and making changes to them is explicit
+agreement by you to release any and all changes you make to these documents
+into the public domain, with no reservations or rights.  By downloading these
+files, you agree that any changes made by you can be used freely and without
+terms, reservations, or rights, and possibly without even attribution to you.
+Your intent in downloading these files is that all changes to these documents
+may potentially be submitted for standardization without your permission, and
+without your claim to the content submitted.  If you do not agree to these
+terms you are explicitly forbidden from reading, modifying or contributing to
+this work in any way.
+
+
 FILES
 -----
 README                       This file
