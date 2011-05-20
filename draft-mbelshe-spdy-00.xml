@@ -136,7 +136,7 @@
 <t>Data frame processing requirements:
 <list>
 <t>If an endpoint receives a data frame for a stream-id which is not open and the endpoint has not sent a <xref target="GOAWAY">GOAWAY</xref> frame, it MUST send issue a <xref target="StreamErrorHandler">stream error</xref> with the error code INVALID_STREAM for the stream-id.</t>
-<t>If the endpoint which created the stream receives a data frame before receiving a SYN_REPLY on that stream, it is a protocol error, and the receiver MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code PROTOCOL_ERROR for the stream-id.</t>
+<t>If the endpoint which created the stream receives a data frame before receiving a SYN_REPLY on that stream, it is a protocol error, and the recipient MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code PROTOCOL_ERROR for the stream-id.</t>
 <t>Implementors note: If an endpoint receives multiple data frames for invalid stream-ids, it MAY close the session.</t>
 <t>All SPDY endpoints MUST accept compressed data frames.  Compression of data frames is always done using zlib compression.  Each stream initializes and uses its own compression context dedicated to use within that stream.  Endpoints are encouraged to use application level compression rather than SPDY stream level compression.</t>
 <t>Each SPDY stream sending compressed frames creates its own zlib context for that stream. (Thus, if both endpoints of a stream are compressing data on the stream, there will be two zlib contexts, one for sending and one for receiving).</t>
@@ -160,11 +160,11 @@
 
 <t>It is illegal for the stream-id to not increase with each new stream.  If an endpoint receives a SYN_STREAM with a stream id which is less than any previously received SYN_STREAM, it MUST issue a <xref target="SessionErrorHandler">session error</xref> with the status PROTOCOL_ERROR.</t>
 
-<t>It is a protocol error to send two SYN_STREAMS with the same stream-id.  If a receiver receives a second SYN_STREAM for the same stream, it MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code PROTOCOL_ERROR.</t>
+<t>It is a protocol error to send two SYN_STREAMS with the same stream-id.  If a recipient receives a second SYN_STREAM for the same stream, it MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code PROTOCOL_ERROR.</t>
 
-<t>Upon receipt of a SYN_STREAM, the receiver can reject the stream by sending a <xref target="StreamErrorHandler">stream error</xref> with the error code REFUSED_STREAM. Note, however, that the creating endpoint may have already sent additional frames for that stream which cannot be immediately stopped.</t>
+<t>Upon receipt of a SYN_STREAM, the recipient can reject the stream by sending a <xref target="StreamErrorHandler">stream error</xref> with the error code REFUSED_STREAM. Note, however, that the creating endpoint may have already sent additional frames for that stream which cannot be immediately stopped.</t>
 
-<t>Once the stream is created, the creator may immediately send HEADER or DATA frames for that stream, without needing to wait for the receiver to acknowledge.</t>
+<t>Once the stream is created, the creator may immediately send HEADER or DATA frames for that stream, without needing to wait for the recipient to acknowledge.</t>
 
           <section title="Unidirectional streams">
 <t>When an endpoint creates a stream with the FLAG_UNIDIRECTIONAL flag set, it creates a unidirectional stream which the creating endpoint can use to send frames, but the receiving endpoint cannot.  The receiving endpoint is implicitly already in the <xref target="StreamHalfClose">half-closed</xref> state.</t>
@@ -178,7 +178,7 @@
         <section anchor="StreamPriority" title="Stream priority">
 <t>The creator of a stream assigns a priority for that stream.  Priority is represented as an integer from 0 to 7.  0 represents the highest priority and 7 represents the lowest priority.</t>
 
-<t>The sender and receiver SHOULD use best-effort to process streams in the order of highest priority to lowest priority.</t>
+<t>The sender and recipient SHOULD use best-effort to process streams in the order of highest priority to lowest priority.</t>
 
 <t>TODO(mbelshe):  Define a trickle-priority?</t>
         </section>
@@ -198,8 +198,8 @@
         <section anchor="StreamClose" title="Stream close">
 <t>There are 3 ways that streams can be terminated:
 <list>
-<t>Normal termination: Normal stream termination occurs when both sender and receiver have half-closed the stream by sending a FLAG_FIN.</t>
-<t>Abrupt termination: Either the client or server can send a RST_STREAM control frame at any time. A RST_STREAM contains an error code to indicate the reason for failure.  When a RST_STREAM is sent from the stream originator, it indicates a failure to complete the stream and that no further data will be sent on the stream.  When a RST_STREAM is sent from the stream receiver, the sender, upon receipt, should stop sending any data on the stream.  The stream receiver should be aware that there is a race between data already in transit from the sender and the time the RST_STREAM is received.  See <xref target="StreamErrorHandler">Stream Error Handling</xref></t>
+<t>Normal termination: Normal stream termination occurs when both sender and recipient have half-closed the stream by sending a FLAG_FIN.</t>
+<t>Abrupt termination: Either the client or server can send a RST_STREAM control frame at any time. A RST_STREAM contains an error code to indicate the reason for failure.  When a RST_STREAM is sent from the stream originator, it indicates a failure to complete the stream and that no further data will be sent on the stream.  When a RST_STREAM is sent from the stream recipient, the sender, upon receipt, should stop sending any data on the stream.  The stream recipient should be aware that there is a race between data already in transit from the sender and the time the RST_STREAM is received.  See <xref target="StreamErrorHandler">Stream Error Handling</xref></t>
 <t>TCP connection teardown: If the TCP connection is torn down while un-closed streams exist, then the endpoint must assume that the stream was abnormally interrupted and may be incomplete.</t>
 </list>
 </t>
@@ -261,7 +261,7 @@
 <t>Flags: Flags related to this frame. Valid flags are:
 <list>
 <t>0x01 = FLAG_FIN - marks this frame as the last frame to be transmitted on this stream and puts the sender in the <xref target="StreamHalfClose">half-closed</xref> state.</t>
-<t>0x02 = FLAG_UNIDIRECTIONAL - a stream created with this flag puts the receiver in the <xref target="StreamHalfClose">half-closed</xref> state.</t>
+<t>0x02 = FLAG_UNIDIRECTIONAL - a stream created with this flag puts the recipient in the <xref target="StreamHalfClose">half-closed</xref> state.</t>
 </list>
 </t>
 
@@ -280,7 +280,7 @@
         </section>
 
         <section anchor="SYN_REPLY" title="SYN_REPLY">
-<t>SYN_REPLY indicates the acceptance of a stream creation by the receiver of a SYN_STREAM frame.</t>
+<t>SYN_REPLY indicates the acceptance of a stream creation by the recipient of a SYN_STREAM frame.</t>
           <figure>
             <artwork>
 +------------------------------------+
@@ -321,7 +321,7 @@
 <t>Name/Value Header Block:  A set of name/value pairs carried as part of the SYN_STREAM.  <xref target="HeaderBlock">see Name/Value Header Block</xref>.</t>
         </section>
         <section anchor="RST_STREAM" title="RST_STREAM">
-<t>The RST_STREAM frame allows for abnormal termination of a stream.  When sent by the creator of a stream, it indicates the creator wishes to cancel the stream.  When sent by the receiver of a stream, it indicates an error or that the receiver did not want to accept the stream, so the stream should be closed.</t>
+<t>The RST_STREAM frame allows for abnormal termination of a stream.  When sent by the creator of a stream, it indicates the creator wishes to cancel the stream.  When sent by the recipient of a stream, it indicates an error or that the recipient did not want to accept the stream, so the stream should be closed.</t>
           <figure>
             <artwork>
 +----------------------------------+
@@ -346,14 +346,14 @@
 <t>1 - PROTOCOL_ERROR. This is a generic error, and should only be used if a more specific error is not available.</t>
 <t>2 - INVALID_STREAM. This is returned when a frame is received for a stream which is not active.</t>
 <t>3 - REFUSED_STREAM.  Indicates that the stream was refused before any processing has been done on the stream.</t>
-<t>4 - UNSUPPORTED_VERSION.  Indicates that the receiver of a stream does not support the SPDY version requested.</t>
+<t>4 - UNSUPPORTED_VERSION.  Indicates that the recipient of a stream does not support the SPDY version requested.</t>
 <t>5 - CANCEL.  Used by the creator of a stream to indicate that the stream is no longer needed.</t>
 <t>6 - FLOW_CONTROL_ERROR.  The endpoint detected that its peer violated the flow control protocol.</t>
 <t>Note:  0 is not a valid status code for a RST_STREAM.</t>
 </list>
 </t>
 
-<t>After receiving a RST_STREAM on a stream, the receiver must not send additional frames for that stream, and the stream moves into the closed state.</t>
+<t>After receiving a RST_STREAM on a stream, the recipient must not send additional frames for that stream, and the stream moves into the closed state.</t>
         </section>
 
         <section anchor="SETTINGS" title="SETTINGS">
@@ -389,8 +389,8 @@
 <list>
   <t>ID.flags:
   <list>
-    <t>FLAG_SETTINGS_PERSIST_VALUE (0x1):   When set, the sender of this SETTINGS frame is requesting that the receiver persist the ID/Value and return it in future SETTINGS frames sent from the sender to this receiver.  Because persistence is only implemented on the client, this flag is only sent by the server.</t>
-    <t>FLAG_SETTINGS_PERSISTED (0x2):  When set, the sender is notifying the receiver that this ID/Value pair was previously sent to the sender by the receiver with the FLAG_SETTINGS_PERSIST_VALUE, and the sender is returning it.  Because persistence is only implemented on the client, this flag is only sent by the client.</t>
+    <t>FLAG_SETTINGS_PERSIST_VALUE (0x1):   When set, the sender of this SETTINGS frame is requesting that the recipient persist the ID/Value and return it in future SETTINGS frames sent from the sender to this recipient.  Because persistence is only implemented on the client, this flag is only sent by the server.</t>
+    <t>FLAG_SETTINGS_PERSISTED (0x2):  When set, the sender is notifying the recipient that this ID/Value pair was previously sent to the sender by the recipient with the FLAG_SETTINGS_PERSIST_VALUE, and the sender is returning it.  Because persistence is only implemented on the client, this flag is only sent by the client.</t>
   </list>
   </t>
 
@@ -408,13 +408,13 @@
 
 <t>Value: A 32-bit value.</t>
 
-<t>The message is intentionally extensible for future information which may improve client-server communications. The sender does not need to send every type of ID/value. It must only send those for which it has accurate values to convey. When multiple ID/value pairs are sent, they should be sent in order of lowest id to highest id.  A single SETTINGS frame MUST not contain multiple values for the same ID.  If the receiver of a SETTINGS frame discovers multiple values for the same ID, it MUST ignore all values except the first one.</t>
+<t>The message is intentionally extensible for future information which may improve client-server communications. The sender does not need to send every type of ID/value. It must only send those for which it has accurate values to convey. When multiple ID/value pairs are sent, they should be sent in order of lowest id to highest id.  A single SETTINGS frame MUST not contain multiple values for the same ID.  If the recipient of a SETTINGS frame discovers multiple values for the same ID, it MUST ignore all values except the first one.</t>
 
 <t>A server may send multiple SETTINGS frames containing different ID/Value pairs.  When the same ID/Value is sent twice, the most recent value overrides any previously sent values.  If the server sends IDs 1, 2, and 3 with the FLAG_SETTINGS_PERSIST_VALUE in a first SETTINGS frame, and then sends IDs 4 and 5 with the FLAG_SETTINGS_PERSIST_VALUE, when the client returns the persisted state on its next SETTINGS frame, it SHOULD send all 5 settings (1, 2, 3, 4, and 5 in this example) to the server.</t>
         </section>
 
         <section anchor="PING" title="PING">
-<t>The PING control frame is a mechanism for measuring a minimal round-trip time from the sender.  It can be sent from the client or the server.  Receivers of a PING frame should send an identical frame to the sender as soon as possible (if there is other pending data waiting to be sent, PING should take highest priority).  Each ping sent by a sender should use a unique ID.</t>
+<t>The PING control frame is a mechanism for measuring a minimal round-trip time from the sender.  It can be sent from the client or the server.  Recipients of a PING frame should send an identical frame to the sender as soon as possible (if there is other pending data waiting to be sent, PING should take highest priority).  Each ping sent by a sender should use a unique ID.</t>
           <figure>
             <artwork>
 +----------------------------------+
@@ -443,7 +443,7 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
         </section>
 
         <section anchor="GOAWAY" title="GOAWAY">
-<t>The GOAWAY control frame is a mechanism to tell the remote side of the connection that it should no longer use this session for further requests.  It can be sent from the client or the server. Once sent, the sender agrees not to initiate any new streams on this session. Receivers of a GOAWAY frame must not send additional requests on this session, although a new session (connection) can be established for new requests.  The purpose of this message is to allow an endpoint to gracefully stop accepting new requests (perhaps for a reboot or maintenance), while still finishing processing of previously established streams.</t>
+<t>The GOAWAY control frame is a mechanism to tell the remote side of the connection that it should no longer use this session for further requests.  It can be sent from the client or the server. Once sent, the sender agrees not to initiate any new streams on this session. Recipients of a GOAWAY frame must not send additional requests on this session, although a new session (connection) can be established for new requests.  The purpose of this message is to allow an endpoint to gracefully stop accepting new requests (perhaps for a reboot or maintenance), while still finishing processing of previously established streams.</t>
 
 <t>There is an inherent race condition between a client sending requests and the server sending a GOAWAY message.  To deal with this case, the GOAWAY message contains a last-stream identifier indicating the last stream which was accepted in this session.  If the client issued requests for sessions after this stream-id, they were not accepted by the server and should be re-issued later at the client's discretion.</t>
 
@@ -522,9 +522,9 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
           </section>
 
           <section anchor="WINDOW_UPDATE" title="WINDOW_UPDATE">
-<t>The WINDOW_UPDATE control frame is used to implement per stream flow control in SPDY. Flow control in SPDY is per hop, that is, only between the two endpoints of a SPDY connection. If there are one or more intermediaries between the client and the origin server, flow control signals are not explicitly forwarded by the intermediaries. (However, throttling of data transfer by any receiver may have the effect of indirectly propagating flow control information upstream back to the original sender.) Flow control only applies to the data portion of data frames. Receivers must buffer all control frames. If a receiver fails to buffer an entire control frame, it MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code FLOW_CONTROL_ERROR for the stream.</t>
+<t>The WINDOW_UPDATE control frame is used to implement per stream flow control in SPDY. Flow control in SPDY is per hop, that is, only between the two endpoints of a SPDY connection. If there are one or more intermediaries between the client and the origin server, flow control signals are not explicitly forwarded by the intermediaries. (However, throttling of data transfer by any recipient may have the effect of indirectly propagating flow control information upstream back to the original sender.) Flow control only applies to the data portion of data frames. Recipients must buffer all control frames. If a recipient fails to buffer an entire control frame, it MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code FLOW_CONTROL_ERROR for the stream.</t>
 
-<t>Flow control in SPDY is implemented by a data transfer window kept by the sender of each stream. The data transfer window is a simple uint32 that indicates how many bytes of data the sender can transmit. After a stream is created, but before any data frames have been transmitted, the sender begins with the initial window size. This window size is a measure of the buffering capability of the receiver. The sender must not send a data frame with data length greater than the transfer window size. After sending each data frame, the sender decrements its transfer window size by the amount of data transmitted. When the window size becomes less than or equal to 0, the sender must pause transmitting data frames. At the other end of the stream, the receiver sends a WINDOW_UPDATE control back to notify the sender that it has consumed some data and freed up buffer space to receive more data.</t>
+<t>Flow control in SPDY is implemented by a data transfer window kept by the sender of each stream. The data transfer window is a simple uint32 that indicates how many bytes of data the sender can transmit. After a stream is created, but before any data frames have been transmitted, the sender begins with the initial window size. This window size is a measure of the buffering capability of the recipient. The sender must not send a data frame with data length greater than the transfer window size. After sending each data frame, the sender decrements its transfer window size by the amount of data transmitted. When the window size becomes less than or equal to 0, the sender must pause transmitting data frames. At the other end of the stream, the recipient sends a WINDOW_UPDATE control back to notify the sender that it has consumed some data and freed up buffer space to receive more data.</t>
           <figure>
             <artwork>
 +----------------------------------+
@@ -552,18 +552,18 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 
 <t>The window size as kept by the sender must never exceed 231 (although it can become negative in one special case). If a sender receives a WINDOW_UPDATE that causes the its window size to exceed this limit, it must send RST_STREAM with status code FLOW_CONTROL_ERROR to terminate the stream.</t>
 
-<t>When a SPDY connection is first established, the default initial window size for all streams is 64KB. An endpoint can use the SETTINGS control frame to adjust the initial window size for the connection. That is, its peer can start out using the 64KB default initial window size when sending data frames before receiving the SETTINGS. Because SETTINGS  is asynchronous, there may be a race condition if the receiver wants to decrease the initial window size, but its peer immediately sends 64KB on the creation of a new connection, before waiting for the SETTINGS to arrive. This is one case where the window size kept by the sender will become negative. Once the sender detects this condition, it must stop sending data frames and wait for the receiver to catch up. The receiver has two choices:
+<t>When a SPDY connection is first established, the default initial window size for all streams is 64KB. An endpoint can use the SETTINGS control frame to adjust the initial window size for the connection. That is, its peer can start out using the 64KB default initial window size when sending data frames before receiving the SETTINGS. Because SETTINGS  is asynchronous, there may be a race condition if the recipient wants to decrease the initial window size, but its peer immediately sends 64KB on the creation of a new connection, before waiting for the SETTINGS to arrive. This is one case where the window size kept by the sender will become negative. Once the sender detects this condition, it must stop sending data frames and wait for the recipient to catch up. The recipient has two choices:
 <list>
 <t>immediately send RST_STREAM with FLOW_CONTROL_ERROR status code.</t>
 <t>allow the head of line blocking (as there is only one stream for the session and the amount of data in flight is bounded by the default initial window size), and send WINDOW_UPDATE as it consumes data.</t>
 </list>
 </t>
 
-<t>In the case of option 2, both sides must compute the window size based on the initial window size in the SETTINGS. For example, if the receiver sets the initial window size to be 16KB, and the sender sends 64KB immediately on connection establishment, the sender will discover its window size is -48KB on receipt of the SETTINGS. As the receiver consumes the first 16KB, it must send a WINDOW_UPDATE of 16KB back to the sender. This interaction continues until the sender's window size becomes positive again, and it can resume transmitting data frames.</t>
+<t>In the case of option 2, both sides must compute the window size based on the initial window size in the SETTINGS. For example, if the recipient sets the initial window size to be 16KB, and the sender sends 64KB immediately on connection establishment, the sender will discover its window size is -48KB on receipt of the SETTINGS. As the recipient consumes the first 16KB, it must send a WINDOW_UPDATE of 16KB back to the sender. This interaction continues until the sender's window size becomes positive again, and it can resume transmitting data frames.</t>
 
-<t>After the receiver reads in a data frame with FLAG_FIN that marks the end of the data stream, it should not send WINDOW_UPDATE frames as it consumes the last data frame. A sender should ignore all the WINDOW_UPDATE frames associated with the stream after it send the last frame for the stream.</t>
+<t>After the recipient reads in a data frame with FLAG_FIN that marks the end of the data stream, it should not send WINDOW_UPDATE frames as it consumes the last data frame. A sender should ignore all the WINDOW_UPDATE frames associated with the stream after it send the last frame for the stream.</t>
 
-<t>The data frames from the sender and the WINDOW_UPDATE frames from the receiver are completely asynchronous with respect to each other. This property allows a receiver to aggressively update the window size kept by the sender to prevent the stream from stalling.</t>
+<t>The data frames from the sender and the WINDOW_UPDATE frames from the recipient are completely asynchronous with respect to each other. This property allows a recipient to aggressively update the window size kept by the sender to prevent the stream from stalling.</t>
           </section>
 
           <section anchor="VERSION" title="VERSION">
@@ -602,7 +602,7 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 
 <t>An endpoint MUST only send one VERSION frame per connection.  After having sent a VERSION frame, it MUST ignore all other frames received for versions it does not recognize.</t>
 
-<t>Upon receipt of a VERSION frame, the receiver MUST recognize that previously sent frames for unsupported versions are invalid.  It must either resend those frames with an appropriate version, or close the connection.</t>
+<t>Upon receipt of a VERSION frame, the recipient MUST recognize that previously sent frames for unsupported versions are invalid.  It must either resend those frames with an appropriate version, or close the connection.</t>
           </section>
 
           <section anchor="HeaderBlock" title="Name/Value Header Block">
@@ -636,9 +636,9 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 </list>
 </t>
 
-<t>Each header name must have at least one value. Header names must be all lower case.  The length of each name must be greater than zero.  A receiver of a zero-length name MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code PROTOCOL_ERROR for the stream-id.</t> 
+<t>Each header name must have at least one value. Header names must be all lower case.  The length of each name must be greater than zero.  A recipient of a zero-length name MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code PROTOCOL_ERROR for the stream-id.</t> 
 
-<t>Duplicate header names are not allowed.  To send two identically named headers, send a header with two values, where the values are separated by a single NUL (0) byte.  Senders must not send multiple, in-sequence NUL characters.  Receivers of multiple, in-sequence NUL characters MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code PROTOCOL_ERROR for the stream-id.</t>
+<t>Duplicate header names are not allowed.  To send two identically named headers, send a header with two values, where the values are separated by a single NUL (0) byte.  Senders must not send multiple, in-sequence NUL characters.  Recipients of multiple, in-sequence NUL characters MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code PROTOCOL_ERROR for the stream-id.</t>
 
       <section title="Compression" anchor="Compression">
 <t>The Name/Value Header Block is the portion of the HEADERS frame which follows the Stream-ID field.  This block is always compressed using zlib compression.</t>
@@ -665,7 +665,7 @@ ation/xhtmltext/plainpublicmax-agecharset=iso-8859-1utf-8gzipdeflateHTTP/1
 
 <t>The entire contents of the name/value header block is compressed using zlib.  There is a single zlib stream for all name value pairs in one direction on a connection.   SPDY uses a SYNC_FLUSH between each compressed frame.</t>
 
-<t>When a HEADERS frame carries the FLAG_RESET_COMPRESSION flag, it indicates that the sender of this frame has re-initialized the compression state prior to compressing this frame.  The receiver of the frame MUST reset the compression state to its initial state (with the compression dictionary above) before decompressing the frame.  See the <xref target="CompressionContexts">privacy considerations</xref> for more information.</t>
+<t>When a HEADERS frame carries the FLAG_RESET_COMPRESSION flag, it indicates that the sender of this frame has re-initialized the compression state prior to compressing this frame.  The recipient of the frame MUST reset the compression state to its initial state (with the compression dictionary above) before decompressing the frame.  See the <xref target="CompressionContexts">privacy considerations</xref> for more information.</t>
 
 <t>Implementation notes: the compression engine can be tuned to favor speed or size. Optimizing for size increases memory use and CPU consumption.  Because header blocks are generally small, implementors may want to reduce the window-size of the compression engine from the default 15bits (a 32KB window) to more like 11bits (a 2KB window).  The exact setting is chosen by the compressor, the decompressor will work with any setting.</t>
           </section>
@@ -690,7 +690,7 @@ Frame types in SPDY are version-specific for all control types except the VERSIO
 
 <t>For performance reasons, it is imperative that SPDY not require additional round trips for version negotiation.  Instead, SPDY incorporates version information into all control frames and handles the version mismatches lazily.</t>
 
-<t>Upon receipt of a VERSION frame, the receiver can can either find a version from the list of versions in the VERSION frame which both endpoints can support, or it must close the session with error code UNSUPPORTED_VERSION.  At the time a VERSION frame is received, all open streams on the receiver are implicitly closed.</t>
+<t>Upon receipt of a VERSION frame, the recipient can can either find a version from the list of versions in the VERSION frame which both endpoints can support, or it must close the session with error code UNSUPPORTED_VERSION.  At the time a VERSION frame is received, all open streams on the recipient are implicitly closed.</t>
 
 <t>An endpoint implicitly supports a version, V, as soon as it sends any control frame other than the VERSION control frame, with that version V.  For example, if an endpoint sends a SETTINGS frame with version V, then it is declaring support for that version.  Endpoints MUST NOT denounce a version which it had previously used for sending data.  If an endpoint receives a conflicting version frame, it MUST close the connection.</t>
 
@@ -886,9 +886,9 @@ issue a <xref target="StreamErrorHandler">stream error</xref> with error code CA
 <t>Alternatively, we've chosen the simple approach, which is to simply provide a flag for resetting the compression context.  For the common case (no proxy), this fine because most requests are to the same origin and we never need to reset the context.  For cases where we are using two different origins over a single SPDY session, we simply reset the compression state between each transition.</t>
       </section>
       <section title="Unidirectional streams">
-<t>Many readers notice that unidirectional streams are both a bit confusing in concept and also somewhat redundant.  If the receiver of a stream doesn't with to send data on a stream, it could simply send a SYN_REPLY with the FLAG_FIN bit set.  The FLAG_UNIDIRECTIONAL is, therefore, not necessary.</t>
+<t>Many readers notice that unidirectional streams are both a bit confusing in concept and also somewhat redundant.  If the recipient of a stream doesn't with to send data on a stream, it could simply send a SYN_REPLY with the FLAG_FIN bit set.  The FLAG_UNIDIRECTIONAL is, therefore, not necessary.</t>
 
-<t>It is true that we don't need the UNIDIRECTIONAL markings.  It is added because it avoids the receiver of pushed streams from needing to send a set of empty frames (e.g. the SYN_STREAM w/ FLAG_FIN) which otherwise serve no purpose.</t>
+<t>It is true that we don't need the UNIDIRECTIONAL markings.  It is added because it avoids the recipient of pushed streams from needing to send a set of empty frames (e.g. the SYN_STREAM w/ FLAG_FIN) which otherwise serve no purpose.</t>
       </section>
       <section title="Data Compression">
 <t>Generic compression of data portion of the streams (as opposed to compression of the headers) without knowing the content of the stream is redundant.  There is no value in compressing a stream which is already compressed.  Because of this, SPDY does allow data compression to be optional.  We included it because study of existing websites shows that many sites are not using compression as they should, and users suffer because of it.  We wanted a mechanism where, at the SPDY layer, site administrators could simply force compression - it is better to compress twice than to not compress.</t>
