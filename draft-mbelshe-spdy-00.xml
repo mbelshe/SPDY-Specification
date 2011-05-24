@@ -733,7 +733,7 @@ Frame types in SPDY are version-specific for all control types except the VERSIO
 <t>":scheme" - the scheme portion of the URL for this request (e.g. "https"))</t>
 </list></t>
 <t>Header names are all lowercase.</t>
-<t>The Connection and Keep-Alive headers are no longer valid and are ignored if present.</t>
+<t>The Connection, Keep-Alive, and Proxy-Connection headers are not valid and are ignored if present.</t>
 <t>User-agents MUST support gzip compression. Regardless of the Accept-Encoding sent by the user-agent, the server may always send content encoded with gzip or deflate encoding.</t>
 <t>If a server receives a request where the sum of the data frame payload lengths does not equal the size of the Content-Length header, the server MUST return a 400 (Bad Request) error.</t>
 <t>POST-specific changes:
