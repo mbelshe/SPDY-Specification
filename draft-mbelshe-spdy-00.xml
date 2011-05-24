@@ -265,7 +265,7 @@
 </list>
 </t>
 
-<t>Length: SYN_STREAM frames are constant size.  The length field (containing the number of bytes in the frame after the length field) is 10.</t>
+<t>Length: The length is the number of bytes which follow the length field in the frame.  For SYN_STREAM frames, this is 10 bytes plus the length of the compressed Name/Value block.</t>
 
 <t>Stream-ID: The 31-bit identifier for this stream.  This stream-id will be used in frames which are part of this stream.</t>
 
@@ -310,7 +310,7 @@
 </list>
 </t>
 
-<t>Length: SYN_REPLY frames are constant size.  The length field (containing the number of bytes in the frame after the length field) is 4.</t>
+<t>Length: The length is the number of bytes which follow the length field in the frame.  For SYN_REPLY frames, this is 4 bytes plus the length of the compressed Name/Value block.</t>
 
 <t>Stream-ID: The 31-bit identifier for this stream.</t>
 
