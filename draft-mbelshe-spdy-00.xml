@@ -89,7 +89,7 @@
 </figure>
 <t>Control bit: The 'C' bit is a single bit indicating if this is a control message. For control frames this value is always 1.</t>
 
-<t>Version: The version number of the session protocol.</t>
+<t>Version: The version number of the SPDY protocol.</t>
 
 <t>Type: The type of control frame. See Control Frames for the complete list of control frames.</t>
 
@@ -314,9 +314,9 @@
 
 <t>Stream-ID: The 31-bit identifier for this stream.</t>
 
-<t>If an endpoint receives multiple SYN_REPLY frames for the same active stream ID, it MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the error code PROTOCOL_ERROR.</t>
+<t>If an endpoint receives multiple SYN_REPLY frames for the same active stream ID, it MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the error code STREAM_IN_USE.</t>
 
-<t>If an endpoint receives a SYN_REPLY frame for a stream already in the half-closed state, it MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the error code PROTOCOL_ERROR.</t>
+<t>If an endpoint receives a SYN_REPLY frame for a stream already in the half-closed state, it MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the error code STREAM_ALREADY_CLOSED.</t>
 
 <t>Name/Value Header Block:  A set of name/value pairs carried as part of the SYN_STREAM.  <xref target="HeaderBlock">see Name/Value Header Block</xref>.</t>
         </section>
@@ -550,7 +550,7 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 
 <t>Delta-Window-Size: The additional number of bytes that the sender can transmit in addition to existing remaining window size. The legal range for this field is 1 to 2^31 - 1 (0x7fffffff) bytes.</t>
 
-<t>The window size as kept by the sender must never exceed 231 (although it can become negative in one special case). If a sender receives a WINDOW_UPDATE that causes the its window size to exceed this limit, it must send RST_STREAM with status code FLOW_CONTROL_ERROR to terminate the stream.</t>
+<t>The window size as kept by the sender must never exceed 2^31 (although it can become negative in one special case). If a sender receives a WINDOW_UPDATE that causes the its window size to exceed this limit, it must send RST_STREAM with status code FLOW_CONTROL_ERROR to terminate the stream.</t>
 
 <t>When a SPDY connection is first established, the default initial window size for all streams is 64KB. An endpoint can use the SETTINGS control frame to adjust the initial window size for the connection. That is, its peer can start out using the 64KB default initial window size when sending data frames before receiving the SETTINGS. Because SETTINGS  is asynchronous, there may be a race condition if the recipient wants to decrease the initial window size, but its peer immediately sends 64KB on the creation of a new connection, before waiting for the SETTINGS to arrive. This is one case where the window size kept by the sender will become negative. Once the sender detects this condition, it must stop sending data frames and wait for the recipient to catch up. The recipient has two choices:
 <list>
@@ -596,7 +596,7 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 
 <t>Number of supported versions: A 32-bit value representing the number of 16 bit versions contained in this message.</t>
 
-<t>Supported Version1,2,3,...N:  A list of 16 bit values for each version supported by the sender of this frame.</t>
+<t>Supported Version 1,2,3,...N:  A list of 16 bit values for each version supported by the sender of this frame.</t>
 
 <t>An endpoint MUST send a VERSION frame after receiving a frame for a version it does not support.</t>
 
@@ -682,7 +682,7 @@ A SPDY version number is a 15 bit number sent in the version field of every cont
 <t>The first 8 octets of a frame:
 The first 8 octets of a frame will not change across versions.  In all frames, the 1st bit indicates whether a frame is a control frame or a data frame.  Also, in all frames, the 2nd set of 4 octets represents the flags &amp; length of that frame.  This is enough information such that any recipient of a frame can ignore that frame (because it knows the length) if it doesn't recognize the version or type of the frame.</t>
 <t>The VERSION control frame:
-Frame types in SPDY are version-specific for all control types except the VERSION control frame.  For example, a SYN_STREAM control frame for SPDY protocol 1 is not guaranteed to be identical to a SYN_STREAM control frame inSPDY protocol 2.  The VERSION control frame, however, will have the same layout across all future versions of SPDY.</t>
+Frame types in SPDY are version-specific for all control types except the VERSION control frame.  For example, a SYN_STREAM control frame for SPDY protocol 1 is not guaranteed to be identical to a SYN_STREAM control frame in SPDY protocol 2.  The VERSION control frame, however, will have the same layout across all future versions of SPDY.</t>
 </list>
 </t>
 
@@ -710,14 +710,15 @@ Frame types in SPDY are version-specific for all control types except the VERSIO
 <t>SPDY is intended to be as compatible as possible with current web-based applications. This means that, from the perspective of the server business logic or application API, the features of HTTP are change. To achieve this, all of the application request and response header semantics are preserved, although the syntax of conveying those semantics has changed.  Thus, the rules from the <xref target="RFC2616">HTTP/1.1 specification in RFC2616</xref> apply with the changes in the sections below.</t>
 
       <section title="Connection Management">
-<t>Clients MUST NOT open more than one SPDY session to a given <xref target="ORIGIN">origin</xref> concurrently.</t>
+<t>Clients SHOULD NOT open more than one SPDY session to a given <xref target="ORIGIN">origin</xref> concurrently.</t>
+<t>Note that it is possible for one SPDY session to be finishing (e.g. a GOAWAY message has been sent, but not all streams have finished), while another SPDY session is starting.</t>
       </section>
 
       <section title="HTTP Request/Response">
         <section title="Request">
-<t>The client initiates a request by sending a SYN_STREAM frame followed by a HEADERS frame.  For requests which do not contain a body, the HEADERS frame MUST set the FLAG_FIN, indicating that the client intends to send no further data on this stream.  For requests which do contain a body, the SYN_STREAM will not contain the FLAG_FIN, and the body will follow the HEADERS in a series of DATA frames.  The last DATA frame will set the FLAG_FIN to indicate the end of the body.</t>
+<t>The client initiates a request by sending a SYN_STREAM frame.  For requests which do not contain a body, the SYN_STREAM frame MUST set the FLAG_FIN, indicating that the client intends to send no further data on this stream.  For requests which do contain a body, the SYN_STREAM will not contain the FLAG_FIN, and the body will follow the SYN_STREAM in a series of DATA frames. The last DATA frame will set the FLAG_FIN to indicate the end of the body.</t>
 
-<t>The HEADERS Name/Value section will contain all of the HTTP headers which are associated with an HTTP request. The header block in SPDY is mostly unchanged from today's HTTP header block, with the following differences:
+<t>The SYN_STREAM Name/Value section will contain all of the HTTP headers which are associated with an HTTP request. The header block in SPDY is mostly unchanged from today's HTTP header block, with the following differences:
 <list>
 <t>The first line of the request is unfolded into name/value pairs like other HTTP headers and must be present:
 <list>
@@ -750,7 +751,7 @@ Frame types in SPDY are version-specific for all control types except the VERSIO
         </section>
 
         <section title="Response">
-<t>The server responds to a client request with a SYN_REPLY and a HEADERS frame. The HEADERS frame contains the HTTP response headers. Symmetric to the client's upload stream, the server will follow the HEADERS with a series of DATA frames, and the last data frame will contain the FLAG_FIN to indicate successful end-of-stream.</t>
+<t>The server responds to a client request with a SYN_REPLY frame. Symmetric to the client's upload stream, server will send data after the SYN_REPLY frame via a series of DATA frames, and the last data frame will contain the FLAG_FIN to indicate successful end-of-stream.  If a response (like a 202 or 204 response) contains no body, the SYN_REPLY frame may contain the FLAG_FIN flag to indicate no further data will be sent on the stream.</t>
 
 <t>
 <list>
@@ -785,7 +786,7 @@ Frame types in SPDY are version-specific for all control types except the VERSIO
 
 <t>To deal with this case, SPDY servers using Stateful Authentication MUST implement one of two changes:
 <list>
-<t>Servers can add "realm=&lt;desired realm&gt;" so that the two authentication requests can be disambiguated and run concurrently.  Unfortunately, given how these mechanisms work, this is probably not practical.</t>
+<t>Servers can add a "realm=&lt;desired realm&gt;" header so that the two authentication requests can be disambiguated and run concurrently.  Unfortunately, given how these mechanisms work, this is probably not practical.</t>
 <t>Upon sending the first stateful challenge response, the server MUST buffer and defer all further frames which are not part of completing the challenge until the challenge has completed.  Completing the authentication challenge may take multiple round trips.  Once the client receives a "401 Authenticate" response for a stateful authentication type, it MUST stop sending new requests to the server until the authentication has completed by receiving a non-401 response on at least one stream.</t>
 </list>
 </t>
@@ -834,7 +835,7 @@ Frame types in SPDY are version-specific for all control types except the VERSIO
 <t>If a client receives a server push stream with stream-id 0, it
  MUST issue a <xref target="SessionErrorHandler">session error</xref> with the status code PROTOCOL_ERROR.</t>
 
-<t>When a client receives a SYN_STREAM from the server without an 'url' in the Name/Value section, it must reply with a RST_STREAM with error code PROTOCOL_ERROR.</t>
+<t>When a client receives a SYN_STREAM from the server without an 'url' in the Name/Value section, it must reply with a RST_STREAM with error code HTTP_PROTOCOL_ERROR.</t>
 
 <t>To cancel individual server push streams, the client can 
 issue a <xref target="StreamErrorHandler">stream error</xref> with error code CANCEL.
@@ -873,7 +874,7 @@ issue a <xref target="StreamErrorHandler">stream error</xref> with error code CA
 
 <t>Through lab measurements, we have seen consistent latency benefits by using fewer connections from the client.  The overall number of packets sent by SPDY can be as much as 40% less than HTTP.  Handling large numbers of concurrent connections on the server also does become a scalability problem, and SPDY reduces this load.</t>
 
-<t>The use of multiple connections is not without benefit, however.  Because SPDY multiplexes multiple, independent streams onto a single stream, it creates a potential for head-of-line blocking problems at the transport level.  In tests so far, the negative effects of head-of-line blocking (especially in the presence of patcket loss) is outweighed by the benefits of compression and prioritization.</t>
+<t>The use of multiple connections is not without benefit, however.  Because SPDY multiplexes multiple, independent streams onto a single stream, it creates a potential for head-of-line blocking problems at the transport level.  In tests so far, the negative effects of head-of-line blocking (especially in the presence of packet loss) is outweighed by the benefits of compression and prioritization.</t>
       </section>
       <section title="Fixed vs Variable Length Fields">
 <t>SPDY favors use of fixed length 32bit fields in cases where smaller, variable length encodings could have been used.  To some, this seems like a tragic waste of bandwidth.  SPDY choses the simple encoding for speed and simplicity.</t>
