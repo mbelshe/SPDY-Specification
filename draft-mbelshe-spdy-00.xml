@@ -89,7 +89,7 @@
 </figure>
 <t>Control bit: The 'C' bit is a single bit indicating if this is a control message. For control frames this value is always 1.</t>
 
-<t>Version: The version number of the SPDY protocol.</t>
+<t>Version: The version number of the SPDY protocol.  This document describes SPDY version 3.</t>
 
 <t>Type: The type of control frame. See Control Frames for the complete list of control frames.</t>
 
@@ -193,6 +193,8 @@
 
         <section anchor="StreamHalfClose" title="Stream half-close">
 <t>When one side of the stream sends a frame with the FLAG_FIN flag set, the stream is half-closed from that endpoint. The sender of the FLAG_FIN MUST NOT send further frames on that stream. When both sides have half-closed, the stream is closed.</t>
+
+<t>If an endpoint receives a data frame after the stream is half-closed, it must send a RST_STREAM to the sender with the status STREAM_ALREADY_CLOSED.</t>
         </section>
 
         <section anchor="StreamClose" title="Stream close">
@@ -204,7 +206,7 @@
 </list>
 </t>
 
-<t>If a client or server receives data on a stream which has already been torn down, it must ignore the data received after the teardown.</t>
+<t>If an endpoint receives a data frame after the stream is closed, it must send a RST_STREAM to the sender with the status PROTOCOL_ERROR.</t>
         </section>
       </section>
 
@@ -349,6 +351,8 @@
 <t>4 - UNSUPPORTED_VERSION.  Indicates that the recipient of a stream does not support the SPDY version requested.</t>
 <t>5 - CANCEL.  Used by the creator of a stream to indicate that the stream is no longer needed.</t>
 <t>6 - FLOW_CONTROL_ERROR.  The endpoint detected that its peer violated the flow control protocol.</t>
+<t>6 - STREAM_IN_USE.  The endpoint received a SYN_REPLY for a stream already open.</t>
+<t>6 - STREAM_ALREADY_CLOSED.  The endpoint received a data or SYN_REPLY frame for a stream which is half closed.</t>
 <t>Note:  0 is not a valid status code for a RST_STREAM.</t>
 </list>
 </t>
@@ -641,7 +645,7 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 <t>Duplicate header names are not allowed.  To send two identically named headers, send a header with two values, where the values are separated by a single NUL (0) byte.  Senders must not send multiple, in-sequence NUL characters.  Recipients of multiple, in-sequence NUL characters MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code PROTOCOL_ERROR for the stream-id.</t>
 
       <section title="Compression" anchor="Compression">
-<t>The Name/Value Header Block is the portion of the HEADERS frame which follows the Stream-ID field.  This block is always compressed using zlib compression.</t>
+        <t>The Name/Value Header Block is a section of the SYN_STREAM, SYN_REPLY, and HEADERS frames used to carry header meta-data.  This block is always compressed using zlib compression.</t>
 
 <t>For each HEADERS compression instance, the initial state is initialized using the following dictionary (without line breaks and not null-terminated):</t>
 
@@ -720,7 +724,7 @@ Frame types in SPDY are version-specific for all control types except the VERSIO
 
 <t>The SYN_STREAM Name/Value section will contain all of the HTTP headers which are associated with an HTTP request. The header block in SPDY is mostly unchanged from today's HTTP header block, with the following differences:
 <list>
-<t>The first line of the request is unfolded into name/value pairs like other HTTP headers and must be present:
+<t>The first line of the request is unfolded into name/value pairs like other HTTP headers and MUST be present:
 <list>
 <t>":method" - the HTTP method for this request (e.g. "GET", "POST", "HEAD", etc)</t>
 <t>":path" - the url-path for this url with "/" prefixed. (See <xref target="RFC1738">RFC1738</xref>).  For example, for "http://www.google.com/search?q=dogs" the path would be "/search?q=dogs".</t>
@@ -733,7 +737,7 @@ Frame types in SPDY are version-specific for all control types except the VERSIO
 <t>":scheme" - the scheme portion of the URL for this request (e.g. "https"))</t>
 </list></t>
 <t>Header names are all lowercase.</t>
-<t>The Connection, Keep-Alive, and Proxy-Connection headers are not valid and are ignored if present.</t>
+<t>The Connection, Keep-Alive, and Proxy-Connection headers are not valid and MUST not be sent.</t>
 <t>User-agents MUST support gzip compression. Regardless of the Accept-Encoding sent by the user-agent, the server may always send content encoded with gzip or deflate encoding.</t>
 <t>If a server receives a request where the sum of the data frame payload lengths does not equal the size of the Content-Length header, the server MUST return a 400 (Bad Request) error.</t>
 <t>POST-specific changes:
@@ -747,7 +751,7 @@ Frame types in SPDY are version-specific for all control types except the VERSIO
 
 <t>The user-agent is free to prioritize requests as it sees fit. If the user-agent cannot make progress without receiving a resource, it should attempt to raise the priority of that resource. Resources such as images, SHOULD generally use the lowest priority.</t>
 
-<t>If a client sends a HEADERS without all of the method, host, path, scheme, and version headers, the server must reply with a HTTP 400 Bad Request reply.</t>
+<t>If a client sends a HEADERS without all of the method, host, path, scheme, and version headers, the server MUST reply with a HTTP 400 Bad Request reply.</t>
         </section>
 
         <section title="Response">
