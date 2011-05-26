@@ -529,11 +529,11 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
             <artwork>
 +----------------------------------+
 |1|   version    |         9       |
-+----------------------------------+ 
++----------------------------------+
 | 0 (Flags)  |  Length (24 bits)   |
 +----------------------------------+
 |X|     Stream-ID (31-bits)        |
-+----------------------------------+ 
++----------------------------------+
 |X|  Delta-Window-Size (31-bits)   |
 +----------------------------------+
             </artwork>
@@ -544,7 +544,7 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 
 <t>Type: The message type for a WINDOW_UPDATE message is 9.</t>
 
-<t>Length: This frame is always 8 bytes long.</t>
+<t>Length: The length field is always 8 for this frame (there are 8 bytes after the length field).</t>
 
 <t>Stream-ID: The stream ID that this WINDOW_UPDATE control frame is for.</t>
 
