@@ -570,45 +570,6 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 <t>The data frames from the sender and the WINDOW_UPDATE frames from the recipient are completely asynchronous with respect to each other. This property allows a recipient to aggressively update the window size kept by the sender to prevent the stream from stalling.</t>
           </section>
 
-          <section anchor="VERSION" title="VERSION">
-<t>A VERSION frame is sent by an endpoint only when it has received a control frame for a protocol version which is not supported by the endpoint.  The VERSION frame contains the versions which are supported by the endpoint.</t>
-          <figure>
-            <artwork>
-+----------------------------------+
-|1| Remote Version  |       10     |
-+----------------------------------+
-| Flags (8)  |  Length (24 bits)   |
-+----------------------------------+
-|   Number of supported versions   |
-+----------------------------------+
-| Supported version 1 (16 bits)    |
-+----------------------------------+
-| Supported version 2 (16 bits)    |
-|             ...                  |
-            </artwork>
-          </figure>
-
-<t>Control bit: The control bit is always 1 for this message.</t>
-
-<t>Version: The SPDY version number of the other endpoint.  NOTE: In all other control frames this is the version number of the endpoint sending this frame.  In this case, it is the version previously sent to this endpoint in an unsupported version control frame.</t>
-
-<t>Type: The message type for a VERSION message is 10.</t>
-
-<t>Flags: There are no flags for this frame.</t>
-
-<t>Length: An unsigned 24-bit value representing the number of bytes after the length field. The total size of a VERSION frame is 8 bytes + length.</t>
-
-<t>Number of supported versions: A 32-bit value representing the number of 16 bit versions contained in this message.</t>
-
-<t>Supported Version 1,2,3,...N:  A list of 16 bit values for each version supported by the sender of this frame.</t>
-
-<t>An endpoint MUST send a VERSION frame after receiving a frame for a version it does not support.</t>
-
-<t>An endpoint MUST only send one VERSION frame per connection.  After having sent a VERSION frame, it MUST ignore all other frames received for versions it does not recognize.</t>
-
-<t>Upon receipt of a VERSION frame, the recipient MUST recognize that previously sent frames for unsupported versions are invalid.  It must either resend those frames with an appropriate version, or close the connection.</t>
-          </section>
-
           <section anchor="HeaderBlock" title="Name/Value Header Block">
             <t>The Name/Value Header Block is found in the SYN_STREAM, SYN_REPLY
             and HEADERS control frames, and shares a common format:</t>
@@ -674,39 +635,6 @@ ation/xhtmltext/plainpublicmax-agecharset=iso-8859-1utf-8gzipdeflateHTTP/1
 <t>Implementation notes: the compression engine can be tuned to favor speed or size. Optimizing for size increases memory use and CPU consumption.  Because header blocks are generally small, implementors may want to reduce the window-size of the compression engine from the default 15bits (a 32KB window) to more like 11bits (a 2KB window).  The exact setting is chosen by the compressor, the decompressor will work with any setting.</t>
           </section>
         </section>
-      </section>
-
-      <section title="Protocol Versioning">
-<t>SPDY provides an asynchronous version negotiation mechanism.  Any protocol providing version negotiation must pin down some parts of the protocol which will be invariant across all versions, otherwise each endpoint cannot communicate even the most primitive version information.  HTTP uses the Request Line and Response Line for this purpose.  Note that when SPDY is transmitted over TLS with the Next-Protocol-Negotiation extension, versioning is handled as part of the TLS handshake, and the rest of this section is not strictly necessary.  SPDY defines version handling so that it can be deployed with or without out-of-band (e.g. TLS/NPN) version negotiation.</t>
-
-<t>SPDY locks down 3 invariants for purposes of version negotiation:
-<list>
-<t>The SPDY version number:
-A SPDY version number is a 15 bit number sent in the version field of every control frame.  Version numbers start at 1 and increase with each protocol change.  0 is not a valid version. </t>
-<t>The first 8 octets of a frame:
-The first 8 octets of a frame will not change across versions.  In all frames, the 1st bit indicates whether a frame is a control frame or a data frame.  Also, in all frames, the 2nd set of 4 octets represents the flags &amp; length of that frame.  This is enough information such that any recipient of a frame can ignore that frame (because it knows the length) if it doesn't recognize the version or type of the frame.</t>
-<t>The VERSION control frame:
-Frame types in SPDY are version-specific for all control types except the VERSION control frame.  For example, a SYN_STREAM control frame for SPDY protocol 1 is not guaranteed to be identical to a SYN_STREAM control frame in SPDY protocol 2.  The VERSION control frame, however, will have the same layout across all future versions of SPDY.</t>
-</list>
-</t>
-
-<t>SPDY endpoints are not guaranteed to be backward compatible.  Just because an endpoint supports SPDY version 3, does not mean that it must also support SPDY version 1.  This is done so that SPDY clients and servers can, over time, jettison support for old protocol versions.</t>
-
-<t>For performance reasons, it is imperative that SPDY not require additional round trips for version negotiation.  Instead, SPDY incorporates version information into all control frames and handles the version mismatches lazily.</t>
-
-<t>Upon receipt of a VERSION frame, the recipient can can either find a version from the list of versions in the VERSION frame which both endpoints can support, or it must close the session with error code UNSUPPORTED_VERSION.  At the time a VERSION frame is received, all open streams on the recipient are implicitly closed.</t>
-
-<t>An endpoint implicitly supports a version, V, as soon as it sends any control frame other than the VERSION control frame, with that version V.  For example, if an endpoint sends a SETTINGS frame with version V, then it is declaring support for that version.  Endpoints MUST NOT denounce a version which it had previously used for sending data.  If an endpoint receives a conflicting version frame, it MUST close the connection.</t>
-
-<t>An endpoint MUST NOT send a VERSION frame more than once.  Once it has sent a VERSION frame in response to having received frames it does not understand, it must ignore future frames received for unsupported versions.</t>
-
-<section title="Basic Flow:  Version Match">
-<t>When both endpoints use the same protocol version, one side will send a frame with a fixed version, V.  The other side will also recognize version V, and no additional work is done to negotiate the version.  For SPDY deployments using TLS/NPN, this MUST always be the case, since version negotiation was completed prior to sending a single SPDY frame.</t>
-</section>
-
-<section title="Basic Flow: Version Mismatch">
-<t>In this case, one endpoint sends a control frame with version V.  The receiving endpoint does not support version V, and only supports version V'.  In this case, the receiving endpoint MUST ignore the received frame and send a VERSION frame to the other endpoint.  The VERSION frame contains information about which SPDY versions are supported by this endpoint.</t>
-</section>
       </section>
     </section>
 
