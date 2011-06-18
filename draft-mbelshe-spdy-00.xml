@@ -164,7 +164,7 @@
 
 <t>Upon receipt of a SYN_STREAM, the recipient can reject the stream by sending a <xref target="StreamErrorHandler">stream error</xref> with the error code REFUSED_STREAM. Note, however, that the creating endpoint may have already sent additional frames for that stream which cannot be immediately stopped.</t>
 
-<t>Once the stream is created, the creator may immediately send HEADER or DATA frames for that stream, without needing to wait for the recipient to acknowledge.</t>
+<t>Once the stream is created, the creator may immediately send HEADERS or DATA frames for that stream, without needing to wait for the recipient to acknowledge.</t>
 
           <section title="Unidirectional streams">
 <t>When an endpoint creates a stream with the FLAG_UNIDIRECTIONAL flag set, it creates a unidirectional stream which the creating endpoint can use to send frames, but the receiving endpoint cannot.  The receiving endpoint is implicitly already in the <xref target="StreamHalfClose">half-closed</xref> state.</t>
@@ -184,7 +184,7 @@
         </section>
 
         <section title="Stream headers">
-<t>Streams carry optional sets of name/value pair headers which carry metadata about the stream.  After the stream has been created, and as long as the sender is not <xref target="StreamClose">closed</xref> or <xref target="StreamHalfClose">half-closed</xref>, each side may send HEADERS frame(s) containing the header data.  Header data can be sent in multiple HEADER frames, and HEADER frames may be interleaved with data frames.</t>
+<t>Streams carry optional sets of name/value pair headers which carry metadata about the stream.  After the stream has been created, and as long as the sender is not <xref target="StreamClose">closed</xref> or <xref target="StreamHalfClose">half-closed</xref>, each side may send HEADERS frame(s) containing the header data.  Header data can be sent in multiple HEADERS frames, and HEADERS frames may be interleaved with data frames.</t>
         </section>
 
         <section title="Stream data exchange">
@@ -517,7 +517,7 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 
 <t>Length: An unsigned 24 bit value representing the number of bytes after the length field. The minimum length of the length field is 8 (when the number of name value pairs is 0).</t>
 
-<t>Stream-ID: The stream this HEADER block is associated with.</t>
+<t>Stream-ID: The stream this HEADERS block is associated with.</t>
 
 <t>Name/Value Header Block:  A set of name/value pairs carried as part of the SYN_STREAM.  <xref target="HeaderBlock">see Name/Value Header Block</xref>.</t>
 
@@ -746,7 +746,7 @@ ation/xhtmltext/plainpublicmax-agecharset=iso-8859-1utf-8gzipdeflateHTTP/1
 
 <t>The server MUST only push resources which would have been returned from a GET request.</t>
 
-<t>Note:  If the server does not have all of the Name/Value Response headers available at the time it issues the HEADERS frame for the pushed resource, it may later use an additional HEADER frame to augment the name/value pairs to be associated with the pushed stream.  The subsequent HEADER frame(s) must not contain a header for ':host', ':scheme', or ':path' (e.g. the server can't change the identity of the resource to be pushed).  The HEADERS frame must not contain duplicate headers with a previously sent HEADERS frame.  The server must send a HEADERS frame including the scheme/host/port headers before sending any data frames on the stream.</t>
+<t>Note:  If the server does not have all of the Name/Value Response headers available at the time it issues the HEADERS frame for the pushed resource, it may later use an additional HEADERS frame to augment the name/value pairs to be associated with the pushed stream.  The subsequent HEADERS frame(s) must not contain a header for ':host', ':scheme', or ':path' (e.g. the server can't change the identity of the resource to be pushed).  The HEADERS frame must not contain duplicate headers with a previously sent HEADERS frame.  The server must send a HEADERS frame including the scheme/host/port headers before sending any data frames on the stream.</t>
         </section>
 
         <section title="Client implementation">
@@ -773,7 +773,7 @@ issue a <xref target="StreamErrorHandler">stream error</xref> with error code CA
 
 <t>If the server sends a HEADER frame containing duplicate headers with a previous HEADERS frame for the same stream, the client must issue a <xref target="StreamErrorHandler">stream error</xref> with error code PROTOCOL ERROR.</t>
 
-<t>If the server sends a HEADER frame after sending a data frame for the same stream, the client must ignore the HEADERS frame.</t>
+<t>If the server sends a HEADERS frame after sending a data frame for the same stream, the client must ignore the HEADERS frame.</t>
 
 <t>TODO(mbelshe): Define how HTTP Trailers should work: "For HTTP, the rules for http trailers apply, as specified in: http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.40"</t>
         </section>
