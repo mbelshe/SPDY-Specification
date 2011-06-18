@@ -603,7 +603,7 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 <t>Duplicate header names are not allowed.  To send two identically named headers, send a header with two values, where the values are separated by a single NUL (0) byte.  Senders must not send multiple, in-sequence NUL characters.  Recipients of multiple, in-sequence NUL characters MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code PROTOCOL_ERROR for the stream-id.</t>
 
       <section title="Compression" anchor="Compression">
-        <t>The Name/Value Header Block is a section of the SYN_STREAM, SYN_REPLY, and HEADERS frames used to carry header meta-data.  This block is always compressed using zlib compression.</t>
+        <t>The Name/Value Header Block is a section of the SYN_STREAM, SYN_REPLY, and HEADERS frames used to carry header meta-data.  This block is always compressed using zlib compression.  Within this specification, any reference to 'zlib' is referring to the <xref target="RFC1950">ZLIB Compressed Data Format Specification Version 3.3 as part of RFC1950.</xref></t>
 
 <t>For each HEADERS compression instance, the initial state is initialized using the following dictionary (without line breaks and not null-terminated):</t>
 
@@ -913,6 +913,13 @@ Here is a list of the major changes between this draft and draft #2.
           <author initials="T." surname="Berners-Lee"></author>
           <author initials="L." surname="Masinter"></author>
           <author initials="M." surname="McCahill"></author>
+        </front>
+      </reference>
+      <reference anchor="RFC1950">
+        <front>
+          <title>ZLIB Compressed Data Format Specification version 3.3</title>
+          <author initials="P." surname="Deutsch"></author>
+          <author initials="J-L." surname="Gailly"></author>
         </front>
       </reference>
       <reference anchor="RFC2119">
