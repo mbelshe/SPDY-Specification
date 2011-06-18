@@ -349,8 +349,8 @@
 <t>4 - UNSUPPORTED_VERSION.  Indicates that the recipient of a stream does not support the SPDY version requested.</t>
 <t>5 - CANCEL.  Used by the creator of a stream to indicate that the stream is no longer needed.</t>
 <t>6 - FLOW_CONTROL_ERROR.  The endpoint detected that its peer violated the flow control protocol.</t>
-<t>6 - STREAM_IN_USE.  The endpoint received a SYN_REPLY for a stream already open.</t>
-<t>6 - STREAM_ALREADY_CLOSED.  The endpoint received a data or SYN_REPLY frame for a stream which is half closed.</t>
+<t>7 - STREAM_IN_USE.  The endpoint received a SYN_REPLY for a stream already open.</t>
+<t>8 - STREAM_ALREADY_CLOSED.  The endpoint received a data or SYN_REPLY frame for a stream which is half closed.</t>
 <t>Note:  0 is not a valid status code for a RST_STREAM.</t>
 </list>
 </t>
@@ -461,7 +461,7 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 +----------------------------------|
 |X|  Last-good-stream-ID (31 bits) |
 +----------------------------------+
-|          Status code             | 
+|          Status code             |
 +----------------------------------+
             </artwork>
           </figure>
@@ -637,7 +637,7 @@ ation/xhtmltext/plainpublicmax-agecharset=iso-8859-1utf-8gzipdeflateHTTP/1
     </section>
 
     <section anchor="HTTPLayer" title="HTTP Layering over SPDY">
-<t>SPDY is intended to be as compatible as possible with current web-based applications. This means that, from the perspective of the server business logic or application API, the features of HTTP are change. To achieve this, all of the application request and response header semantics are preserved, although the syntax of conveying those semantics has changed.  Thus, the rules from the <xref target="RFC2616">HTTP/1.1 specification in RFC2616</xref> apply with the changes in the sections below.</t>
+<t>SPDY is intended to be as compatible as possible with current web-based applications. This means that, from the perspective of the server business logic or application API, the features of HTTP are unchanged. To achieve this, all of the application request and response header semantics are preserved, although the syntax of conveying those semantics has changed.  Thus, the rules from the <xref target="RFC2616">HTTP/1.1 specification in RFC2616</xref> apply with the changes in the sections below.</t>
 
       <section title="Connection Management">
 <t>Clients SHOULD NOT open more than one SPDY session to a given <xref target="ORIGIN">origin</xref> concurrently.</t>
