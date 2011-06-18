@@ -194,7 +194,7 @@
         <section anchor="StreamHalfClose" title="Stream half-close">
 <t>When one side of the stream sends a frame with the FLAG_FIN flag set, the stream is half-closed from that endpoint. The sender of the FLAG_FIN MUST NOT send further frames on that stream. When both sides have half-closed, the stream is closed.</t>
 
-<t>If an endpoint receives a data frame after the stream is half-closed, it must send a RST_STREAM to the sender with the status STREAM_ALREADY_CLOSED.</t>
+<t>If an endpoint receives a data frame after the stream is half-closed from the sender (e.g. the endpoint has already received a prior frame for the stream with the FIN flag set), it MUST send a RST_STREAM to the sender with the status STREAM_ALREADY_CLOSED.</t>
         </section>
 
         <section anchor="StreamClose" title="Stream close">
@@ -317,8 +317,6 @@
 <t>Stream-ID: The 31-bit identifier for this stream.</t>
 
 <t>If an endpoint receives multiple SYN_REPLY frames for the same active stream ID, it MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the error code STREAM_IN_USE.</t>
-
-<t>If an endpoint receives a SYN_REPLY frame for a stream already in the half-closed state, it MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the error code STREAM_ALREADY_CLOSED.</t>
 
 <t>Name/Value Header Block:  A set of name/value pairs carried as part of the SYN_STREAM.  <xref target="HeaderBlock">see Name/Value Header Block</xref>.</t>
         </section>
@@ -665,12 +663,11 @@ ation/xhtmltext/plainpublicmax-agecharset=iso-8859-1utf-8gzipdeflateHTTP/1
 <t>":scheme" - the scheme portion of the URL for this request (e.g. "https"))</t>
 </list></t>
 <t>Header names are all lowercase.</t>
-<t>The Connection, Keep-Alive, and Proxy-Connection headers are not valid and MUST not be sent.</t>
+<t>The Connection, Keep-Alive, Proxy-Connection, and Transfer-Encoding headers are not valid and MUST not be sent.</t>
 <t>User-agents MUST support gzip compression. Regardless of the Accept-Encoding sent by the user-agent, the server may always send content encoded with gzip or deflate encoding.</t>
 <t>If a server receives a request where the sum of the data frame payload lengths does not equal the size of the Content-Length header, the server MUST return a 400 (Bad Request) error.</t>
 <t>POST-specific changes:
 <list>
-<t>Transfer-encoding is no longer valid, because data is already framed at the SPDY layer.</t>
 <t>Although POSTs are inherently chunked, POST requests SHOULD also be accompanied by a Content-Length header.  There are two reasons for this:  First, it assists with upload progress meters for an improved user experience.  But second, we know from early versions of SPDY that failure to send a content length header is incompatible with many existing HTTP server implementations.  Existing user-agents do not omit the Content-Length header, and server implementations have come to depend upon this.</t>
 </list>
 </t>
@@ -694,10 +691,9 @@ ation/xhtmltext/plainpublicmax-agecharset=iso-8859-1utf-8gzipdeflateHTTP/1
 </list>
 </t>
 <t>All header names must be lowercase.</t>
-<t>The Connection and Keep-alive response headers are no longer valid.</t>
+<t>The Connection, Keep-Alive, Proxy-Connection, and Transfer-Encoding headers are not valid and MUST not be sent.</t>
 <t>Responses MAY be accompanied by a Content-Length header for advisory purposes.  (e.g. for UI progress meters)</t>
 <t>If a client receives a response where the sum of the data frame payload lengths does not equal the size of the Content-Length header, the client MUST ignore the content length header.</t>
-<t>Transfer-encoding is no longer valid, because data is already framed at the SPDY layer.</t>
 </list>
 </t>
 
