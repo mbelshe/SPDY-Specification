@@ -155,6 +155,16 @@
 </list>
 </t>
 
+        <section anchor="StreamFrames" title="Stream frames">
+<t>SPDY defines 3 control frames to manage the lifecycle of a stream:
+    <list>
+        <t>SYN_STREAM - Open a new stream</t>
+        <t>SYN_REPLY - Remote acknowledgement of a new, open stream</t>
+        <t>RST_STREAM - Close a stream</t>
+    </list>
+</t>
+        </section>
+
         <section anchor="StreamCreation" title="Stream creation">
 <t>A stream is created by sending a control frame with the type set to <xref target="SYN_STREAM">SYN_STREAM</xref>.  If the server is initiating the stream, the Stream-ID must be even.  If the client is initiating the stream, the Stream-ID must be odd.  0 is not a valid Stream-ID. Stream-IDs from each side of the connection must increase monotonically as new streams are created.  E.g. Stream 2 may be created after stream 3, but stream 7 must not be created after stream 9. Stream IDs do not wrap: when a client or server cannot create a new stream id without exceeding 32bits, it MUST NOT create a new stream.</t>
 
@@ -436,7 +446,7 @@
 
 <t>Length: This frame is always 4 bytes long.</t>
 
-<t>ID: A unique ID for this ping.  When the client initiates a ping, it must use an odd numbered ID.  When the server initiates a ping, it must use an even numbered ping.  Use of odd/even IDs is required in order to avoid accidental looping on PINGs (where each side initiates an identical PING at the same time).</t>
+<t>ID: A unique ID for this ping, represented as an unsigned 32 bit value.  When the client initiates a ping, it must use an odd numbered ID.  When the server initiates a ping, it must use an even numbered ping.  Use of odd/even IDs is required in order to avoid accidental looping on PINGs (where each side initiates an identical PING at the same time).</t>
 
 <t>Note: If a sender uses all possible PING ids (e.g. has sent all 2^31 possible IDs), it can wrap and start re-using IDs.</t>
 
@@ -457,7 +467,7 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 +----------------------------------+
 |1|   version    |         7       |
 +----------------------------------+
-| 0 (flags) |     4 (length)       |
+| 0 (flags) |     8 (length)       |
 +----------------------------------|
 |X|  Last-good-stream-ID (31 bits) |
 +----------------------------------+
@@ -515,7 +525,7 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 </list>
 </t>
 
-<t>Length: An unsigned 24 bit value representing the number of bytes after the length field. The minimum length of the length field is 8 (when the number of name value pairs is 0).</t>
+<t>Length: An unsigned 24 bit value representing the number of bytes after the length field. The minimum length of the length field is 4 (when the number of name value pairs is 0).</t>
 
 <t>Stream-ID: The stream this HEADERS block is associated with.</t>
 
@@ -532,7 +542,7 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 +----------------------------------+
 |1|   version    |         9       |
 +----------------------------------+
-| 0 (Flags)  |  Length (24 bits)   |
+| 0 (flags) |     8 (length)       |
 +----------------------------------+
 |X|     Stream-ID (31-bits)        |
 +----------------------------------+
@@ -592,16 +602,16 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 
 <t>List of Name/Value pairs:
 <list>
-<t>Length of Name: a 32-bit value containing the number of octets in the name field.</t>
+<t>Length of Name: a 32-bit value containing the number of octets in the name field.  Note that in practice, this length must not exceed 2^24, as that is the maximum size of a SPDY frame.</t>
 <t>Name: 0 or more octets, 8-bit sequences of data, excluding 0.</t>
-<t>Length of Value: a 32-bit value containing the number of octets in the value field.</t>
+<t>Length of Value: a 32-bit value containing the number of octets in the value field.  Note that in practice, this length must not exceed 2^24, as that is the maximum size of a SPDY frame.</t>
 <t>Value: 0 or more octets, 8-bit sequences of data, excluding 0.</t>
 </list>
 </t>
 
-<t>Each header name must have at least one value. Header names must be all lower case.  The length of each name must be greater than zero.  A recipient of a zero-length name MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code PROTOCOL_ERROR for the stream-id.</t> 
+<t>Each header name must have at least one value.  Header names are encoded using the <xref target="ASCII">US-ASCII character set</xref> and must be all lower case.  The length of each name must be greater than zero.  A recipient of a zero-length name MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code PROTOCOL_ERROR for the stream-id.</t>
 
-<t>Duplicate header names are not allowed.  To send two identically named headers, send a header with two values, where the values are separated by a single NUL (0) byte.  Senders must not send multiple, in-sequence NUL characters.  Recipients of multiple, in-sequence NUL characters MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code PROTOCOL_ERROR for the stream-id.</t>
+<t>Duplicate header names are not allowed.  To send two identically named headers, send a header with two values, where the values are separated by a single NUL (0) byte.  A header name can either be empty (e.g. the length is zero) or it can contain multiple, NUL-separated values, each with length greater than zero.  The value never starts nor ends with a NUL character.  Recipients of illegal value fields MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code PROTOCOL_ERROR for the stream-id.</t>
 
       <section title="Compression" anchor="Compression">
         <t>The Name/Value Header Block is a section of the SYN_STREAM, SYN_REPLY, and HEADERS frames used to carry header meta-data.  This block is always compressed using zlib compression.  Within this specification, any reference to 'zlib' is referring to the <xref target="RFC1950">ZLIB Compressed Data Format Specification Version 3.3 as part of RFC1950.</xref></t>
@@ -1004,6 +1014,11 @@ Here is a list of the major changes between this draft and draft #2.
           <author initials="A." surname="Barth"> <organization/> </author>
           <author initials="C." surname="Jackson"> <organization/> </author>
           <author initials="I." surname="Hickson"> <organization/> </author>
+        </front>
+      </reference>
+      <reference anchor="ASCII">
+        <front>
+          <title>US-ASCII. Coded Character Set - 7-Bit American Standard Code for Information Interchange. Standard ANSI X3.4-1986, ANSI, 1986.</title>
         </front>
       </reference>
     </references>
