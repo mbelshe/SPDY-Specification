@@ -521,7 +521,6 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 <t>Flags: Flags related to this frame. Valid flags are:
 <list>
 <t>0x01 = FLAG_FIN - marks this frame as the last frame to be transmitted on this stream and puts the sender in the <xref target="StreamHalfClose">half-closed</xref> state.</t>
-<t>0x02 = FLAG_RESET_COMPRESSION - indicates that the compression context should be reset before compressing or decompressing the Name/Value header block.</t>
 </list>
 </t>
 
@@ -637,8 +636,6 @@ ation/xhtmltext/plainpublicmax-agecharset=iso-8859-1utf-8gzipdeflateHTTP/1
 </figure>
 
 <t>The entire contents of the name/value header block is compressed using zlib.  There is a single zlib stream for all name value pairs in one direction on a connection.   SPDY uses a SYNC_FLUSH between each compressed frame.</t>
-
-<t>When a HEADERS frame carries the FLAG_RESET_COMPRESSION flag, it indicates that the sender of this frame has re-initialized the compression state prior to compressing this frame.  The recipient of the frame MUST reset the compression state to its initial state (with the compression dictionary above) before decompressing the frame.  See the <xref target="CompressionContexts">privacy considerations</xref> for more information.</t>
 
 <t>Implementation notes: the compression engine can be tuned to favor speed or size. Optimizing for size increases memory use and CPU consumption.  Because header blocks are generally small, implementors may want to reduce the window-size of the compression engine from the default 15bits (a 32KB window) to more like 11bits (a 2KB window).  The exact setting is chosen by the compressor, the decompressor will work with any setting.</t>
           </section>
@@ -862,11 +859,6 @@ issue a <xref target="StreamErrorHandler">stream error</xref> with error code CA
     </section>
 
     <section title="Privacy Considerations">
-      <section anchor="CompressionContexts" title="Compression Contexts">
-<t>SPDY uses a stateful compression engine between requests across as single SPDY session.  If we use the same stateful compression for requests destined to different security origins, it is possible for an attacker to learn about the contents sent to an origin for which it should not.</t>
-<t>Although the risk of such contamination is low, the protocol avoids this problem by introducing the FLAG_RESET_COMPRESSION.  Whenever an endpoint sends data on a session which targets a new domain, it MUST use this flag to reset the compression state.  This avoids all possibility of privacy leakage.</t>
-      </section>
-
       <section title="Long Lived Connections">
 <t>SPDY aims to keep connections open longer between clients and servers in order to reduce the latency when a user makes a request.  The maintenance of these connections over time could be used to expose private information.  For example, a user using a browser hours after the previous user stopped using that browser may be able to learn about what the previous user was doing.  This is a problem with HTTP in its current form as well, however the short lived connections make it less of a risk.</t>
       </section>
