@@ -615,7 +615,7 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
       <section title="Compression" anchor="Compression">
         <t>The Name/Value Header Block is a section of the SYN_STREAM, SYN_REPLY, and HEADERS frames used to carry header meta-data.  This block is always compressed using zlib compression.  Within this specification, any reference to 'zlib' is referring to the <xref target="RFC1950">ZLIB Compressed Data Format Specification Version 3.3 as part of RFC1950.</xref></t>
 
-<t>For each HEADERS compression instance, the initial state is initialized using the following dictionary (without line breaks and not null-terminated):</t>
+<t>For each HEADERS compression instance, the initial state is initialized using the following dictionary (without line breaks and IS null-terminated):</t>
 
 <figure>
   <artwork>
