@@ -412,7 +412,9 @@
 <t>2 - SETTINGS_DOWNLOAD_BANDWIDTH allows the sender to send its expected download bandwidth on this channel. This number is an estimate. The value should be the integral number of kilobytes per second that the sender predicts as an expected maximum download channel capacity.</t>
 <t>3 - SETTINGS_ROUND_TRIP_TIME allows the sender to send its expected round-trip-time on this channel. The round trip time is defined as the minimum amount of time to send a control frame from this client to the remote and receive a response. The value is represented in milliseconds.</t>
 <t>4 - SETTINGS_MAX_CONCURRENT_STREAMS allows the sender to inform the remote endpoint the maximum number of concurrent streams which it will allow. By default there is no limit. For implementors it is recommended that this value be no smaller than 100.</t>
-<t>5 - SETTINGS_CURRENT_CWND allows the sender to inform the remote endpoint of the current CWND value.</t>
+<t>5 - SETTINGS_CURRENT_CWND allows the sender to inform the remote endpoint of the current TCP CWND value.</t>
+<t>6 - SETTINGS_DOWNLOAD_RETRANS_RATE allows the sender to inform the remote endpoint the retransmission rate (bytes retransmitted / total bytes transmitted).</t>
+<t>7 - SETTINGS_INITIAL_WINDOW_SIZE allows the sender to inform the remote endpoint the initial window size (in bytes) for new streams.</t>
   </list>
   </t>
 </list>
@@ -610,7 +612,7 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 
 <t>Each header name must have at least one value.  Header names are encoded using the <xref target="ASCII">US-ASCII character set</xref> and must be all lower case.  The length of each name must be greater than zero.  A recipient of a zero-length name MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code PROTOCOL_ERROR for the stream-id.</t>
 
-<t>Duplicate header names are not allowed.  To send two identically named headers, send a header with two values, where the values are separated by a single NUL (0) byte.  A header name can either be empty (e.g. the length is zero) or it can contain multiple, NUL-separated values, each with length greater than zero.  The value never starts nor ends with a NUL character.  Recipients of illegal value fields MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code PROTOCOL_ERROR for the stream-id.</t>
+<t>Duplicate header names are not allowed.  To send two identically named headers, send a header with two values, where the values are separated by a single NUL (0) byte.  A header value can either be empty (e.g. the length is zero) or it can contain multiple, NUL-separated values, each with length greater than zero.  The value never starts nor ends with a NUL character.  Recipients of illegal value fields MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code PROTOCOL_ERROR for the stream-id.</t>
 
       <section title="Compression" anchor="Compression">
         <t>The Name/Value Header Block is a section of the SYN_STREAM, SYN_REPLY, and HEADERS frames used to carry header meta-data.  This block is always compressed using zlib compression.  Within this specification, any reference to 'zlib' is referring to the <xref target="RFC1950">ZLIB Compressed Data Format Specification Version 3.3 as part of RFC1950.</xref></t>
@@ -743,7 +745,7 @@ ation/xhtmltext/plainpublicmax-agecharset=iso-8859-1utf-8gzipdeflateHTTP/1
 <t>Implementation note:  With server push, it is theoretically possible for servers to push unreasonable amounts of content or resources to the user-agent.  Browsers MUST implement throttles to protect against unreasonable push attacks.</t>
 
         <section title="Server implementation">
-<t>When the server intends to push a resource to the user-agent, it opens a new stream by sending a unidirectional SYN_STREAM.  The SYN_STREAM MUST include an Associated-To-Stream-ID, and MUST set the FLAG_UNIDIRECTIONAL flag.  The SYN_STREAM is followed by a HEADERS frame which MUST include a header for ":scheme", ":host", ":path", which represent the URL for the resource being pushed.  The purpose of the association is so that the user-agent can differentiate which request induced the pushed stream; without it, if the user-agent had two tabs open to the same page, each pushing unique content under a fixed URL, the user-agent would not be able to differentiate the requests.</t>
+<t>When the server intends to push a resource to the user-agent, it opens a new stream by sending a unidirectional SYN_STREAM.  The SYN_STREAM MUST include an Associated-To-Stream-ID, and MUST set the FLAG_UNIDIRECTIONAL flag.  The SYN_STREAM MUST include headers for ":scheme", ":host", ":path", which represent the URL for the resource being pushed. Subsequent headers may follow in HEADERS frames. The purpose of the association is so that the user-agent can differentiate which request induced the pushed stream; without it, if the user-agent had two tabs open to the same page, each pushing unique content under a fixed URL, the user-agent would not be able to differentiate the requests.</t>
 
 <t>The Associated-To-Stream-ID must be the ID of an existing, open stream.  The reason for this restriction is to have a clear endpoint for pushed content.  If the user-agent requested a resource on stream 11, the server replies on stream 11.  It can push any number of additional streams to the client before sending a FLAG_FIN on stream 11.  However, once the originating stream is closed no further push streams may be associated with it.  The pushed streams do not need to be closed (FIN set) before the originating stream is closed, they only need to be created before the originating stream closes.</t>
 
@@ -822,7 +824,7 @@ issue a <xref target="StreamErrorHandler">stream error</xref> with error code CA
 <t>Alternatively, we've chosen the simple approach, which is to simply provide a flag for resetting the compression context.  For the common case (no proxy), this fine because most requests are to the same origin and we never need to reset the context.  For cases where we are using two different origins over a single SPDY session, we simply reset the compression state between each transition.</t>
       </section>
       <section title="Unidirectional streams">
-<t>Many readers notice that unidirectional streams are both a bit confusing in concept and also somewhat redundant.  If the recipient of a stream doesn't with to send data on a stream, it could simply send a SYN_REPLY with the FLAG_FIN bit set.  The FLAG_UNIDIRECTIONAL is, therefore, not necessary.</t>
+<t>Many readers notice that unidirectional streams are both a bit confusing in concept and also somewhat redundant.  If the recipient of a stream doesn't wish to send data on a stream, it could simply send a SYN_REPLY with the FLAG_FIN bit set.  The FLAG_UNIDIRECTIONAL is, therefore, not necessary.</t>
 
 <t>It is true that we don't need the UNIDIRECTIONAL markings.  It is added because it avoids the recipient of pushed streams from needing to send a set of empty frames (e.g. the SYN_STREAM w/ FLAG_FIN) which otherwise serve no purpose.</t>
       </section>
