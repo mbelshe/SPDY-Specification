@@ -361,6 +361,7 @@
 <t>6 - FLOW_CONTROL_ERROR.  The endpoint detected that its peer violated the flow control protocol.</t>
 <t>7 - STREAM_IN_USE.  The endpoint received a SYN_REPLY for a stream already open.</t>
 <t>8 - STREAM_ALREADY_CLOSED.  The endpoint received a data or SYN_REPLY frame for a stream which is half closed.</t>
+<t>9 - INVALID_CREDENTIALS.  The server received a request for a resource whose origin does not have valid credentials in the client certificate vector.</t>
 <t>Note:  0 is not a valid status code for a RST_STREAM.</t>
 </list>
 </t>
@@ -415,6 +416,7 @@
 <t>5 - SETTINGS_CURRENT_CWND allows the sender to inform the remote endpoint of the current TCP CWND value.</t>
 <t>6 - SETTINGS_DOWNLOAD_RETRANS_RATE allows the sender to inform the remote endpoint the retransmission rate (bytes retransmitted / total bytes transmitted).</t>
 <t>7 - SETTINGS_INITIAL_WINDOW_SIZE allows the sender to inform the remote endpoint the initial window size (in bytes) for new streams.</t>
+<t>8 - SETTINGS_CLIENT_CERTIFICATE_VECTOR_SIZE allows the server to inform the client if the new size of the client certificate vector.</t>
   </list>
   </t>
 </list>
@@ -577,6 +579,43 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 <t>After the recipient reads in a data frame with FLAG_FIN that marks the end of the data stream, it should not send WINDOW_UPDATE frames as it consumes the last data frame. A sender should ignore all the WINDOW_UPDATE frames associated with the stream after it send the last frame for the stream.</t>
 
 <t>The data frames from the sender and the WINDOW_UPDATE frames from the recipient are completely asynchronous with respect to each other. This property allows a recipient to aggressively update the window size kept by the sender to prevent the stream from stalling.</t>
+          </section>
+
+          <section anchor="CREDENTIAL" title="CREDENTIAL">
+            <t>The CREDENTIAL control frame is used by the client to send a client certificate to the server.  A SPDY client may decide to send requests for resources from different origins on the same SPDY session if it decides that that server handles both origins.  For example if the IP address associated with both hostnames matches and the SSL server certificate presented in the initial handshake is valid for both hostnames.  However, because the SSL connection can contain at most one client certificate, the client needs a mechanism to send additional client certificates to the server.</t>
+
+            <t>The server is required to maintain a vector of client certificates, in addition to the certificate presented during the SSL handshake.  When the client needs to send a client certificate to the server, it will send a CREDENTIAL frame that specifies both the index of the slot in which to store the certificate as well as the origin that the certificate should be used for.  The initial size of this vector must be 8.  The server may change the size of this vector by sending a SETTINGS frame with the setting SETTINGS_CLIENT_CERTIFICATE_VECTOR_SIZE value specified.  In the event that the new size is smaller than the current size, truncation occurs preserving lower-index slots as possible.</t>
+
+          <figure>
+            <artwork>
++----------------------------------+
+|1|000000000000001|0000000000001011|
++----------------------------------+
+| flags (8)  |  Length (24 bits)   |
++----------------------------------+
+|  Slot (16 bits) | Origin Len (16)|
++----------------------------------+
+|              Origin              |
++----------------------------------+
+|      Proof Length (32 bits)      |
++----------------------------------+
+|               Proof              |
++----------------------------------+ <+
+|   Certificate Length (32 bits)   |  |
++----------------------------------+  | Repeated until end of frame
+|            Certificate           |  |
++----------------------------------+ <+
+            </artwork>
+          </figure>
+
+            <t>Slot: The index in the server's client certificate vector where this certificate should be stored.  If there is already a certificate stored at this index, it will be overwritten.</t>
+            <t>Origin: The origin string defined in RFC 6454 (http://tools.ietf.org/html/rfc6454).  
+For example: https://example.org or https://example.com:8080.</t>
+            <t>Proof: Cryptographic proof that the client has possession of the private key associated with the certificate.  The format is a TLS digitally-signed element (http://tools.ietf.org/html/rfc5246#section-4.7).  The signature algorithm must be the same as that used in the CertificateVerify message.  However, since the MD5+SHA1 signature type used in TLS 1.0 connections can not be correctly encoded in a digitally-signed element, SHA1 must be used when MD5+SHA1 was used in the SSL connection.  The signature is calculated over a TLS extractor value (http://tools.ietf.org/html/rfc5705) with a label of "EXPORTER SPDY certificate proof" using the origin as context. ForRSA certificates the signature would be a PKCS#1 v1.5 signature. For ECDSA, it would be an ECDSA-Sig-Value (http://tools.ietf.org/html/rfc5480#appendix-A).  For a 1024-bit RSA key, the CREDENTIAL message would be ~500 bytes.
+</t>
+            <t>Certificate: The certificate chain, starting with the leaf certificate.  Each certificate must be encoded as a 32 bit length, followed by a DER encoded certificate.  The certificate must be of the same type (RSA, ECDSA, etc) as the client certificate associated with the SSL connection.</t>
+            <t>If the server receives a request for a resource with unacceptable credential (either missing or invalid), it must reply with a RST_STREAM frame with the status code INVALID_CREDENTIALS. Upon receipt of a RST_STREAM frame with INVALID_CREDENTIALS, the client should initiate a new stream directly to the requested origin and resend the request.  Note, SPDY does not allow the server to request different client authentication for different resources in the same origin.</t>
+            <t>If the server receives an invalid CREDENTIAL frame, it should respond with a GOAWAY frame and shutdown the session.  </t>
           </section>
 
           <section anchor="HeaderBlock" title="Name/Value Header Block">
