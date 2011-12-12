@@ -600,11 +600,11 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 |      Proof Length (32 bits)      |
 +----------------------------------+
 |               Proof              |
-+----------------------------------+ <+
++----------------------------------+ &lt;+
 |   Certificate Length (32 bits)   |  |
 +----------------------------------+  | Repeated until end of frame
 |            Certificate           |  |
-+----------------------------------+ <+
++----------------------------------+ &lt;+
             </artwork>
           </figure>
 
