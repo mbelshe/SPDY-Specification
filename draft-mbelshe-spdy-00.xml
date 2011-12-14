@@ -371,7 +371,7 @@
         <section anchor="SETTINGS" title="SETTINGS">
 <t>A SETTINGS frame contains a set of id/value pairs for communicating configuration data about how the two endpoints may communicate. SETTINGS frames can be sent at any time by either endpoint, are optionally sent, and are fully asynchronous.  When the server is the sender, the sender can request that configuration data be persisted by the client across SPDY sessions and returned to the server in future communications.</t>
 
-<t>Persistence of SETTINGS ID/Value pairs is done on a per origin/IP pair (the "origin" is the set of scheme, host, and port from the URI.  See <xref target="ORIGIN"></xref>).  That is, when a client connects to a server, and the server persists settings within the client, the client SHOULD return the persisted settings on future connections to the same origin AND IP address and TCP port. Clients MUST NOT request servers to use the persistence features of the SETTINGS frames, and servers MUST ignore persistence related flags sent by a client.</t>
+<t>Persistence of SETTINGS ID/Value pairs is done on a per origin/IP pair (the "origin" is the set of scheme, host, and port from the URI.  See <xref target="RFC6454"></xref>).  That is, when a client connects to a server, and the server persists settings within the client, the client SHOULD return the persisted settings on future connections to the same origin AND IP address and TCP port. Clients MUST NOT request servers to use the persistence features of the SETTINGS frames, and servers MUST ignore persistence related flags sent by a client.</t>
           <figure>
             <artwork>
 +----------------------------------+
@@ -649,7 +649,7 @@ ation/xhtmltext/plainpublicmax-agecharset=iso-8859-1utf-8gzipdeflateHTTP/1
 <t>SPDY is intended to be as compatible as possible with current web-based applications. This means that, from the perspective of the server business logic or application API, the features of HTTP are unchanged. To achieve this, all of the application request and response header semantics are preserved, although the syntax of conveying those semantics has changed.  Thus, the rules from the <xref target="RFC2616">HTTP/1.1 specification in RFC2616</xref> apply with the changes in the sections below.</t>
 
       <section title="Connection Management">
-<t>Clients SHOULD NOT open more than one SPDY session to a given <xref target="ORIGIN">origin</xref> concurrently.</t>
+<t>Clients SHOULD NOT open more than one SPDY session to a given <xref target="RFC6454">origin</xref> concurrently.</t>
 <t>Note that it is possible for one SPDY session to be finishing (e.g. a GOAWAY message has been sent, but not all streams have finished), while another SPDY session is starting.</t>
       </section>
 
@@ -734,7 +734,7 @@ ation/xhtmltext/plainpublicmax-agecharset=iso-8859-1utf-8gzipdeflateHTTP/1
       <section title="Server Push Transactions">
 <t>SPDY enables a server to send multiple replies to a client for a single request.  The rationale for this feature is that sometimes a server knows that it will need to send multiple resources in response to a single request.  Without server push features, the client must first download the primary resource, then discover the secondary resource(s), and request them.  Pushing of resources avoids the round-trip delay, but also creates a potential race where a server can be pushing content which a user-agent is in the process of requesting.  The following mechanics attempt to prevent the race condition while enabling the performance benefit.</t>
 
-<t>Browsers receiving a pushed response MUST validate that the server is authorized to push the URL using the <xref target="ORIGIN">browser same-origin</xref> policy.  For example, a SPDY connection to www.foo.com is generally not permitted to push a response for www.evil.com.</t>
+<t>Browsers receiving a pushed response MUST validate that the server is authorized to push the URL using the <xref target="RFC6454">browser same-origin</xref> policy.  For example, a SPDY connection to www.foo.com is generally not permitted to push a response for www.evil.com.</t>
 
 <t>If the browser accepts a pushed response (e.g. it does not send a RST_STREAM), the browser MUST attempt to cache the pushed response in same way that it would cache any other response.  This means validating the response headers and inserting into the disk cache.</t>
 
@@ -844,7 +844,7 @@ issue a <xref target="StreamErrorHandler">stream error</xref> with error code CA
       </section>
 
       <section title="Use of Same-origin constraints">
-<t>This specification uses the <xref target="ORIGIN">same-origin policy</xref> in all cases where verification of content is required.</t>
+<t>This specification uses the <xref target="RFC6454">same-origin policy</xref> in all cases where verification of content is required.</t>
       </section>
 
       <section title="HTTP Headers and SPDY Headers">
@@ -1002,7 +1002,7 @@ Here is a list of the major changes between this draft and draft #2.
           <author initials="A." surname="Langley"> <organization/> </author>
         </front>
       </reference>
-      <reference anchor="ORIGIN">
+      <reference anchor="RFC6454">
         <front>
           <title>The HTTP Origin Header</title>
           <author initials="A." surname="Barth"> <organization/> </author>
