@@ -725,7 +725,7 @@ ation/xhtmltext/plainpublicmax-agecharset=iso-8859-1utf-8gzipdeflateHTTP/1
 
 <t>The user-agent is free to prioritize requests as it sees fit. If the user-agent cannot make progress without receiving a resource, it should attempt to raise the priority of that resource. Resources such as images, SHOULD generally use the lowest priority.</t>
 
-<t>If a client sends a HEADERS without all of the method, host, path, scheme, and version headers, the server MUST reply with a HTTP 400 Bad Request reply.</t>
+<t>If a client sends a SYN_STREAM without all of the method, host, path, scheme, and version headers, the server MUST reply with a HTTP 400 Bad Request reply.</t>
         </section>
 
         <section title="Response">
