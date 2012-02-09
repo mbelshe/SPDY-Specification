@@ -170,7 +170,7 @@
 
 <t>It is illegal for the stream-id to not increase with each new stream.  If an endpoint receives a SYN_STREAM with a stream id which is less than any previously received SYN_STREAM, it MUST issue a <xref target="SessionErrorHandler">session error</xref> with the status PROTOCOL_ERROR.</t>
 
-<t>It is a protocol error to send two SYN_STREAMS with the same stream-id.  If a recipient receives a second SYN_STREAM for the same stream, it MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code PROTOCOL_ERROR.</t>
+<t>It is a protocol error to send two SYN_STREAMs with the same stream-id.  If a recipient receives a second SYN_STREAM for the same stream, it MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code PROTOCOL_ERROR.</t>
 
 <t>Upon receipt of a SYN_STREAM, the recipient can reject the stream by sending a <xref target="StreamErrorHandler">stream error</xref> with the error code REFUSED_STREAM. Note, however, that the creating endpoint may have already sent additional frames for that stream which cannot be immediately stopped.</t>
 
@@ -459,11 +459,11 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
         </section>
 
         <section anchor="GOAWAY" title="GOAWAY">
-<t>The GOAWAY control frame is a mechanism to tell the remote side of the connection that it should no longer use this session for further requests.  It can be sent from the client or the server. Once sent, the sender agrees not to initiate any new streams on this session. Recipients of a GOAWAY frame must not send additional requests on this session, although a new session (connection) can be established for new requests.  The purpose of this message is to allow an endpoint to gracefully stop accepting new requests (perhaps for a reboot or maintenance), while still finishing processing of previously established streams.</t>
+<t>The GOAWAY control frame is a mechanism to tell the remote side of the connection to stop creating streams on this session.  It can be sent from the client or the server. Once sent, the sender will not respond to any new SYN_STREAMs on this session. Recipients of a GOAWAY frame must not send additional streams on this session, although a new session can be established for new streams.  The purpose of this message is to allow an endpoint to gracefully stop accepting new streams (perhaps for a reboot or maintenance), while still finishing processing of previously established streams.</t>
 
-<t>There is an inherent race condition between a client sending requests and the server sending a GOAWAY message.  To deal with this case, the GOAWAY message contains a last-stream identifier indicating the last stream which was accepted in this session.  If the client issued requests for sessions after this stream-id, they were not accepted by the server and should be re-issued later at the client's discretion.</t>
+<t>There is an inherent race condition between an endpoint sending SYN_STREAMs and the remote sending a GOAWAY message.  To deal with this case, the GOAWAY contains a last-stream-id indicating the stream-id of the last stream which was created on the sending endpoint in this session.  If the receiver of the GOAWAY sent new SYN_STREAMs for sessions after this last-stream-id, they were not processed by the server and the receiver may treat the stream as though it had never been created at all (hence the receiver may want to re-create the stream later on a new session).</t>
 
-<t>Endpoints should always send a GOAWAY message before closing a connection so that the remote can know whether a request has been partially processed or not.  (For example, if the client sends a POST at the same time that a server closes a connection, the client cannot know if the server started to process that POST request if the server does not send a GOAWAY frame to indicate where it stopped working)</t>
+<t>Endpoints should always send a GOAWAY message before closing a connection so that the remote can know whether a stream has been partially processed or not.  (For example, if an HTTP client sends a POST at the same time that a server closes a connection, the client cannot know if the server started to process that POST request if the server does not send a GOAWAY frame to indicate where it stopped working).</t>
 
 <t>After sending a GOAWAY message, the sender must ignore all SYN_STREAM frames for new streams.</t>
           <figure>
@@ -487,7 +487,7 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 
 <t>Length: This frame is always 8 bytes long.</t>
 
-<t>Last-good-stream-Id: The last stream id which was accepted by the sender of the GOAWAY message.  If no streams were accepted, this value MUST be 0.</t>
+<t>Last-good-stream-Id: The last stream id which was replied to (with either a SYN_REPLY or RST_STREAM) by the sender of the GOAWAY message.  If no streams were replied to, this value MUST be 0.</t>
 
 <t>Status: The reason for closing the session.
 <list>
@@ -691,6 +691,18 @@ ation/xhtmltext/plainpublicmax-agecharset=iso-8859-1utf-8gzipdeflateHTTP/1
       <section title="Connection Management">
 <t>Clients SHOULD NOT open more than one SPDY session to a given <xref target="RFC6454">origin</xref> concurrently.</t>
 <t>Note that it is possible for one SPDY session to be finishing (e.g. a GOAWAY message has been sent, but not all streams have finished), while another SPDY session is starting.</t>
+        <section title="Use of GOAWAY">
+<t>SPDY provides a GOAWAY message which can be used when closing a connection from either the client or server.  Without a server GOAWAY message, HTTP has a race condition where the client sends a request (a new SYN_STREAM)  just as the server is closing the connection, and the client cannot know if the server received the stream or not.  By using the last-stream-id in the GOAWAY, servers can indicate to the client if a request was processed or not.</t>
+
+<t>Note that some servers will choose to send the GOAWAY and immediately terminate the connection without waiting for active streams to finish.  The client will be able to determine this because SPDY streams are determinstically closed.  This abrupt termination will force the client to heuristically decide whether to retry the pending requests.  Clients always need to be capable of dealing with this case because they must deal with accidental connection termination cases, which are the same as the server never having sent a GOAWAY.</t>
+
+<t>More sophisticated servers will use GOAWAY to implement a graceful teardown. They will send the GOAWAY and provide some time for the active streams to finish before terminating the connection.</t>
+
+<t>If a SPDY client closes the connection, it should also send a GOAWAY message.  This allows the server to know if any server-push streams were received by the client.</t>
+
+<t>If the endpoint closing the connection has not received any SYN_STREAMs from the remote, the GOAWAY will contain a last-stream-id of 0.</t>
+
+        </section>
       </section>
 
       <section title="HTTP Request/Response">
