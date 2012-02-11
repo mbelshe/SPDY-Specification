@@ -385,6 +385,7 @@
 <t>8 - STREAM_ALREADY_CLOSED.  The endpoint received a data or SYN_REPLY frame for a stream which is half closed.</t>
 <t>9 - INVALID_CREDENTIALS.  The server received a request for a resource whose origin does not have valid credentials in the client certificate vector.</t>
 <t>10 - FRAME_TOO_LARGE.  The endpoint received a frame which this implementation could not support.  If FRAME_TOO_LARGE is sent for a SYN_STREAM, HEADERS, or SYN_REPLY frame without fully processing the compressed portion of those frames, then the compression state will be out-of-sync with the other endpoint.  In this case, senders of FRAME_TOO_LARGE MUST close the session.</t>
+<t>11 - INTERNAL_ERROR.  This is a generic error which can be used when the implementation has internally failed, not due to anything in the protocol.</t>
 <t>Note:  0 is not a valid status code for a RST_STREAM.</t>
 </list>
 </t>
@@ -516,6 +517,7 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 <list>
 <t>0 - OK. This is a normal session teardown.</t>
 <t>1 - PROTOCOL_ERROR. This is a generic error, and should only be used if a more specific error is not available.</t>
+<t>11 - INTERNAL_ERROR.  This is a generic error which can be used when the implementation has internally failed, not due to anything in the protocol.</t>
 <t>TODO(mbelshe): enumerate all the errors</t>
 </list>
 </t>
