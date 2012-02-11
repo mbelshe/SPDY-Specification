@@ -116,6 +116,7 @@
 <t>Control frame processing requirements:
 <list>
 <t>If an endpoint receives a control frame for a type it does not recognize, it MUST ignore the frame.</t>
+<t>Note that full length control frames (16MB) can be large for implementations running on resource-limited hardware.  In such cases, implementations MAY limit the maximum length frame supported.  However, all implementations MUST be able to receive control frames of at least 16KB + headers (16392 octets) in length.</t>
 </list>
 </t>
         </section>
@@ -303,6 +304,8 @@
 
 <t>Name/Value Header Block:  A set of name/value pairs carried as part of the SYN_STREAM.  <xref target="HeaderBlock">see Name/Value Header Block</xref>.</t>
 
+<t>If an endpoint receives a SYN_STREAM which is larger than the implementation supports, it MAY send a RST_STREAM with error code FRAME_TOO_LARGE.  All implementations MUST support the minimum size limits defined in <xref target="ControlFrames">the Control Frames section</xref>.</t>
+
         </section>
 
         <section anchor="SYN_REPLY" title="SYN_REPLY">
@@ -343,7 +346,10 @@
 <t>If an endpoint receives multiple SYN_REPLY frames for the same active stream ID, it MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the error code STREAM_IN_USE.</t>
 
 <t>Name/Value Header Block:  A set of name/value pairs carried as part of the SYN_STREAM.  <xref target="HeaderBlock">see Name/Value Header Block</xref>.</t>
+
+<t>If an endpoint receives a SYN_REPLY which is larger than the implementation supports, it MAY send a RST_STREAM with error code FRAME_TOO_LARGE.  All implementations MUST support the minimum size limits defined in <xref target="ControlFrames">the Control Frames section</xref>.</t>
         </section>
+
         <section anchor="RST_STREAM" title="RST_STREAM">
 <t>The RST_STREAM frame allows for abnormal termination of a stream.  When sent by the creator of a stream, it indicates the creator wishes to cancel the stream.  When sent by the recipient of a stream, it indicates an error or that the recipient did not want to accept the stream, so the stream should be closed.</t>
           <figure>
@@ -376,6 +382,7 @@
 <t>7 - STREAM_IN_USE.  The endpoint received a SYN_REPLY for a stream already open.</t>
 <t>8 - STREAM_ALREADY_CLOSED.  The endpoint received a data or SYN_REPLY frame for a stream which is half closed.</t>
 <t>9 - INVALID_CREDENTIALS.  The server received a request for a resource whose origin does not have valid credentials in the client certificate vector.</t>
+<t>10 - FRAME_TOO_LARGE.  The endpoint received a frame which this implementation could not support.</t>
 <t>Note:  0 is not a valid status code for a RST_STREAM.</t>
 </list>
 </t>
