@@ -384,7 +384,7 @@
 <t>7 - STREAM_IN_USE.  The endpoint received a SYN_REPLY for a stream already open.</t>
 <t>8 - STREAM_ALREADY_CLOSED.  The endpoint received a data or SYN_REPLY frame for a stream which is half closed.</t>
 <t>9 - INVALID_CREDENTIALS.  The server received a request for a resource whose origin does not have valid credentials in the client certificate vector.</t>
-<t>10 - FRAME_TOO_LARGE.  The endpoint received a frame which this implementation could not support.</t>
+<t>10 - FRAME_TOO_LARGE.  The endpoint received a frame which this implementation could not support.  If FRAME_TOO_LARGE is sent for a SYN_STREAM, HEADERS, or SYN_REPLY frame without fully processing the compressed portion of those frames, then the compression state will be out-of-sync with the other endpoint.  In this case, senders of FRAME_TOO_LARGE MUST close the session.</t>
 <t>Note:  0 is not a valid status code for a RST_STREAM.</t>
 </list>
 </t>
