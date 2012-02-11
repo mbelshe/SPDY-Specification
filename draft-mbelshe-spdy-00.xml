@@ -21,13 +21,13 @@
   <front>
     <title abbrev="SPDY">SPDY Protocol</title>
     <author initials="M." surname="Belshe" fullname="Mike Belshe">
-      <organization>Google Inc</organization>
+      <organization>Twist</organization>
       <address>
-        <email>mbelshe@google.com</email>
+        <email>mbelshe@chromium.org</email>
       </address>
     </author>
     <author initials="R." surname="Peon" fullname="Roberto Peon">
-      <organization>Google Inc</organization>
+      <organization>Google, Inc</organization>
       <address>
         <email>fenix@google.com</email>
       </address>
