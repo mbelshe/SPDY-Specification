@@ -824,11 +824,9 @@ ation/xhtmltext/plainpublicmax-agecharset=iso-8859-1utf-8gzipdeflateHTTP/1
 <t>If a client receives a server push stream with stream-id 0, it
  MUST issue a <xref target="SessionErrorHandler">session error</xref> with the status code PROTOCOL_ERROR.</t>
 
-<t>When a client receives a SYN_STREAM from the server without an 'url' in the Name/Value section, it must reply with a RST_STREAM with error code HTTP_PROTOCOL_ERROR.</t>
+<t>When a client receives a SYN_STREAM from the server without a the ':host', ':scheme', and ':path' headers in the Name/Value section, it MUST reply with a RST_STREAM with error code HTTP_PROTOCOL_ERROR.</t>
 
-<t>To cancel individual server push streams, the client can 
-issue a <xref target="StreamErrorHandler">stream error</xref> with error code CANCEL.
-  Upon receipt, the server MUST stop sending on this stream immediately (this is an Abrupt termination).</t> 
+<t>To cancel individual server push streams, the client can issue a <xref target="StreamErrorHandler">stream error</xref> with error code CANCEL.  Upon receipt, the server MUST stop sending on this stream immediately (this is an Abrupt termination).</t> 
 
 <t>To cancel all server push streams related to a request, the client may issue a <xref target="StreamErrorHandler">stream error</xref> with error code CANCEL on the associated-stream-id.  By cancelling that stream, the server MUST immediately stop sending frames for any streams with in-association-to for the original stream.</t>
 
