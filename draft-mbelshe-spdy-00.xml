@@ -244,7 +244,7 @@
         </section>
 
         <section anchor="StreamErrorHandler" title="Stream Error Handling">
-<t>A stream error is an error which occurs within the context of a stream.  Upon a stream error, the endpoint MUST send a <xref target="RST_STREAM">RST_STREAM</xref> frame which contains the stream id of the stream where the error occurred and the error status which caused the error.  After sending the RST_STREAM, the stream is closed to the endpoint, so receipt of any further frames for that stream id will result in sending additional RST_STREAM frames.  Sending a RST_STREAM does not cause the SPDY session to be closed.</t>
+<t>A stream error is an error which occurs within the context of a stream.  Upon a stream error, the endpoint MUST send a <xref target="RST_STREAM">RST_STREAM</xref> frame which contains the stream id of the stream where the error occurred and the error status which caused the error.  After sending the RST_STREAM, the stream is closed to the sending endpoint.  After sending the RST_STREAM, if the sender receives any frames other than a RST_STREAM for that stream id, it will result in sending additional RST_STREAM frames.  An endpoint MUST NOT send a RST_STREAM in response to an RST_STREAM, as doing so would lead to RST_STREAM loops.  Sending a RST_STREAM does not cause the SPDY session to be closed.</t>
 
 <t>If an endpoint has multiple RST_STREAM frames to send in succession for the same stream-id and the same error code, it MAY coalesce them into a single RST_STREAM frame.  (This can happen if a stream is closed, but the remote sends multiple data frames.  There is no reason to send a RST_STREAM for each frame in succession).</t>
         </section>
