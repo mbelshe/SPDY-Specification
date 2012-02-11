@@ -204,8 +204,6 @@
 <t>The creator of a stream assigns a priority for that stream.  Priority is represented as an integer from 0 to 7.  0 represents the highest priority and 7 represents the lowest priority.</t>
 
 <t>The sender and recipient SHOULD use best-effort to process streams in the order of highest priority to lowest priority.</t>
-
-<t>TODO(mbelshe):  Define a trickle-priority?</t>
         </section>
 
         <section title="Stream headers">
@@ -518,7 +516,6 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 <t>0 - OK. This is a normal session teardown.</t>
 <t>1 - PROTOCOL_ERROR. This is a generic error, and should only be used if a more specific error is not available.</t>
 <t>11 - INTERNAL_ERROR.  This is a generic error which can be used when the implementation has internally failed, not due to anything in the protocol.</t>
-<t>TODO(mbelshe): enumerate all the errors</t>
 </list>
 </t>
         </section>
@@ -815,8 +812,6 @@ ation/xhtmltext/plainpublicmax-agecharset=iso-8859-1utf-8gzipdeflateHTTP/1
 
 <t>If the browser accepts a pushed response (e.g. it does not send a RST_STREAM), the browser MUST attempt to cache the pushed response in same way that it would cache any other response.  This means validating the response headers and inserting into the disk cache.</t>
 
-<t>TODO(mbelshe): servers that push non-cacheable content?</t>
-
 <t>Because pushed responses have no request, they have no request headers associated with them.  At the framing layer, SPDY pushed streams contain an "associated-stream-id" which indicates the requested stream for which the pushed stream is related.  The pushed stream inherits all of the headers from the associated-stream-id with the exception of ":host", ":scheme", and ":path", which are provided as part of the pushed response stream headers.  The browser MUST store these inherited and implied request headers with the cached resource.</t>
 
 <t>Implementation note:  With server push, it is theoretically possible for servers to push unreasonable amounts of content or resources to the user-agent.  Browsers MUST implement throttles to protect against unreasonable push attacks.</t>
@@ -914,10 +909,6 @@ ation/xhtmltext/plainpublicmax-agecharset=iso-8859-1utf-8gzipdeflateHTTP/1
     </section>
 
     <section title="Security Considerations">
-      <section title="Transport Layer Security">
-<t>TODO(mbelshe): </t>
-      </section>
-
       <section title="Use of Same-origin constraints">
 <t>This specification uses the <xref target="RFC6454">same-origin policy</xref> in all cases where verification of content is required.</t>
       </section>
