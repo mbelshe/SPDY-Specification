@@ -166,7 +166,7 @@
         </section>
 
         <section anchor="StreamCreation" title="Stream creation">
-<t>A stream is created by sending a control frame with the type set to <xref target="SYN_STREAM">SYN_STREAM</xref>.  If the server is initiating the stream, the Stream-ID must be even.  If the client is initiating the stream, the Stream-ID must be odd.  0 is not a valid Stream-ID. Stream-IDs from each side of the connection must increase monotonically as new streams are created.  E.g. Stream 2 may be created after stream 3, but stream 7 must not be created after stream 9. Stream IDs do not wrap: when a client or server cannot create a new stream id without exceeding 32bits, it MUST NOT create a new stream.</t>
+<t>A stream is created by sending a control frame with the type set to <xref target="SYN_STREAM">SYN_STREAM</xref>.  If the server is initiating the stream, the Stream-ID must be even.  If the client is initiating the stream, the Stream-ID must be odd.  0 is not a valid Stream-ID. Stream-IDs from each side of the connection must increase monotonically as new streams are created.  E.g. Stream 2 may be created after stream 3, but stream 7 must not be created after stream 9. Stream IDs do not wrap: when a client or server cannot create a new stream id without exceeding a 31 bit value, it MUST NOT create a new stream.</t>
 
 <t>It is illegal for the stream-id to not increase with each new stream.  If an endpoint receives a SYN_STREAM with a stream id which is less than any previously received SYN_STREAM, it MUST issue a <xref target="SessionErrorHandler">session error</xref> with the status PROTOCOL_ERROR.</t>
 
