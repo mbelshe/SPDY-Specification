@@ -1,4 +1,18 @@
 <?xml version="1.0"?>
+<!DOCTYPE rfc SYSTEM "rfc2629.dtd" [
+  <!ENTITY RFC0793 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.0793.xml'>
+  <!ENTITY RFC1738 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.1738.xml'>
+  <!ENTITY RFC1950 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.1950.xml'>
+  <!ENTITY RFC2119 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.2119.xml'>
+  <!ENTITY RFC2285 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.2285.xml'>
+  <!ENTITY RFC2616 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.2616.xml'>
+  <!ENTITY RFC2617 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.2617.xml'>
+  <!ENTITY RFC4559 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.4559.xml'>
+  <!ENTITY RFC4366 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.4366.xml'>
+  <!ENTITY RFC5246 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.5246.xml'>
+  <!ENTITY RFC6454 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.6454.xml'>
+]>
+
 <?xml-stylesheet type="text/xsl" href="rfc2629.xml"?>
 
 <?rfc toc="yes" symrefs="yes"?>
@@ -65,7 +79,7 @@
 
     <section anchor="FramingLayer" title="SPDY Framing Layer">
       <section title="Session (Connections)">
-<t>The SPDY framing layer (or "session") runs atop a reliable transport layer such as <xref target="RFC793">TCP</xref>. The client is the TCP connection initiator. SPDY connections are persistent connections. The HTTP connection header does not apply and MUST be ignored.</t>
+<t>The SPDY framing layer (or "session") runs atop a reliable transport layer such as <xref target="RFC0793">TCP</xref>. The client is the TCP connection initiator. SPDY connections are persistent connections. The HTTP connection header does not apply and MUST be ignored.</t>
 
 <t>For best performance, it is expected that clients will not close open connections until the user navigates away from all web pages referencing a connection, or until the server closes the connection. Servers are encouraged to leave connections open for as long as possible, but can terminate idle connections after some amount of inactivity if necessary.  When either side closes the transport-level connection, it MUST first send a <xref target="GOAWAY">GOAWAY</xref> frame so that the endpoints can reliably determine if requests finished before the close.</t>
       </section>
@@ -964,100 +978,22 @@ Here is a list of the major changes between this draft and draft #2.
   </middle>
 
   <back>
-    <references title="Normative References">
-      <reference anchor="RFC1738">
-        <front>
-          <title>Uniform Resource Locators (URL)</title>
-          <author initials="T." surname="Berners-Lee"></author>
-          <author initials="L." surname="Masinter"></author>
-          <author initials="M." surname="McCahill"></author>
-        </front>
-      </reference>
-      <reference anchor="RFC1950">
-        <front>
-          <title>ZLIB Compressed Data Format Specification version 3.3</title>
-          <author initials="P." surname="Deutsch"></author>
-          <author initials="J-L." surname="Gailly"></author>
-        </front>
-      </reference>
-      <reference anchor="RFC2119">
-        <front>
-          <title>Key words for use in RFCs to Indicate Requirement Levels</title>
-          <author initials="S." surname="Bradner"></author>
-        </front>
-      </reference>
-      <reference anchor="RFC2616">
-        <front>
-          <title>Hypertext Transfer Protocol -- HTTP/1.1</title>
-          <author initials="R." surname="Fielding"></author>
-          <author initials="J." surname="Gettys"></author>
-          <author initials="J." surname="Mogul"></author>
-          <author initials="H." surname="Frystyk"></author>
-          <author initials="L." surname="Masinter"></author>
-          <author initials="P." surname="Leach"></author>
-          <author initials="T." surname="Berners-Lee"></author>
-        </front>
-      </reference>
-      <reference anchor="RFC2617">
-        <front>
-          <title>HTTP Authentication: Basic and Digest Authentication</title>
-          <author initials="R." surname="Franks"></author>
-          <author initials="P." surname="Hallam-Baker"></author>
-          <author initials="J." surname="Hostetler"></author>
-          <author initials="S." surname="Lawrence"></author>
-          <author initials="P." surname="Leach"></author>
-          <author initials="A." surname="Luotonen"></author>
-          <author initials="L." surname="Stewart"></author>
-        </front>
-      </reference>
-      <reference anchor="RFC4559">
-        <front>
-          <title>SPNEGO-based Kerberos and NTLM HTTP Authentication in Microsoft Windows</title>
-          <author initials="K." surname="Jaganathan"></author>
-          <author initials="J." surname="Brezak"></author>
-        </front>
-      </reference>
-      <reference anchor="RFC2285">
-        <front>
-          <title>Benchmarking Terminology for LAN Switching Devices</title>
-          <author initials="R." surname="Mandeville"></author>
-        </front>
-      </reference>
-      <reference anchor="RFC4366">
-        <front>
-          <title>Transport Layer Security (TLS) Extensions</title>
-          <author initials="S." surname="Blake-Wilson"></author>
-          <author initials="M." surname="Nystrom"></author>
-          <author initials="D." surname="Hopwood"></author>
-          <author initials="J." surname="Mikkelsen"></author>
-          <author initials="T." surname="Wright"></author>
-        </front>
-      </reference>
-      <reference anchor="RFC5246">
-        <front>
-          <title>The Transport Layer Security (TLS) Protocol Version 1.2</title>
-          <author initials="T." surname="Dierks"></author>
-          <author initials="E." surname="Rescorla"></author>
-        </front>
-      </reference>
-      <reference anchor="RFC793">
-        <front>
-          <title>Transport Control Protocol</title>
-          <author> <organization/> </author>
-        </front>
-      </reference>
+  <references title="Normative References">
+      &RFC0793;
+      &RFC1738;
+      &RFC1950;
+      &RFC2119;
+      &RFC2285;
+      &RFC2616;
+      &RFC2617;
+      &RFC4559;
+      &RFC4366;
+      &RFC5246;
+      &RFC6454;
       <reference anchor="TLSNPN">
         <front>
           <title>TLS Next Protocol Negotiation</title>
           <author initials="A." surname="Langley"> <organization/> </author>
-        </front>
-      </reference>
-      <reference anchor="RFC6454">
-        <front>
-          <title>The HTTP Origin Header</title>
-          <author initials="A." surname="Barth"> <organization/> </author>
-          <author initials="C." surname="Jackson"> <organization/> </author>
-          <author initials="I." surname="Hickson"> <organization/> </author>
         </front>
       </reference>
       <reference anchor="ASCII">
