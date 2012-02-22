@@ -9,7 +9,7 @@ Expires: November 2, 2011                                        R. Peon
 
 
                              SPDY Protocol
-                         draft-mbelshe-spdy-00
+                     draft-mbelshe-httpbis-spdy-00
 
 Abstract
 
@@ -354,9 +354,6 @@ Internet-Draft                    SPDY                          May 2011
 
    Control frame processing requirements:
 
-      If an endpoint receives a control frame for a type it does not
-      recognize, it MUST ignore the frame.
-
       Note that full length control frames (16MB) can be large for
       implementations running on resource-limited hardware.  In such
       cases, implementations MAY limit the maximum length frame
@@ -386,6 +383,9 @@ Internet-Draft                    SPDY                          May 2011
       0x02 = FLAG_COMPRESS - indicates that the data in this frame has
       been compressed.
 
+   Length: An unsigned 24-bit value representing the number of bytes
+   after the length field.  The total size of a data frame is 8 bytes +
+
 
 
 Belshe & Peon           Expires November 2, 2011                [Page 7]
@@ -393,8 +393,6 @@ Belshe & Peon           Expires November 2, 2011                [Page 7]
 Internet-Draft                    SPDY                          May 2011
 
 
-   Length: An unsigned 24-bit value representing the number of bytes
-   after the length field.  The total size of a data frame is 8 bytes +
    length.  It is valid to have a zero-length data frame.
 
    Data: The variable-length data payload; the length was defined in the
@@ -440,6 +438,8 @@ Internet-Draft                    SPDY                          May 2011
 
       Streams can concurrently send data interleaved with other streams.
 
+      Streams may be cancelled.
+
 
 
 
@@ -448,8 +448,6 @@ Belshe & Peon           Expires November 2, 2011                [Page 8]
 
 Internet-Draft                    SPDY                          May 2011
 
-
-      Streams may be cancelled.
 
 2.3.1.  Stream frames
 
@@ -497,6 +495,8 @@ Internet-Draft                    SPDY                          May 2011
 
    When an endpoint creates a stream with the FLAG_UNIDIRECTIONAL flag
    set, it creates a unidirectional stream which the creating endpoint
+   can use to send frames, but the receiving endpoint cannot.  The
+   receiving endpoint is implicitly already in the half-closed
 
 
 
@@ -505,8 +505,6 @@ Belshe & Peon           Expires November 2, 2011                [Page 9]
 Internet-Draft                    SPDY                          May 2011
 
 
-   can use to send frames, but the receiving endpoint cannot.  The
-   receiving endpoint is implicitly already in the half-closed
    (Section 2.3.6) state.
 
 2.3.2.2.  Bidirectional streams
@@ -553,6 +551,8 @@ Internet-Draft                    SPDY                          May 2011
    If an endpoint receives a data frame after the stream is half-closed
    from the sender (e.g. the endpoint has already received a prior frame
    for the stream with the FIN flag set), it MUST send a RST_STREAM to
+   the sender with the status STREAM_ALREADY_CLOSED.
+
 
 
 
@@ -560,8 +560,6 @@ Belshe & Peon           Expires November 2, 2011               [Page 10]
 
 Internet-Draft                    SPDY                          May 2011
 
-
-   the sender with the status STREAM_ALREADY_CLOSED.
 
 2.3.7.  Stream close
 
@@ -609,6 +607,8 @@ Internet-Draft                    SPDY                          May 2011
    Note that the session compression state is dependent upon both
    endpoints always processing all compressed data.  If an endpoint
    partially processes a frame containing compressed data without
+   updating compression state properly, future control frames which use
+   compression will be always be errored.  Implementations SHOULD always
 
 
 
@@ -617,8 +617,6 @@ Belshe & Peon           Expires November 2, 2011               [Page 11]
 Internet-Draft                    SPDY                          May 2011
 
 
-   updating compression state properly, future control frames which use
-   compression will be always be errored.  Implementations SHOULD always
    try to process compressed data so that errors which could be handled
    as stream errors do not become session errors.
 
@@ -661,6 +659,8 @@ Internet-Draft                    SPDY                          May 2011
    The SYN_STREAM control frame allows the sender to asynchronously
    create a stream between the endpoints.  See Stream Creation
    (Section 2.3.2)
+
+
 
 
 

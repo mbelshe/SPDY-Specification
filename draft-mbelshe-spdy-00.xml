@@ -17,7 +17,7 @@
 
 <?rfc toc="yes" symrefs="yes"?>
 
-<rfc ipr="full3978" docName="draft-mbelshe-spdy-00">
+<rfc ipr="full3978" docName="draft-mbelshe-httpbis-spdy-00">
   <front>
     <title abbrev="SPDY">SPDY Protocol</title>
     <author initials="M." surname="Belshe" fullname="Mike Belshe">
@@ -115,7 +115,6 @@
 
 <t>Control frame processing requirements:
 <list>
-<t>If an endpoint receives a control frame for a type it does not recognize, it MUST ignore the frame.</t>
 <t>Note that full length control frames (16MB) can be large for implementations running on resource-limited hardware.  In such cases, implementations MAY limit the maximum length frame supported.  However, all implementations MUST be able to receive control frames of at least 8192 octets in length.</t>
 </list>
 </t>
