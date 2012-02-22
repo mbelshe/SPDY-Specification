@@ -1160,7 +1160,7 @@ Here is a list of the major changes between this draft and draft #2.
       &RFC4366;
       &RFC5246;
       &RFC6454;
-      <reference anchor="TLSNPN">
+      <reference anchor="TLSNPN" target="http://tools.ietf.org/html/draft-agl-tls-nextprotoneg-01">
         <front>
           <title>TLS Next Protocol Negotiation</title>
           <author initials="A." surname="Langley"> <organization/> </author>
