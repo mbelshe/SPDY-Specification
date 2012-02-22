@@ -79,9 +79,9 @@
 
     <section anchor="FramingLayer" title="SPDY Framing Layer">
       <section title="Session (Connections)">
-<t>The SPDY framing layer (or "session") runs atop a reliable transport layer such as <xref target="RFC0793">TCP</xref>. The client is the TCP connection initiator. SPDY connections are persistent connections. The HTTP connection header does not apply and MUST be ignored.</t>
+<t>The SPDY framing layer (or "session") runs atop a reliable transport layer such as <xref target="RFC0793">TCP</xref>. The client is the TCP connection initiator. SPDY connections are persistent connections.</t>
 
-<t>For best performance, it is expected that clients will not close open connections until the user navigates away from all web pages referencing a connection, or until the server closes the connection. Servers are encouraged to leave connections open for as long as possible, but can terminate idle connections after some amount of inactivity if necessary.  When either side closes the transport-level connection, it MUST first send a <xref target="GOAWAY">GOAWAY</xref> frame so that the endpoints can reliably determine if requests finished before the close.</t>
+<t>For best performance, it is expected that clients will not close open connections until the user navigates away from all web pages referencing a connection, or until the server closes the connection. Servers are encouraged to leave connections open for as long as possible, but can terminate idle connections if necessary.  When either endpoint closes the transport-level connection, it MUST first send a <xref target="GOAWAY">GOAWAY</xref> frame so that the endpoints can reliably determine if requests finished before the close.</t>
       </section>
       <section title="Framing">
 <t>Once the connection is established, clients and servers exchange framed messages. There are two types of frames: <xref target="ControlFrames">control frames</xref> and <xref target="DataFrames">data frames</xref>.  Frames always have a common header which is 8 bytes in length.</t>
@@ -183,7 +183,7 @@
         <section anchor="StreamCreation" title="Stream creation">
 <t>A stream is created by sending a control frame with the type set to <xref target="SYN_STREAM">SYN_STREAM</xref>.  If the server is initiating the stream, the Stream-ID must be even.  If the client is initiating the stream, the Stream-ID must be odd.  0 is not a valid Stream-ID. Stream-IDs from each side of the connection must increase monotonically as new streams are created.  E.g. Stream 2 may be created after stream 3, but stream 7 must not be created after stream 9. Stream IDs do not wrap: when a client or server cannot create a new stream id without exceeding a 31 bit value, it MUST NOT create a new stream.</t>
 
-<t>It is illegal for the stream-id to not increase with each new stream.  If an endpoint receives a SYN_STREAM with a stream id which is less than any previously received SYN_STREAM, it MUST issue a <xref target="SessionErrorHandler">session error</xref> with the status PROTOCOL_ERROR.</t>
+<t>The stream-id MUST increase with each new stream.  If an endpoint receives a SYN_STREAM with a stream id which is less than any previously received SYN_STREAM, it MUST issue a <xref target="SessionErrorHandler">session error</xref> with the status PROTOCOL_ERROR.</t>
 
 <t>It is a protocol error to send two SYN_STREAMs with the same stream-id.  If a recipient receives a second SYN_STREAM for the same stream, it MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code PROTOCOL_ERROR.</t>
 
@@ -237,7 +237,7 @@
 <t>The SPDY framing layer has only two types of errors, and they are always handled consistently.  Any reference in this specification to "issue a session error" refers to <xref target="SessionErrorHandler"></xref>.  Any reference to "issue a stream error" refers to <xref target="StreamErrorHandler"></xref>.</t>
 
         <section anchor="SessionErrorHandler" title="Session Error Handling">
-<t>A session error is any error which occurs outside the context of a specific stream, and prevents further processing of the framing layer or which corrupts the session compression state.  When a session error occurs, the endpoint encountering the error MUST first send a <xref target="GOAWAY">GOAWAY</xref> frame with the stream id of most recently received stream from the remote endpoint, and the error code for why the session is terminating.  After sending the GOAWAY frame, the endpoint MUST close the TCP connection.</t>
+<t>A session error is any error which prevents further processing of the framing layer or which corrupts the session compression state.  When a session error occurs, the endpoint encountering the error MUST first send a <xref target="GOAWAY">GOAWAY</xref> frame with the stream id of most recently received stream from the remote endpoint, and the error code for why the session is terminating.  After sending the GOAWAY frame, the endpoint MUST close the TCP connection.</t>
 
 <t>Note that the session compression state is dependent upon both endpoints always processing all compressed data.  If an endpoint partially processes a frame containing compressed data without updating compression state properly, future control frames which use compression will be always be errored.  Implementations SHOULD always try to process compressed data so that errors which could be handled as stream errors do not become session errors.</t>
 
@@ -245,7 +245,7 @@
         </section>
 
         <section anchor="StreamErrorHandler" title="Stream Error Handling">
-<t>A stream error is an error which occurs within the context of a stream, and does not affect processing of other streams at the framing layer.  Upon a stream error, the endpoint MUST send a <xref target="RST_STREAM">RST_STREAM</xref> frame which contains the stream id of the stream where the error occurred and the error status which caused the error.  After sending the RST_STREAM, the stream is closed to the sending endpoint.  After sending the RST_STREAM, if the sender receives any frames other than a RST_STREAM for that stream id, it will result in sending additional RST_STREAM frames.  An endpoint MUST NOT send a RST_STREAM in response to an RST_STREAM, as doing so would lead to RST_STREAM loops.  Sending a RST_STREAM does not cause the SPDY session to be closed.</t>
+<t>A stream error is an error related to a specific stream-id which does not affect processing of other streams at the framing layer.  Upon a stream error, the endpoint MUST send a <xref target="RST_STREAM">RST_STREAM</xref> frame which contains the stream id of the stream where the error occurred and the error status which caused the error.  After sending the RST_STREAM, the stream is closed to the sending endpoint.  After sending the RST_STREAM, if the sender receives any frames other than a RST_STREAM for that stream id, it will result in sending additional RST_STREAM frames.  An endpoint MUST NOT send a RST_STREAM in response to an RST_STREAM, as doing so would lead to RST_STREAM loops.  Sending a RST_STREAM does not cause the SPDY session to be closed.</t>
 
 <t>If an endpoint has multiple RST_STREAM frames to send in succession for the same stream-id and the same error code, it MAY coalesce them into a single RST_STREAM frame.  (This can happen if a stream is closed, but the remote sends multiple data frames.  There is no reason to send a RST_STREAM for each frame in succession).</t>
         </section>
