@@ -1019,9 +1019,7 @@ const unsigned char SPDY_dictionary_txt[] = {
 
 <t>If the server sends a HEADER frame containing duplicate headers with a previous HEADERS frame for the same stream, the client must issue a <xref target="StreamErrorHandler">stream error</xref> with error code PROTOCOL ERROR.</t>
 
-<t>If the server sends a HEADERS frame after sending a data frame for the same stream, the client must ignore the HEADERS frame.</t>
-
-<t>TODO(mbelshe): Define how HTTP Trailers should work: "For HTTP, the rules for http trailers apply, as specified in: http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.40"</t>
+<t>If the server sends a HEADERS frame after sending a data frame for the same stream, the client MAY ignore the HEADERS frame.  Ignoring the HEADERS frame after a data frame prevents handling of HTTP's trailing headers (http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.40).</t>
         </section>
       </section>
 
