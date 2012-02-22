@@ -154,7 +154,7 @@
 <t>If the endpoint which created the stream receives a data frame before receiving a SYN_REPLY on that stream, it is a protocol error, and the recipient MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code PROTOCOL_ERROR for the stream-id.</t>
 <t>Implementors note: If an endpoint receives multiple data frames for invalid stream-ids, it MAY close the session.</t>
 <t>All SPDY endpoints MUST accept compressed data frames.  Compression of data frames is always done using zlib compression.  Each stream initializes and uses its own compression context dedicated to use within that stream.  Endpoints are encouraged to use application level compression rather than SPDY stream level compression.</t>
-<t>Each SPDY stream sending compressed frames creates its own zlib context for that stream. (Thus, if both endpoints of a stream are compressing data on the stream, there will be two zlib contexts, one for sending and one for receiving).</t>
+<t>Each SPDY stream sending compressed frames creates its own zlib context for that stream, and these compression contexts MUST be distinct from the compression contexts used with SYN_STREAM/SYN_REPLY/HEADER compression. (Thus, if both endpoints of a stream are compressing data on the stream, there will be two zlib contexts, one for sending and one for receiving).</t>
 </list>
 </t>
         </section>
@@ -1103,7 +1103,7 @@ const unsigned char SPDY_dictionary_txt[] = {
 
 <t>Clients MUST clear persisted SETTINGS information when clearing the cookies.</t>
 
-<t>TODO: Put range maximums on each type of setting to limit usability for inappropriate uses.</t>
+<t>TODO: Put range maximums on each type of setting to limit inappropriate uses.</t>
       </section>
     </section>
 
@@ -1114,6 +1114,7 @@ Here is a list of the major changes between this draft and draft #2.
 <t>Addition of flow control</t>
 <t>Increased 16 bit length fields in SYN_STREAM and SYN_REPLY to 32 bits.</t>
 <t>Changed definition of compression for DATA frames</t>
+<t>Updated compression dictionary</t>
 <t>Fixed off-by-one on the compression dictionary for headers</t>
 <t>Increased priority field from 2bits to 3bits.</t>
 <t>Removed NOOP frame</t>
