@@ -89,7 +89,7 @@ Table of Contents
        2.6.7.  HEADERS  . . . . . . . . . . . . . . . . . . . . . . . 21
        2.6.8.  WINDOW_UPDATE  . . . . . . . . . . . . . . . . . . . . 22
        2.6.9.  CREDENTIAL . . . . . . . . . . . . . . . . . . . . . . 24
-       2.6.10. Name/Value Header Block  . . . . . . . . . . . . . . . 27
+       2.6.10. Name/Value Header Block  . . . . . . . . . . . . . . . 26
    3.  HTTP Layering over SPDY  . . . . . . . . . . . . . . . . . . . 33
      3.1.  Connection Management  . . . . . . . . . . . . . . . . . . 33
        3.1.1.  Use of GOAWAY  . . . . . . . . . . . . . . . . . . . . 33
@@ -682,8 +682,8 @@ Internet-Draft                    SPDY                          May 2011
 +------------------------------------+
 |X| Associated-To-Stream-ID (31bits) |
 +------------------------------------+
-|  Pri | Unused    |                 |
-+------------------+                 |
+| Pri|Unused | Slot |                |
++-------------------+                |
 | Number of Name/Value pairs (int32) |   <+
 +------------------------------------+    |
 |     Length of name (int32)         |    | This section is the "Name/Value
@@ -718,9 +718,9 @@ Internet-Draft                    SPDY                          May 2011
 
    Priority: A 3-bit priority (Section 2.3.3) field.
 
-   Unused: 13 bits of unused space, reserved for future use.
+   Unused: 5 bits of unused space, reserved for future use.
 
-   Name/Value Header Block: A set of name/value pairs carried as part of
+   Slot: An 8 bit unsigned integer specifying the index in the server's
 
 
 
@@ -729,6 +729,11 @@ Belshe & Peon           Expires November 2, 2011               [Page 13]
 Internet-Draft                    SPDY                          May 2011
 
 
+   CREDENTIAL vector of the client certificate to be used for this
+   request. see CREDENTIAL frame (Section 2.6.9).  The value 0 means no
+   client certificate should be associated with this stream.
+
+   Name/Value Header Block: A set of name/value pairs carried as part of
    the SYN_STREAM. see Name/Value Header Block (Section 2.6.10).
 
    If an endpoint receives a SYN_STREAM which is larger than the
@@ -772,11 +777,6 @@ Internet-Draft                    SPDY                          May 2011
 
    Stream-ID: The 31-bit identifier for this stream.
 
-   If an endpoint receives multiple SYN_REPLY frames for the same active
-   stream ID, it MUST issue a stream error (Section 2.4.2) with the
-   error code STREAM_IN_USE.
-
-   Name/Value Header Block: A set of name/value pairs carried as part of
 
 
 
@@ -785,6 +785,11 @@ Belshe & Peon           Expires November 2, 2011               [Page 14]
 Internet-Draft                    SPDY                          May 2011
 
 
+   If an endpoint receives multiple SYN_REPLY frames for the same active
+   stream ID, it MUST issue a stream error (Section 2.4.2) with the
+   error code STREAM_IN_USE.
+
+   Name/Value Header Block: A set of name/value pairs carried as part of
    the SYN_STREAM. see Name/Value Header Block (Section 2.6.10).
 
    If an endpoint receives a SYN_REPLY which is larger than the
@@ -828,11 +833,6 @@ Internet-Draft                    SPDY                          May 2011
       2 - INVALID_STREAM.  This is returned when a frame is received for
       a stream which is not active.
 
-      3 - REFUSED_STREAM.  Indicates that the stream was refused before
-      any processing has been done on the stream.
-
-      4 - UNSUPPORTED_VERSION.  Indicates that the recipient of a stream
-      does not support the SPDY version requested.
 
 
 
@@ -840,6 +840,12 @@ Belshe & Peon           Expires November 2, 2011               [Page 15]
 
 Internet-Draft                    SPDY                          May 2011
 
+
+      3 - REFUSED_STREAM.  Indicates that the stream was refused before
+      any processing has been done on the stream.
+
+      4 - UNSUPPORTED_VERSION.  Indicates that the recipient of a stream
+      does not support the SPDY version requested.
 
       5 - CANCEL.  Used by the creator of a stream to indicate that the
       stream is no longer needed.
@@ -884,12 +890,6 @@ Internet-Draft                    SPDY                          May 2011
    by the client across SPDY sessions and returned to the server in
    future communications.
 
-   Persistence of SETTINGS ID/Value pairs is done on a per origin/IP
-   pair (the "origin" is the set of scheme, host, and port from the URI.
-   See [RFC6454]).  That is, when a client connects to a server, and the
-   server persists settings within the client, the client SHOULD return
-   the persisted settings on future connections to the same origin AND
-
 
 
 Belshe & Peon           Expires November 2, 2011               [Page 16]
@@ -897,6 +897,11 @@ Belshe & Peon           Expires November 2, 2011               [Page 16]
 Internet-Draft                    SPDY                          May 2011
 
 
+   Persistence of SETTINGS ID/Value pairs is done on a per origin/IP
+   pair (the "origin" is the set of scheme, host, and port from the URI.
+   See [RFC6454]).  That is, when a client connects to a server, and the
+   server persists settings within the client, the client SHOULD return
+   the persisted settings on future connections to the same origin AND
    IP address and TCP port.  Clients MUST NOT request servers to use the
    persistence features of the SETTINGS frames, and servers MUST ignore
    persistence related flags sent by a client.
@@ -940,11 +945,6 @@ Internet-Draft                    SPDY                          May 2011
 
          FLAG_SETTINGS_PERSIST_VALUE (0x1): When set, the sender of this
          SETTINGS frame is requesting that the recipient persist the ID/
-         Value and return it in future SETTINGS frames sent from the
-         sender to this recipient.  Because persistence is only
-         implemented on the client, this flag is only sent by the
-         server.
-
 
 
 
@@ -952,6 +952,11 @@ Belshe & Peon           Expires November 2, 2011               [Page 17]
 
 Internet-Draft                    SPDY                          May 2011
 
+
+         Value and return it in future SETTINGS frames sent from the
+         sender to this recipient.  Because persistence is only
+         implemented on the client, this flag is only sent by the
+         server.
 
          FLAG_SETTINGS_PERSISTED (0x2): When set, the sender is
          notifying the recipient that this ID/Value pair was previously
@@ -997,17 +1002,16 @@ Internet-Draft                    SPDY                          May 2011
          the remote endpoint the initial window size (in bytes) for new
          streams.
 
-         8 - SETTINGS_CLIENT_CERTIFICATE_VECTOR_SIZE allows the server
-         to inform the client if the new size of the client certificate
-         vector.
-
-
 
 
 Belshe & Peon           Expires November 2, 2011               [Page 18]
 
 Internet-Draft                    SPDY                          May 2011
 
+
+         8 - SETTINGS_CLIENT_CERTIFICATE_VECTOR_SIZE allows the server
+         to inform the client if the new size of the client certificate
+         vector.
 
    Value: A 32-bit value.
 
@@ -1054,10 +1058,6 @@ Internet-Draft                    SPDY                          May 2011
 
    Length: This frame is always 4 bytes long.
 
-   ID: A unique ID for this ping, represented as an unsigned 32 bit
-   value.  When the client initiates a ping, it must use an odd numbered
-   ID.  When the server initiates a ping, it must use an even numbered
-
 
 
 Belshe & Peon           Expires November 2, 2011               [Page 19]
@@ -1065,6 +1065,9 @@ Belshe & Peon           Expires November 2, 2011               [Page 19]
 Internet-Draft                    SPDY                          May 2011
 
 
+   ID: A unique ID for this ping, represented as an unsigned 32 bit
+   value.  When the client initiates a ping, it must use an odd numbered
+   ID.  When the server initiates a ping, it must use an even numbered
    ping.  Use of odd/even IDs is required in order to avoid accidental
    looping on PINGs (where each side initiates an identical PING at the
    same time).
@@ -1108,9 +1111,6 @@ Internet-Draft                    SPDY                          May 2011
 
    After sending a GOAWAY message, the sender must ignore all SYN_STREAM
    frames for new streams.
-
-
-
 
 
 
@@ -1350,25 +1350,22 @@ Internet-Draft                    SPDY                          May 2011
    contain at most one client certificate, the client needs a mechanism
    to send additional client certificates to the server.
 
-   The server is required to maintain a vector of client certificates,
-   in addition to the client certificate presented during the SSL
-   handshake.  When the client needs to send a client certificate to the
-   server, it will send a CREDENTIAL frame that specifies both the index
-   of the slot in which to store the certificate as well as the origin
-   that the certificate should be used for.  The initial size of this
-   vector must be 8.  The server may change the size of this vector by
-   sending a SETTINGS frame with the setting
+   The server is required to maintain a vector of client certificates
+   associated with a SPDY session.  When the client needs to send a
+   client certificate to the server, it will send a CREDENTIAL frame
+   that specifies the index of the slot in which to store the
+   certificate as well as proof that the client posesses the
+   corresponding private key.  The initial size of this vector must be
+   8.  If the client provides a client certificate during the first TLS
+   handshake, the contents of this certificate must be copied into the
+   first slot (index 1) in the CREDENTIAL vector, though it may be
+   overwritten by subsequent CREDENTIAL frames.  The server must
+   exclusively use the CREDNETIAL vector when evaluating the client
+   certificates associated with an origin.  The server may change the
+   size of this vector by sending a SETTINGS frame with the setting
    SETTINGS_CLIENT_CERTIFICATE_VECTOR_SIZE value specified.  In the
    event that the new size is smaller than the current size, truncation
-   occurs preserving lower-index slots as possible.  Note, these client
-   certificates are always in addition to the client certificate
-   presented during the TLS handshake.  All requests for the origin
-   associated with the server name specified with the SNI extension must
-   be associated with this certificate.  If a request is received by a
-   server for an origin (different from that specified by SNI) that is
-   not contained in the server's client certificate vector, the server
-   must treat this request as having no client certificate associated
-   with it.
+   occurs preserving lower-index slots as possible.
 
    TLS renegotiation with client authentication is incompatible with
    SPDY given the multiplexed nature of SPDY.  Specifically, imagine
@@ -1378,38 +1375,13 @@ Internet-Draft                    SPDY                          May 2011
    which resource triggered the client certificate request, in order to
    prompt the user accordingly.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Belshe & Peon           Expires November 2, 2011               [Page 25]
-
-Internet-Draft                    SPDY                          May 2011
-
-
    +----------------------------------+
    |1|000000000000001|0000000000001011|
    +----------------------------------+
    | flags (8)  |  Length (24 bits)   |
    +----------------------------------+
-   |  Slot (16 bits) | Origin Len (16)|
-   +----------------------------------+
-   |              Origin              |
-   +----------------------------------+
+   |  Slot (16 bits) |                |
+   +-----------------+                |
    |      Proof Length (32 bits)      |
    +----------------------------------+
    |               Proof              |
@@ -1421,11 +1393,16 @@ Internet-Draft                    SPDY                          May 2011
 
    Slot: The index in the server's client certificate vector where this
    certificate should be stored.  If there is already a certificate
-   stored at this index, it will be overwritten.
 
-   Origin: The origin string defined in RFC 6454
-   (http://tools.ietf.org/html/rfc6454).  For example:
-   https://example.org or https://example.com:8080.
+
+
+Belshe & Peon           Expires November 2, 2011               [Page 25]
+
+Internet-Draft                    SPDY                          May 2011
+
+
+   stored at this index, it will be overwritten.  The index is one
+   based, not zero based; zero is an invalid slot index.
 
    Proof: Cryptographic proof that the client has possession of the
    private key associated with the certificate.  The format is a TLS
@@ -1437,7 +1414,7 @@ Internet-Draft                    SPDY                          May 2011
    element, SHA1 must be used when MD5+SHA1 was used in the SSL
    connection.  The signature is calculated over a 32 byte TLS extractor
    value (http://tools.ietf.org/html/rfc5705) with a label of "EXPORTER
-   SPDY certificate proof" using the origin as context.  ForRSA
+   SPDY certificate proof" using the empty string as context.  ForRSA
    certificates the signature would be a PKCS#1 v1.5 signature.  For
    ECDSA, it would be an ECDSA-Sig-Value
    (http://tools.ietf.org/html/rfc5480#appendix-A).  For a 1024-bit RSA
@@ -1449,14 +1426,6 @@ Internet-Draft                    SPDY                          May 2011
    the same type (RSA, ECDSA, etc) as the client certificate associated
    with the SSL connection.
 
-
-
-
-Belshe & Peon           Expires November 2, 2011               [Page 26]
-
-Internet-Draft                    SPDY                          May 2011
-
-
    If the server receives a request for a resource with unacceptable
    credential (either missing or invalid), it must reply with a
    RST_STREAM frame with the status code INVALID_CREDENTIALS.  Upon
@@ -1466,13 +1435,27 @@ Internet-Draft                    SPDY                          May 2011
    different client authentication for different resources in the same
    origin.
 
-   If the server receives an invalid CREDENTIAL frame, it should respond
+   If the server receives an invalid CREDENTIAL frame, it MUST respond
    with a GOAWAY frame and shutdown the session.
 
 2.6.10.  Name/Value Header Block
 
    The Name/Value Header Block is found in the SYN_STREAM, SYN_REPLY and
    HEADERS control frames, and shares a common format:
+
+
+
+
+
+
+
+
+
+
+Belshe & Peon           Expires November 2, 2011               [Page 26]
+
+Internet-Draft                    SPDY                          May 2011
+
 
    +------------------------------------+
    | Number of Name/Value pairs (int32) |
@@ -1505,14 +1488,6 @@ Internet-Draft                    SPDY                          May 2011
       Value: 0 or more octets, 8-bit sequences of data, excluding 0.
 
    Each header name must have at least one value.  Header names are
-
-
-
-Belshe & Peon           Expires November 2, 2011               [Page 27]
-
-Internet-Draft                    SPDY                          May 2011
-
-
    encoded using the US-ASCII character set [ASCII] and must be all
    lower case.  The length of each name must be greater than zero.  A
    recipient of a zero-length name MUST issue a stream error
@@ -1527,6 +1502,16 @@ Internet-Draft                    SPDY                          May 2011
    never starts nor ends with a NUL character.  Recipients of illegal
    value fields MUST issue a stream error (Section 2.4.2) with the
    status code PROTOCOL_ERROR for the stream-id.
+
+
+
+
+
+
+Belshe & Peon           Expires November 2, 2011               [Page 27]
+
+Internet-Draft                    SPDY                          May 2011
+
 
 2.6.10.1.  Compression
 
@@ -1561,14 +1546,6 @@ Internet-Draft                    SPDY                          May 2011
            0x00, 0x00, 0x00, 0x03, 0x61, 0x67, 0x65, 0x00,   \\ - - - - a g e -
            0x00, 0x00, 0x05, 0x61, 0x6c, 0x6c, 0x6f, 0x77,   \\ - - - a l l o w
            0x00, 0x00, 0x00, 0x0d, 0x61, 0x75, 0x74, 0x68,   \\ - - - - a u t h
-
-
-
-Belshe & Peon           Expires November 2, 2011               [Page 28]
-
-Internet-Draft                    SPDY                          May 2011
-
-
            0x6f, 0x72, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f,   \\ o r i z a t i o
            0x6e, 0x00, 0x00, 0x00, 0x0d, 0x63, 0x61, 0x63,   \\ n - - - - c a c
            0x68, 0x65, 0x2d, 0x63, 0x6f, 0x6e, 0x74, 0x72,   \\ h e - c o n t r
@@ -1584,6 +1561,14 @@ Internet-Draft                    SPDY                          May 2011
            0x00, 0x00, 0x00, 0x0e, 0x63, 0x6f, 0x6e, 0x74,   \\ - - - - c o n t
            0x65, 0x6e, 0x74, 0x2d, 0x6c, 0x65, 0x6e, 0x67,   \\ e n t - l e n g
            0x74, 0x68, 0x00, 0x00, 0x00, 0x10, 0x63, 0x6f,   \\ t h - - - - c o
+
+
+
+Belshe & Peon           Expires November 2, 2011               [Page 28]
+
+Internet-Draft                    SPDY                          May 2011
+
+
            0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x6c, 0x6f,   \\ n t e n t - l o
            0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x00, 0x00,   \\ c a t i o n - -
            0x00, 0x0b, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e,   \\ - - c o n t e n
@@ -1617,14 +1602,6 @@ Internet-Draft                    SPDY                          May 2011
            0x77, 0x61, 0x72, 0x64, 0x73, 0x00, 0x00, 0x00,   \\ w a r d s - - -
            0x06, 0x70, 0x72, 0x61, 0x67, 0x6d, 0x61, 0x00,   \\ - p r a g m a -
            0x00, 0x00, 0x12, 0x70, 0x72, 0x6f, 0x78, 0x79,   \\ - - - p r o x y
-
-
-
-Belshe & Peon           Expires November 2, 2011               [Page 29]
-
-Internet-Draft                    SPDY                          May 2011
-
-
            0x2d, 0x61, 0x75, 0x74, 0x68, 0x65, 0x6e, 0x74,   \\ - a u t h e n t
            0x69, 0x63, 0x61, 0x74, 0x65, 0x00, 0x00, 0x00,   \\ i c a t e - - -
            0x13, 0x70, 0x72, 0x6f, 0x78, 0x79, 0x2d, 0x61,   \\ - p r o x y - a
@@ -1640,6 +1617,14 @@ Internet-Draft                    SPDY                          May 2011
            0x65, 0x72, 0x00, 0x00, 0x00, 0x11, 0x74, 0x72,   \\ e r - - - - t r
            0x61, 0x6e, 0x73, 0x66, 0x65, 0x72, 0x2d, 0x65,   \\ a n s f e r - e
            0x6e, 0x63, 0x6f, 0x64, 0x69, 0x6e, 0x67, 0x00,   \\ n c o d i n g -
+
+
+
+Belshe & Peon           Expires November 2, 2011               [Page 29]
+
+Internet-Draft                    SPDY                          May 2011
+
+
            0x00, 0x00, 0x07, 0x75, 0x70, 0x67, 0x72, 0x61,   \\ - - - u p g r a
            0x64, 0x65, 0x00, 0x00, 0x00, 0x0a, 0x75, 0x73,   \\ d e - - - - u s
            0x65, 0x72, 0x2d, 0x61, 0x67, 0x65, 0x6e, 0x74,   \\ e r - a g e n t
@@ -1673,14 +1658,6 @@ Internet-Draft                    SPDY                          May 2011
            0x30, 0x39, 0x34, 0x31, 0x30, 0x34, 0x31, 0x31,   \\ 0 9 4 1 0 4 1 1
            0x34, 0x31, 0x32, 0x34, 0x31, 0x33, 0x34, 0x31,   \\ 4 1 2 4 1 3 4 1
            0x34, 0x34, 0x31, 0x35, 0x34, 0x31, 0x36, 0x34,   \\ 4 4 1 5 4 1 6 4
-
-
-
-Belshe & Peon           Expires November 2, 2011               [Page 30]
-
-Internet-Draft                    SPDY                          May 2011
-
-
            0x31, 0x37, 0x35, 0x30, 0x32, 0x35, 0x30, 0x34,   \\ 1 7 5 0 2 5 0 4
            0x35, 0x30, 0x35, 0x32, 0x30, 0x33, 0x20, 0x4e,   \\ 5 0 5 2 0 3 - N
            0x6f, 0x6e, 0x2d, 0x41, 0x75, 0x74, 0x68, 0x6f,   \\ o n - A u t h o
@@ -1696,6 +1673,14 @@ Internet-Draft                    SPDY                          May 2011
            0x31, 0x20, 0x55, 0x6e, 0x61, 0x75, 0x74, 0x68,   \\ 1 - U n a u t h
            0x6f, 0x72, 0x69, 0x7a, 0x65, 0x64, 0x34, 0x30,   \\ o r i z e d 4 0
            0x33, 0x20, 0x46, 0x6f, 0x72, 0x62, 0x69, 0x64,   \\ 3 - F o r b i d
+
+
+
+Belshe & Peon           Expires November 2, 2011               [Page 30]
+
+Internet-Draft                    SPDY                          May 2011
+
+
            0x64, 0x65, 0x6e, 0x34, 0x30, 0x34, 0x20, 0x4e,   \\ d e n 4 0 4 - N
            0x6f, 0x74, 0x20, 0x46, 0x6f, 0x75, 0x6e, 0x64,   \\ o t - F o u n d
            0x35, 0x30, 0x30, 0x20, 0x49, 0x6e, 0x74, 0x65,   \\ 5 0 0 - I n t e
@@ -1729,14 +1714,6 @@ Internet-Draft                    SPDY                          May 2011
            0x6d, 0x6c, 0x2c, 0x61, 0x70, 0x70, 0x6c, 0x69,   \\ m l - a p p l i
            0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x78,   \\ c a t i o n - x
            0x68, 0x74, 0x6d, 0x6c, 0x2b, 0x78, 0x6d, 0x6c,   \\ h t m l - x m l
-
-
-
-Belshe & Peon           Expires November 2, 2011               [Page 31]
-
-Internet-Draft                    SPDY                          May 2011
-
-
            0x2c, 0x74, 0x65, 0x78, 0x74, 0x2f, 0x70, 0x6c,   \\ - t e x t - p l
            0x61, 0x69, 0x6e, 0x2c, 0x74, 0x65, 0x78, 0x74,   \\ a i n - t e x t
            0x2f, 0x6a, 0x61, 0x76, 0x61, 0x73, 0x63, 0x72,   \\ - j a v a s c r
@@ -1753,6 +1730,13 @@ Internet-Draft                    SPDY                          May 2011
            0x2c, 0x65, 0x6e, 0x71, 0x3d, 0x30, 0x2e          \\ - e n q - 0 -
    };
 
+
+
+Belshe & Peon           Expires November 2, 2011               [Page 31]
+
+Internet-Draft                    SPDY                          May 2011
+
+
    The entire contents of the name/value header block is compressed
    using zlib.  There is a single zlib stream for all name value pairs
    in one direction on a connection.  SPDY uses a SYNC_FLUSH between
@@ -1765,6 +1749,22 @@ Internet-Draft                    SPDY                          May 2011
    default 15bits (a 32KB window) to more like 11bits (a 2KB window).
    The exact setting is chosen by the compressor, the decompressor will
    work with any setting.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
