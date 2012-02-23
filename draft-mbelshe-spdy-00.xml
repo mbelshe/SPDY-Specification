@@ -17,7 +17,7 @@
 
 <?rfc toc="yes" symrefs="yes"?>
 
-<rfc ipr="full3978" docName="draft-mbelshe-httpbis-spdy-00">
+<rfc ipr="trust200902" docName="draft-mbelshe-httpbis-spdy-00">
   <front>
     <title abbrev="SPDY">SPDY Protocol</title>
     <author initials="M." surname="Belshe" fullname="Mike Belshe">

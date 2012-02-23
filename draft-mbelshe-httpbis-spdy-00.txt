@@ -24,10 +24,8 @@ Abstract
 
 Status of this Memo
 
-   By submitting this Internet-Draft, each author represents that any
-   applicable patent or other IPR claims of which he or she is aware
-   have been or will be disclosed, and any of which he or she becomes
-   aware will be disclosed, in accordance with Section 6 of BCP 79.
+   This Internet-Draft is submitted in full conformance with the
+   provisions of BCP 78 and BCP 79.
 
    Internet-Drafts are working documents of the Internet Engineering
    Task Force (IETF).  Note that other groups may also distribute
@@ -41,20 +39,28 @@ Status of this Memo
 
    This Internet-Draft will expire on August 4, 2012.
 
+Copyright Notice
 
+   Copyright (c) 2012 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
 
-
-
-
-
-
-
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents
+   (http://trustee.ietf.org/license-info) in effect on the date of
+   publication of this document.  Please review these documents
+   carefully, as they describe your rights and restrictions with respect
 
 
 
 Belshe & Peon            Expires August 4, 2012                 [Page 1]
 
 Internet-Draft                    SPDY                          Feb 2012
+
+
+   to this document.  Code Components extracted from this document must
+   include Simplified BSD License text as described in Section 4.e of
+   the Trust Legal Provisions and are provided without warranty as
+   described in the Simplified BSD License.
 
 
 Table of Contents
@@ -99,12 +105,6 @@ Table of Contents
        3.2.3.  Authentication . . . . . . . . . . . . . . . . . . . . 36
      3.3.  Server Push Transactions . . . . . . . . . . . . . . . . . 37
        3.3.1.  Server implementation  . . . . . . . . . . . . . . . . 38
-       3.3.2.  Client implementation  . . . . . . . . . . . . . . . . 39
-   4.  Design Rationale and Notes . . . . . . . . . . . . . . . . . . 40
-     4.1.  Separation of Framing Layer and Application Layer  . . . . 40
-     4.2.  Error handling - Framing Layer . . . . . . . . . . . . . . 40
-     4.3.  One Connection Per Domain  . . . . . . . . . . . . . . . . 40
-     4.4.  Fixed vs Variable Length Fields  . . . . . . . . . . . . . 41
 
 
 
@@ -113,6 +113,12 @@ Belshe & Peon            Expires August 4, 2012                 [Page 2]
 Internet-Draft                    SPDY                          Feb 2012
 
 
+       3.3.2.  Client implementation  . . . . . . . . . . . . . . . . 39
+   4.  Design Rationale and Notes . . . . . . . . . . . . . . . . . . 40
+     4.1.  Separation of Framing Layer and Application Layer  . . . . 40
+     4.2.  Error handling - Framing Layer . . . . . . . . . . . . . . 40
+     4.3.  One Connection Per Domain  . . . . . . . . . . . . . . . . 40
+     4.4.  Fixed vs Variable Length Fields  . . . . . . . . . . . . . 41
      4.5.  Compression Context(s) . . . . . . . . . . . . . . . . . . 41
      4.6.  Unidirectional streams . . . . . . . . . . . . . . . . . . 42
      4.7.  Data Compression . . . . . . . . . . . . . . . . . . . . . 42
@@ -131,12 +137,6 @@ Internet-Draft                    SPDY                          Feb 2012
    10. Normative References . . . . . . . . . . . . . . . . . . . . . 48
    Appendix A.  Changes . . . . . . . . . . . . . . . . . . . . . . . 50
    Authors' Addresses . . . . . . . . . . . . . . . . . . . . . . . . 51
-   Intellectual Property and Copyright Statements . . . . . . . . . . 52
-
-
-
-
-
 
 
 
@@ -2853,60 +2853,4 @@ Authors' Addresses
 
 
 Belshe & Peon            Expires August 4, 2012                [Page 51]
-
-Internet-Draft                    SPDY                          Feb 2012
-
-
-Full Copyright Statement
-
-   Copyright (C) The IETF Trust (2012).
-
-   This document is subject to the rights, licenses and restrictions
-   contained in BCP 78, and except as set forth therein, the authors
-   retain all their rights.
-
-   This document and the information contained herein are provided on an
-   "AS IS" basis and THE CONTRIBUTOR, THE ORGANIZATION HE/SHE REPRESENTS
-   OR IS SPONSORED BY (IF ANY), THE INTERNET SOCIETY, THE IETF TRUST AND
-   THE INTERNET ENGINEERING TASK FORCE DISCLAIM ALL WARRANTIES, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY WARRANTY THAT THE USE OF
-   THE INFORMATION HEREIN WILL NOT INFRINGE ANY RIGHTS OR ANY IMPLIED
-   WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
-
-
-Intellectual Property
-
-   The IETF takes no position regarding the validity or scope of any
-   Intellectual Property Rights or other rights that might be claimed to
-   pertain to the implementation or use of the technology described in
-   this document or the extent to which any license under such rights
-   might or might not be available; nor does it represent that it has
-   made any independent effort to identify any such rights.  Information
-   on the procedures with respect to rights in RFC documents can be
-   found in BCP 78 and BCP 79.
-
-   Copies of IPR disclosures made to the IETF Secretariat and any
-   assurances of licenses to be made available, or the result of an
-   attempt made to obtain a general license or permission for the use of
-   such proprietary rights by implementers or users of this
-   specification can be obtained from the IETF on-line IPR repository at
-   http://www.ietf.org/ipr.
-
-   The IETF invites any interested party to bring to its attention any
-   copyrights, patents or patent applications, or other proprietary
-   rights that may cover technology that may be required to implement
-   this standard.  Please address the information to the IETF at
-   ietf-ipr@ietf.org.
-
-
-
-
-
-
-
-
-
-
-
-Belshe & Peon            Expires August 4, 2012                [Page 52]
 
