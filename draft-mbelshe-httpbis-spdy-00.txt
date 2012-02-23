@@ -3,9 +3,9 @@
 
 Network Working Group                                          M. Belshe
 Internet-Draft                                                     Twist
-Expires: November 2, 2011                                        R. Peon
+Expires: August 4, 2012                                          R. Peon
                                                              Google, Inc
-                                                                May 2011
+                                                                Feb 2012
 
 
                              SPDY Protocol
@@ -39,7 +39,7 @@ Status of this Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on November 2, 2011.
+   This Internet-Draft will expire on August 4, 2012.
 
 
 
@@ -52,9 +52,9 @@ Status of this Memo
 
 
 
-Belshe & Peon           Expires November 2, 2011                [Page 1]
+Belshe & Peon            Expires August 4, 2012                 [Page 1]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
 Table of Contents
@@ -108,9 +108,9 @@ Table of Contents
 
 
 
-Belshe & Peon           Expires November 2, 2011                [Page 2]
+Belshe & Peon            Expires August 4, 2012                 [Page 2]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
      4.5.  Compression Context(s) . . . . . . . . . . . . . . . . . . 41
@@ -164,9 +164,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011                [Page 3]
+Belshe & Peon            Expires August 4, 2012                 [Page 3]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
 1.  Overview
@@ -220,9 +220,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011                [Page 4]
+Belshe & Peon            Expires August 4, 2012                 [Page 4]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
    has not been a goal.  The framing layer is tailored to the needs of
@@ -276,9 +276,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011                [Page 5]
+Belshe & Peon            Expires August 4, 2012                 [Page 5]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
 2.  SPDY Framing Layer
@@ -332,9 +332,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011                [Page 6]
+Belshe & Peon            Expires August 4, 2012                 [Page 6]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
    Version: The version number of the SPDY protocol.  This document
@@ -388,9 +388,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011                [Page 7]
+Belshe & Peon            Expires August 4, 2012                 [Page 7]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
    length.  It is valid to have a zero-length data frame.
@@ -444,9 +444,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011                [Page 8]
+Belshe & Peon            Expires August 4, 2012                 [Page 8]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
 2.3.1.  Stream frames
@@ -500,9 +500,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011                [Page 9]
+Belshe & Peon            Expires August 4, 2012                 [Page 9]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
    (Section 2.3.6) state.
@@ -556,9 +556,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 10]
+Belshe & Peon            Expires August 4, 2012                [Page 10]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
 2.3.7.  Stream close
@@ -612,9 +612,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 11]
+Belshe & Peon            Expires August 4, 2012                [Page 11]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
    try to process compressed data so that errors which could be handled
@@ -668,9 +668,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 12]
+Belshe & Peon            Expires August 4, 2012                [Page 12]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
 +------------------------------------+
@@ -724,9 +724,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 13]
+Belshe & Peon            Expires August 4, 2012                [Page 13]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
    CREDENTIAL vector of the client certificate to be used for this
@@ -780,9 +780,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 14]
+Belshe & Peon            Expires August 4, 2012                [Page 14]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
    If an endpoint receives multiple SYN_REPLY frames for the same active
@@ -836,9 +836,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 15]
+Belshe & Peon            Expires August 4, 2012                [Page 15]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
       3 - REFUSED_STREAM.  Indicates that the stream was refused before
@@ -892,9 +892,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 16]
+Belshe & Peon            Expires August 4, 2012                [Page 16]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
    Persistence of SETTINGS ID/Value pairs is done on a per origin/IP
@@ -948,9 +948,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 17]
+Belshe & Peon            Expires August 4, 2012                [Page 17]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
          Value and return it in future SETTINGS frames sent from the
@@ -1004,9 +1004,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 18]
+Belshe & Peon            Expires August 4, 2012                [Page 18]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
          8 - SETTINGS_CLIENT_CERTIFICATE_VECTOR_SIZE allows the server
@@ -1060,9 +1060,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 19]
+Belshe & Peon            Expires August 4, 2012                [Page 19]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
    ID: A unique ID for this ping, represented as an unsigned 32 bit
@@ -1116,9 +1116,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 20]
+Belshe & Peon            Expires August 4, 2012                [Page 20]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
    +----------------------------------+
@@ -1172,9 +1172,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 21]
+Belshe & Peon            Expires August 4, 2012                [Page 21]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
 +------------------------------------+
@@ -1228,9 +1228,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 22]
+Belshe & Peon            Expires August 4, 2012                [Page 22]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
    Flow control in SPDY is implemented by a data transfer window kept by
@@ -1284,9 +1284,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 23]
+Belshe & Peon            Expires August 4, 2012                [Page 23]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
    window size for all streams is 64KB.  An endpoint can use the
@@ -1340,9 +1340,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 24]
+Belshe & Peon            Expires August 4, 2012                [Page 24]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
    the SSL server certificate presented in the initial handshake is
@@ -1396,9 +1396,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 25]
+Belshe & Peon            Expires August 4, 2012                [Page 25]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
    stored at this index, it will be overwritten.  The index is one
@@ -1452,9 +1452,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 26]
+Belshe & Peon            Expires August 4, 2012                [Page 26]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
    +------------------------------------+
@@ -1508,9 +1508,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 27]
+Belshe & Peon            Expires August 4, 2012                [Page 27]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
 2.6.10.1.  Compression
@@ -1564,9 +1564,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 28]
+Belshe & Peon            Expires August 4, 2012                [Page 28]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
            0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x6c, 0x6f,   \\ n t e n t - l o
@@ -1620,9 +1620,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 29]
+Belshe & Peon            Expires August 4, 2012                [Page 29]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
            0x00, 0x00, 0x07, 0x75, 0x70, 0x67, 0x72, 0x61,   \\ - - - u p g r a
@@ -1676,9 +1676,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 30]
+Belshe & Peon            Expires August 4, 2012                [Page 30]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
            0x64, 0x65, 0x6e, 0x34, 0x30, 0x34, 0x20, 0x4e,   \\ d e n 4 0 4 - N
@@ -1732,9 +1732,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 31]
+Belshe & Peon            Expires August 4, 2012                [Page 31]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
    The entire contents of the name/value header block is compressed
@@ -1788,9 +1788,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 32]
+Belshe & Peon            Expires August 4, 2012                [Page 32]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
 3.  HTTP Layering over SPDY
@@ -1844,9 +1844,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 33]
+Belshe & Peon            Expires August 4, 2012                [Page 33]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
    SYN_STREAMs from the remote, the GOAWAY will contain a last-stream-id
@@ -1900,9 +1900,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 34]
+Belshe & Peon            Expires August 4, 2012                [Page 34]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
       User-agents MUST support gzip compression.  Regardless of the
@@ -1956,9 +1956,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 35]
+Belshe & Peon            Expires August 4, 2012                [Page 35]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
       All header names must be lowercase.
@@ -2012,9 +2012,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 36]
+Belshe & Peon            Expires August 4, 2012                [Page 36]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
    To deal with this case, SPDY servers using Stateful Authentication
@@ -2068,9 +2068,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 37]
+Belshe & Peon            Expires August 4, 2012                [Page 37]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
    resource.
@@ -2124,9 +2124,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 38]
+Belshe & Peon            Expires August 4, 2012                [Page 38]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
    identity of the resource to be pushed).  The HEADERS frame must not
@@ -2180,9 +2180,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 39]
+Belshe & Peon            Expires August 4, 2012                [Page 39]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
 4.  Design Rationale and Notes
@@ -2236,9 +2236,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 40]
+Belshe & Peon            Expires August 4, 2012                [Page 40]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
    large numbers of concurrent connections on the server also does
@@ -2292,9 +2292,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 41]
+Belshe & Peon            Expires August 4, 2012                [Page 41]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
    case (no proxy), this fine because most requests are to the same
@@ -2348,9 +2348,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 42]
+Belshe & Peon            Expires August 4, 2012                [Page 42]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
 5.  Security Considerations
@@ -2404,9 +2404,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 43]
+Belshe & Peon            Expires August 4, 2012                [Page 43]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
 6.  Privacy Considerations
@@ -2460,9 +2460,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 44]
+Belshe & Peon            Expires August 4, 2012                [Page 44]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
 7.  Incompatibilities with SPDY draft #2
@@ -2516,9 +2516,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 45]
+Belshe & Peon            Expires August 4, 2012                [Page 45]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
 8.  Requirements Notation
@@ -2572,9 +2572,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 46]
+Belshe & Peon            Expires August 4, 2012                [Page 46]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
 9.  Acknowledgements
@@ -2628,9 +2628,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 47]
+Belshe & Peon            Expires August 4, 2012                [Page 47]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
 10.  Normative References
@@ -2684,9 +2684,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 48]
+Belshe & Peon            Expires August 4, 2012                [Page 48]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
    [UDELCOMPRESSION]
@@ -2740,9 +2740,9 @@ Internet-Draft                    SPDY                          May 2011
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 49]
+Belshe & Peon            Expires August 4, 2012                [Page 49]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
 Appendix A.  Changes
@@ -2796,9 +2796,9 @@ Appendix A.  Changes
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 50]
+Belshe & Peon            Expires August 4, 2012                [Page 50]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
 Authors' Addresses
@@ -2852,14 +2852,14 @@ Authors' Addresses
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 51]
+Belshe & Peon            Expires August 4, 2012                [Page 51]
 
-Internet-Draft                    SPDY                          May 2011
+Internet-Draft                    SPDY                          Feb 2012
 
 
 Full Copyright Statement
 
-   Copyright (C) The IETF Trust (2011).
+   Copyright (C) The IETF Trust (2012).
 
    This document is subject to the rights, licenses and restrictions
    contained in BCP 78, and except as set forth therein, the authors
@@ -2908,5 +2908,5 @@ Intellectual Property
 
 
 
-Belshe & Peon           Expires November 2, 2011               [Page 52]
+Belshe & Peon            Expires August 4, 2012                [Page 52]
 
