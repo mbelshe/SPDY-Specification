@@ -268,8 +268,8 @@
 +------------------------------------+
 |X| Associated-To-Stream-ID (31bits) |
 +------------------------------------+
-|  Pri | Unused    |                 |
-+------------------+                 |
+| Pri|Unused | Slot |                |
++-------------------+                |
 | Number of Name/Value pairs (int32) |   &lt;+
 +------------------------------------+    |
 |     Length of name (int32)         |    | This section is the "Name/Value
@@ -299,7 +299,9 @@
 
 <t>Priority: A 3-bit <xref target="StreamPriority">priority</xref> field.</t>
 
-<t>Unused: 13 bits of unused space, reserved for future use.</t>
+<t>Unused: 5 bits of unused space, reserved for future use.</t>
+
+<t>Slot: An 8 bit unsigned integer specifying the index in the server's CREDENTIAL vector of the client certificate to be used for this request. <xref target="CREDENTIAL">see CREDENTIAL frame</xref>.  The value 0 means no client certificate should be associated with this stream.</t>
 
 <t>Name/Value Header Block:  A set of name/value pairs carried as part of the SYN_STREAM.  <xref target="HeaderBlock">see Name/Value Header Block</xref>.</t>
 
@@ -603,10 +605,11 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
           </section>
 
           <section anchor="CREDENTIAL" title="CREDENTIAL">
-            <t>The CREDENTIAL control frame is used by the client to send additional client certificates to the server.  A SPDY client may decide to send requests for resources from different origins on the same SPDY session if it decides that that server handles both origins.  For example if the IP address associated with both hostnames matches and the SSL server certificate presented in the initial handshake is valid for both hostnames.  However, because the SSL connection can contain at most one client certificate, the client needs a mechanism to send additional client certificates to the server.</t>
+<t>The CREDENTIAL control frame is used by the client to send additional client certificates to the server.  A SPDY client may decide to send requests for resources from different origins on the same SPDY session if it decides that that server handles both origins.  For example if the IP address associated with both hostnames matches and the SSL server certificate presented in the initial handshake is valid for both hostnames.  However, because the SSL connection can contain at most one client certificate, the client needs a mechanism to send additional client certificates to the server.</t>
 
-            <t>The server is required to maintain a vector of client certificates, in addition to the client certificate presented during the SSL handshake.  When the client needs to send a client certificate to the server, it will send a CREDENTIAL frame that specifies both the index of the slot in which to store the certificate as well as the origin that the certificate should be used for.  The initial size of this vector must be 8.  The server may change the size of this vector by sending a SETTINGS frame with the setting SETTINGS_CLIENT_CERTIFICATE_VECTOR_SIZE value specified.  In the event that the new size is smaller than the current size, truncation occurs preserving lower-index slots as possible.  Note, these client certificates are always in addition to the client certificate presented during the TLS handshake.  All requests for the origin associated with the server name specified with the SNI extension must be associated with this certificate.  If a request is received by a server for an origin (different from that specified by SNI) that is not contained in the server's client certificate vector, the server must treat this request as having no client certificate associated with it. </t>
-			<t>TLS renegotiation with client authentication is incompatible with SPDY given the multiplexed nature of SPDY.  Specifically, imagine that the client has 2 requests outstanding to the server for two different pages (in different tabs).  When the renegotiation + client certificate request comes in, the browser is unable to determine which resource triggered the client certificate request, in order to prompt the user accordingly.</t>
+<t>The server is required to maintain a vector of client certificates associated with a SPDY session.  When the client needs to send a client certificate to the server, it will send a CREDENTIAL frame that specifies the index of the slot in which to store the certificate as well as proof that the client posesses the corresponding private key.  The initial size of this vector must be 8.  If the client provides a client certificate during the first TLS handshake, the contents of this certificate must be copied into the first slot (index 1) in the CREDENTIAL vector, though it may be overwritten by subsequent CREDENTIAL frames.  The server must exclusively use the CREDNETIAL vector when evaluating the client certificates associated with an origin.  The server may change the size of this vector by sending a SETTINGS frame with the setting SETTINGS_CLIENT_CERTIFICATE_VECTOR_SIZE value specified.  In the event that the new size is smaller than the current size, truncation occurs preserving lower-index slots as possible.</t>  
+
+<t>TLS renegotiation with client authentication is incompatible with SPDY given the multiplexed nature of SPDY.  Specifically, imagine that the client has 2 requests outstanding to the server for two different pages (in different tabs).  When the renegotiation + client certificate request comes in, the browser is unable to determine which resource triggered the client certificate request, in order to prompt the user accordingly.</t>
 
           <figure>
             <artwork>
@@ -615,10 +618,8 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 +----------------------------------+
 | flags (8)  |  Length (24 bits)   |
 +----------------------------------+
-|  Slot (16 bits) | Origin Len (16)|
-+----------------------------------+
-|              Origin              |
-+----------------------------------+
+|  Slot (16 bits) |                |
++-----------------+                |
 |      Proof Length (32 bits)      |
 +----------------------------------+
 |               Proof              |
@@ -630,14 +631,11 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
             </artwork>
           </figure>
 
-            <t>Slot: The index in the server's client certificate vector where this certificate should be stored.  If there is already a certificate stored at this index, it will be overwritten.</t>
-            <t>Origin: The origin string defined in RFC 6454 (http://tools.ietf.org/html/rfc6454).  
-For example: https://example.org or https://example.com:8080.</t>
-            <t>Proof: Cryptographic proof that the client has possession of the private key associated with the certificate.  The format is a TLS digitally-signed element (http://tools.ietf.org/html/rfc5246#section-4.7).  The signature algorithm must be the same as that used in the CertificateVerify message.  However, since the MD5+SHA1 signature type used in TLS 1.0 connections can not be correctly encoded in a digitally-signed element, SHA1 must be used when MD5+SHA1 was used in the SSL connection.  The signature is calculated over a 32 byte TLS extractor value (http://tools.ietf.org/html/rfc5705) with a label of "EXPORTER SPDY certificate proof" using the origin as context. ForRSA certificates the signature would be a PKCS#1 v1.5 signature. For ECDSA, it would be an ECDSA-Sig-Value (http://tools.ietf.org/html/rfc5480#appendix-A).  For a 1024-bit RSA key, the CREDENTIAL message would be ~500 bytes.
-</t>
-            <t>Certificate: The certificate chain, starting with the leaf certificate.  Each certificate must be encoded as a 32 bit length, followed by a DER encoded certificate.  The certificate must be of the same type (RSA, ECDSA, etc) as the client certificate associated with the SSL connection.</t>
-            <t>If the server receives a request for a resource with unacceptable credential (either missing or invalid), it must reply with a RST_STREAM frame with the status code INVALID_CREDENTIALS. Upon receipt of a RST_STREAM frame with INVALID_CREDENTIALS, the client should initiate a new stream directly to the requested origin and resend the request.  Note, SPDY does not allow the server to request different client authentication for different resources in the same origin.</t>
-            <t>If the server receives an invalid CREDENTIAL frame, it should respond with a GOAWAY frame and shutdown the session.  </t>
+<t>Slot: The index in the server's client certificate vector where this certificate should be stored.  If there is already a certificate stored at this index, it will be overwritten.  The index is one based, not zero based; zero is an invalid slot index.</t>
+<t>Proof: Cryptographic proof that the client has possession of the private key associated with the certificate.  The format is a TLS digitally-signed element (http://tools.ietf.org/html/rfc5246#section-4.7).  The signature algorithm must be the same as that used in the CertificateVerify message.  However, since the MD5+SHA1 signature type used in TLS 1.0 connections can not be correctly encoded in a digitally-signed element, SHA1 must be used when MD5+SHA1 was used in the SSL connection.  The signature is calculated over a 32 byte TLS extractor value (http://tools.ietf.org/html/rfc5705) with a label of "EXPORTER SPDY certificate proof" using the empty string as context. ForRSA certificates the signature would be a PKCS#1 v1.5 signature. For ECDSA, it would be an ECDSA-Sig-Value (http://tools.ietf.org/html/rfc5480#appendix-A).  For a 1024-bit RSA key, the CREDENTIAL message would be ~500 bytes.</t>
+<t>Certificate: The certificate chain, starting with the leaf certificate.  Each certificate must be encoded as a 32 bit length, followed by a DER encoded certificate.  The certificate must be of the same type (RSA, ECDSA, etc) as the client certificate associated with the SSL connection.</t>
+<t>If the server receives a request for a resource with unacceptable credential (either missing or invalid), it must reply with a RST_STREAM frame with the status code INVALID_CREDENTIALS. Upon receipt of a RST_STREAM frame with INVALID_CREDENTIALS, the client should initiate a new stream directly to the requested origin and resend the request.  Note, SPDY does not allow the server to request different client authentication for different resources in the same origin.</t>
+<t>If the server receives an invalid CREDENTIAL frame, it MUST respond with a GOAWAY frame and shutdown the session.  </t>
           </section>
 
           <section anchor="HeaderBlock" title="Name/Value Header Block">
