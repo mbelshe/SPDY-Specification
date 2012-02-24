@@ -452,7 +452,6 @@
   </list>
 </t>
 
-
 <t>Value: A 32-bit value.</t>
 
 <t>The message is intentionally extensible for future information which may improve client-server communications. The sender does not need to send every type of ID/value. It must only send those for which it has accurate values to convey. When multiple ID/value pairs are sent, they should be sent in order of lowest id to highest id.  A single SETTINGS frame MUST not contain multiple values for the same ID.  If the recipient of a SETTINGS frame discovers multiple values for the same ID, it MUST ignore all values except the first one.</t>
