@@ -419,18 +419,20 @@
 
 <t>Length: An unsigned 24-bit value representing the number of bytes after the length field. The total size of a SETTINGS frame is 8 bytes + length.</t>
 
-<t>Number of entries: A 32-bit value representing the number of ID/value pairs in this message.</t>
+<t>Number of entries: A 32-bit value representing the number of ID/value pairs in this message. </t>
 
-<t>ID: A 32-bit ID number, comprised of 8 bits of flags and 24 bits of unique ID.
-<list>
-  <t>ID.flags:
-  <list>
-    <t>FLAG_SETTINGS_PERSIST_VALUE (0x1):   When set, the sender of this SETTINGS frame is requesting that the recipient persist the ID/Value and return it in future SETTINGS frames sent from the sender to this recipient.  Because persistence is only implemented on the client, this flag is only sent by the server.</t>
-    <t>FLAG_SETTINGS_PERSISTED (0x2):  When set, the sender is notifying the recipient that this ID/Value pair was previously sent to the sender by the recipient with the FLAG_SETTINGS_PERSIST_VALUE, and the sender is returning it.  Because persistence is only implemented on the client, this flag is only sent by the client.</t>
-  </list>
-  </t>
-
-  <t>Defined IDs:
+<t>Each ID/value pair is as follows:
+          <figure>
+            <artwork>
+ +----------------------------------+
+ |      ID (24 bits)    | Flags (8) |
+ +----------------------------------+
+ |          Value (32 bits)         |
+ +----------------------------------+
+            </artwork>
+          </figure>
+</t>
+<t>ID: 24-bits in network byte order.  Defined IDs:
   <list>
 <t>1 - SETTINGS_UPLOAD_BANDWIDTH allows the sender to send its expected upload bandwidth on this channel. This number is an estimate. The value should be the integral number of kilobytes per second that the sender predicts as an expected maximum upload channel capacity.</t>
 <t>2 - SETTINGS_DOWNLOAD_BANDWIDTH allows the sender to send its expected download bandwidth on this channel. This number is an estimate. The value should be the integral number of kilobytes per second that the sender predicts as an expected maximum download channel capacity.</t>
@@ -441,9 +443,15 @@
 <t>7 - SETTINGS_INITIAL_WINDOW_SIZE allows the sender to inform the remote endpoint the initial window size (in bytes) for new streams.</t>
 <t>8 - SETTINGS_CLIENT_CERTIFICATE_VECTOR_SIZE allows the server to inform the client if the new size of the client certificate vector.</t>
   </list>
-  </t>
-</list>
 </t>
+
+<t>Flags: An 8 bit value.  Defined Flags:
+  <list>
+    <t>FLAG_SETTINGS_PERSIST_VALUE (0x1):   When set, the sender of this SETTINGS frame is requesting that the recipient persist the ID/Value and return it in future SETTINGS frames sent from the sender to this recipient.  Because persistence is only implemented on the client, this flag is only sent by the server.</t>
+    <t>FLAG_SETTINGS_PERSISTED (0x2):  When set, the sender is notifying the recipient that this ID/Value pair was previously sent to the sender by the recipient with the FLAG_SETTINGS_PERSIST_VALUE, and the sender is returning it.  Because persistence is only implemented on the client, this flag is only sent by the client.</t>
+  </list>
+</t>
+
 
 <t>Value: A 32-bit value.</t>
 
