@@ -32,11 +32,11 @@
         <email>fenix@google.com</email>
       </address>
     </author>
-    <date month="Feb" year="2012" />
+    <date month="February" year="2012" />
     <area>Applications</area>
     <keyword>HTTP</keyword>
     <abstract>
-      <t>This document describes SPDY, a protocol designed for low-latency transport of content over the World Wide Web.  SPDY introduces two layers of protocol.  The lower layer is a general purpose framing layer which can be used atop a reliable transport (likely TCP) for multiplexed, prioritized, and compressed data communication of many concurrent streams.  The upper layer of the protocol provides HTTP-like <xref target="RFC2616">RFC2616</xref> semantics for compatibility with existing HTTP application servers.</t>
+      <t>This document describes SPDY, a protocol designed for low-latency transport of content over the World Wide Web.  SPDY introduces two layers of protocol.  The lower layer is a general purpose framing layer which can be used atop a reliable transport (likely TCP) for multiplexed, prioritized, and compressed data communication of many concurrent streams.  The upper layer of the protocol provides HTTP-like semantics for compatibility with existing HTTP application servers.</t>
     </abstract>
   </front>
 
@@ -148,7 +148,7 @@
 
 <t>Data frame processing requirements:
 <list>
-<t>If an endpoint receives a data frame for a stream-id which is not open and the endpoint has not sent a <xref target="GOAWAY">GOAWAY</xref> frame, it MUST send issue a <xref target="StreamErrorHandler">stream error</xref> with the error code INVALID_STREAM for the stream-id.</t>
+<t>If an endpoint receives a data frame for a stream-id which is not open and the endpoint has not sent a <xref target="GOAWAY">GOAWAY</xref> frame, it MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the error code INVALID_STREAM for the stream-id.</t>
 <t>If the endpoint which created the stream receives a data frame before receiving a SYN_REPLY on that stream, it is a protocol error, and the recipient MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code PROTOCOL_ERROR for the stream-id.</t>
 <t>Implementors note: If an endpoint receives multiple data frames for invalid stream-ids, it MAY close the session.</t>
 </list>
@@ -905,7 +905,7 @@ const unsigned char SPDY_dictionary_txt[] = {
 <t>The first line of the request is unfolded into name/value pairs like other HTTP headers and MUST be present:
 <list>
 <t>":method" - the HTTP method for this request (e.g. "GET", "POST", "HEAD", etc)</t>
-<t>":path" - the url-path for this url with "/" prefixed. (See <xref target="RFC1738">RFC1738</xref>).  For example, for "http://www.google.com/search?q=dogs" the path would be "/search?q=dogs".</t>
+<t>":path" - the url-path for this url with "/" prefixed. (See <xref target="RFC3986">RFC3986</xref>).  For example, for "http://www.google.com/search?q=dogs" the path would be "/search?q=dogs".</t>
 <t>":version" - the HTTP version of this request (e.g. "HTTP/1.1")</t>
 </list>
 </t>
@@ -979,7 +979,7 @@ const unsigned char SPDY_dictionary_txt[] = {
 
 <t>Browsers receiving a pushed response MUST validate that the server is authorized to push the URL using the <xref target="RFC6454">browser same-origin</xref> policy.  For example, a SPDY connection to www.foo.com is generally not permitted to push a response for www.evil.com.</t>
 
-<t>If the browser accepts a pushed response (e.g. it does not send a RST_STREAM), the browser MUST attempt to cache the pushed response in same way that it would cache any other response.  This means validating the response headers and inserting into the disk cache.</t>
+<t>If the browser accepts a pushed response (e.g. it does not send a RST_STREAM), the browser MUST attempt to cache the pushed response in same way that it would cache any other response.  This means validating the response headers and inserting into the cache.</t>
 
 <t>Because pushed responses have no request, they have no request headers associated with them.  At the framing layer, SPDY pushed streams contain an "associated-stream-id" which indicates the requested stream for which the pushed stream is related.  The pushed stream inherits all of the headers from the associated-stream-id with the exception of ":host", ":scheme", and ":path", which are provided as part of the pushed response stream headers.  The browser MUST store these inherited and implied request headers with the cached resource.</t>
 
