@@ -619,7 +619,7 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
           <figure>
             <artwork>
 +----------------------------------+
-|1|000000000000001|0000000000001011|
+|1|000000000000001|0000000000001010|
 +----------------------------------+
 | flags (8)  |  Length (24 bits)   |
 +----------------------------------+
