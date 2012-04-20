@@ -7,6 +7,7 @@
   <!ENTITY RFC2285 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.2285.xml'>
   <!ENTITY RFC2616 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.2616.xml'>
   <!ENTITY RFC2617 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.2617.xml'>
+  <!ENTITY RFC3986 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.3986.xml'>
   <!ENTITY RFC4559 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.4559.xml'>
   <!ENTITY RFC4366 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.4366.xml'>
   <!ENTITY RFC5246 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.5246.xml'>
@@ -1157,6 +1158,7 @@ Here is a list of the major changes between this draft and draft #2.
       &RFC2285;
       &RFC2616;
       &RFC2617;
+      &RFC3986;
       &RFC4559;
       &RFC4366;
       &RFC5246;
