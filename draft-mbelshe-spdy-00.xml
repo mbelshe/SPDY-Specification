@@ -189,11 +189,11 @@
 <t>Once the stream is created, the creator may immediately send HEADERS or DATA frames for that stream, without needing to wait for the recipient to acknowledge.</t>
 
           <section title="Unidirectional streams">
-<t>When an endpoint creates a stream with the FLAG_UNIDIRECTIONAL flag set, it creates a unidirectional stream which the creating endpoint can use to send frames, but the receiving endpoint cannot.  The receiving endpoint is implicitly already in the <xref target="StreamHalfClose">half-closed</xref> state.</t>
+<t>When an endpoint creates a stream that includes an Associated-To-Stream-ID, it creates a unidirectional stream which the creating endpoint can use to send frames, but the receiving endpoint cannot.  The receiving endpoint is implicitly already in the <xref target="StreamHalfClose">half-closed</xref> state.</t>
           </section>
 
           <section title="Bidirectional streams">
-<t>SYN_STREAM frames which do not use the FLAG_UNIDIRECTIONAL flag are bidirectional streams.  Both endpoints can send data on a bi-directional stream.</t>
+<t>SYN_STREAM frames which do not include an Associated-To-Stream-ID are bidirectional streams.  Both endpoints can send data on a bi-directional stream.</t>
           </section>
         </section>
 
@@ -285,7 +285,6 @@
 <t>Flags: Flags related to this frame. Valid flags are:
 <list>
 <t>0x01 = FLAG_FIN - marks this frame as the last frame to be transmitted on this stream and puts the sender in the <xref target="StreamHalfClose">half-closed</xref> state.</t>
-<t>0x02 = FLAG_UNIDIRECTIONAL - a stream created with this flag puts the recipient in the <xref target="StreamHalfClose">half-closed</xref> state.</t>
 </list>
 </t>
 
@@ -987,7 +986,7 @@ const unsigned char SPDY_dictionary_txt[] = {
 <t>Implementation note:  With server push, it is theoretically possible for servers to push unreasonable amounts of content or resources to the user-agent.  Browsers MUST implement throttles to protect against unreasonable push attacks.</t>
 
         <section title="Server implementation">
-<t>When the server intends to push a resource to the user-agent, it opens a new stream by sending a unidirectional SYN_STREAM.  The SYN_STREAM MUST include an Associated-To-Stream-ID, and MUST set the FLAG_UNIDIRECTIONAL flag.  The SYN_STREAM MUST include headers for ":scheme", ":host", ":path", which represent the URL for the resource being pushed. Subsequent headers may follow in HEADERS frames. The purpose of the association is so that the user-agent can differentiate which request induced the pushed stream; without it, if the user-agent had two tabs open to the same page, each pushing unique content under a fixed URL, the user-agent would not be able to differentiate the requests.</t>
+<t>When the server intends to push a resource to the user-agent, it opens a new stream by sending a unidirectional SYN_STREAM.  The SYN_STREAM MUST include an Associated-To-Stream-ID, and MUST include headers for ":scheme", ":host", ":path", which represent the URL for the resource being pushed. Subsequent headers may follow in HEADERS frames. The purpose of the association is so that the user-agent can differentiate which request induced the pushed stream; without it, if the user-agent had two tabs open to the same page, each pushing unique content under a fixed URL, the user-agent would not be able to differentiate the requests.</t>
 
 <t>The Associated-To-Stream-ID must be the ID of an existing, open stream.  The reason for this restriction is to have a clear endpoint for pushed content.  If the user-agent requested a resource on stream 11, the server replies on stream 11.  It can push any number of additional streams to the client before sending a FLAG_FIN on stream 11.  However, once the originating stream is closed no further push streams may be associated with it.  The pushed streams do not need to be closed (FIN set) before the originating stream is closed, they only need to be created before the originating stream closes.</t>
 
@@ -1062,9 +1061,7 @@ const unsigned char SPDY_dictionary_txt[] = {
 <t>Alternatively, we've chosen the simple approach, which is to simply provide a flag for resetting the compression context.  For the common case (no proxy), this fine because most requests are to the same origin and we never need to reset the context.  For cases where we are using two different origins over a single SPDY session, we simply reset the compression state between each transition.</t>
       </section>
       <section title="Unidirectional streams">
-<t>Many readers notice that unidirectional streams are both a bit confusing in concept and also somewhat redundant.  If the recipient of a stream doesn't wish to send data on a stream, it could simply send a SYN_REPLY with the FLAG_FIN bit set.  The FLAG_UNIDIRECTIONAL is, therefore, not necessary.</t>
-
-<t>It is true that we don't need the UNIDIRECTIONAL markings.  It is added because it avoids the recipient of pushed streams from needing to send a set of empty frames (e.g. the SYN_STREAM w/ FLAG_FIN) which otherwise serve no purpose.</t>
+<t>Besides providing a clear endpoint for unidirectional streams, Associated-To-Stream-ID also avoids the recipient of pushed streams from needing to send a set of empty frames (e.g. the SYN_STREAM w/ FLAG_FIN) to signal that it doesn't wish to send data on the stream.</t>
       </section>
       <section title="Data Compression">
 <t>Generic compression of data portion of the streams (as opposed to compression of the headers) without knowing the content of the stream is redundant.  There is no value in compressing a stream which is already compressed.  Because of this, SPDY initially allowed data compression to be optional.  We included it because study of existing websites shows that many sites are not using compression as they should, and users suffer because of it.  We wanted a mechanism where, at the SPDY layer, site administrators could simply force compression - it is better to compress twice than to not compress.</t>
