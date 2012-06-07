@@ -299,7 +299,7 @@
 
 <t>Unused: 5 bits of unused space, reserved for future use.</t>
 
-<t>Slot: An 8 bit unsigned integer specifying the index in the server's CREDENTIAL vector of the client certificate to be used for this request. <xref target="CREDENTIAL">see CREDENTIAL frame</xref>.  The value 0 means no client certificate should be associated with this stream.</t>
+<t>Slot: An 8 bit unsigned integer specifying the index in the server's CREDENTIAL vector of the client certificate to be used for this request. <xref target="CREDENTIAL">see CREDENTIAL frame</xref>. If the stream is client-initiated, the value 0 means no client certificate should be associated with this stream. Otherwise, it represents the client certificate used for the stream that this stream is associated to.</t>
 
 <t>Name/Value Header Block:  A set of name/value pairs carried as part of the SYN_STREAM.  <xref target="HeaderBlock">see Name/Value Header Block</xref>.</t>
 
@@ -991,7 +991,9 @@ const unsigned char SPDY_dictionary_txt[] = {
 
 <t>The Associated-To-Stream-ID must be the ID of an existing, open stream.  The reason for this restriction is to have a clear endpoint for pushed content.  If the user-agent requested a resource on stream 11, the server replies on stream 11.  It can push any number of additional streams to the client before sending a FLAG_FIN on stream 11.  However, once the originating stream is closed no further push streams may be associated with it.  The pushed streams do not need to be closed (FIN set) before the originating stream is closed, they only need to be created before the originating stream closes.</t>
 
-<t>It is illegal for a server to push a resource with the Associated-To-Stream-ID of 0.</t>
+<t>To prevent a race condition with the client, the server must only use the client certificate of the associated stream when pushing resources.</t>
+
+<t>It is illegal for a server to push a resource with the Associated-To-Stream-ID of 0, or with a Slot that is not 0.</t>
 
 <t>To minimize race conditions with the client, the SYN_STREAM for the pushed resources MUST be sent prior to sending any content which could allow the client to discover the pushed resource and request it.</t>
 
