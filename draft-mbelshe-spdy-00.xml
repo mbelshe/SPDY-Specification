@@ -521,7 +521,7 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 <list>
 <t>0 - OK. This is a normal session teardown.</t>
 <t>1 - PROTOCOL_ERROR. This is a generic error, and should only be used if a more specific error is not available.</t>
-<t>11 - INTERNAL_ERROR.  This is a generic error which can be used when the implementation has internally failed, not due to anything in the protocol.</t>
+<t>2 - INTERNAL_ERROR.  This is a generic error which can be used when the implementation has internally failed, not due to anything in the protocol.</t>
 </list>
 </t>
         </section>
