@@ -71,7 +71,7 @@
 <t>server: The endpoint which did not initiate the SPDY session.</t>
 <t>session: A synonym for a connection.</t>
 <t>session error: An error on the SPDY session.</t>
-<t>stream: A bi-directional flow of bytes across a virtual channel within a SPDY session.</t>
+<t>stream: A potentially bi-directional flow of bytes across a virtual channel within a SPDY session.</t>
 <t>stream error: An error on an individual SPDY stream.</t>
 </list>
 </t>
@@ -82,29 +82,75 @@
       <section title="Session (Connections)">
 <t>The SPDY framing layer (or "session") runs atop a reliable transport layer such as <xref target="RFC0793">TCP</xref>. The client is the TCP connection initiator. SPDY connections are persistent connections.</t>
 
-<t>For best performance, it is expected that clients will not close open connections until the user navigates away from all web pages referencing a connection, or until the server closes the connection. Servers are encouraged to leave connections open for as long as possible, but can terminate idle connections if necessary.  When either endpoint closes the transport-level connection, it MUST first send a <xref target="GOAWAY">GOAWAY</xref> frame so that the endpoints can reliably determine if requests finished before the close.</t>
+<t>For best performance, it is expected that non-battery operated clients will leave open connections until the user navigates away from all web pages referencing the connection, or until the server closes the connection. Servers are encouraged to leave connections open for as long as possible, but can terminate idle connections if necessary.  When either endpoint closes the transport-level connection, it MUST first send a <xref target="GOAWAY">GOAWAY</xref> frame so that the endpoints can reliably determine if requests finished before the close. It is expected that battery-operated clients may have more involved heuristics as to when a connection should be closed.</t>
       </section>
-      <section title="Framing">
-<t>Once the connection is established, clients and servers exchange framed messages. There are two types of frames: <xref target="ControlFrames">control frames</xref> and <xref target="DataFrames">data frames</xref>.  Frames always have a common header which is 8 bytes in length.</t>
 
-<t>The first bit is a control bit indicating whether a frame is a control frame or data frame. Control frames carry a version number, a frame type, flags, and a length. Data frames contain the stream ID, flags, and the length for the payload carried after the common header. The simple header is designed to make reading and writing of frames easy.</t>
+      <section title="Framing">
+<t>Once the connection is established, clients and servers exchange framed messages. There are two types of frames: <xref target="ControlFrames">control frames</xref> and <xref target="DataFrames">data frames</xref>.  All frames have a common header which is 8 bytes in length.</t>
+
+<t>The first bit of any frame indicates whether a frame is a control frame or data frame. Control frames carry a version number, a frame type, flags, and a length. Data frames contain the stream ID, flags, and the length for the payload carried after the common header. The simple header is designed to make reading and writing of frames easy.</t>
 
 <t>All integer values, including length, version, and type, are in network byte order.  SPDY does not enforce alignment of types in dynamically sized frames.</t>
+        <section anchor="NotationalConventions" title="Notational Conventions for Framing">
+<t> In SPDY, since everything is defined to be in network byte-order, the most significant bit of any field is the "leftmost" in any diagram.
+<list>
+<t> "+" denotes the boundary of a byte (synonomous with octet in this document)</t>
+<t> "-" denotes a bit </t>
+<t> "=" denotes an unknown number of bits, typically bounded by one of the fields in the frame definition</t>
+<t> "|" denotes field separation, which may or may not be on a byte boundary</t>
+<t> "->" at the end of a line indicates that the structure is not yet fully described</t>
+<t> "(N)" indicates that the field is N bits long</t>
+<t> "[Foo]" advises that the field is the Foo field for that frame</t>
+<t> "X" represents a reserved bit. It MUST be zeroed</t>
+<t> A number preceeded by "0x" is a hexidecimal number</t>
+<t> A number which is not preceeded by "0x" is to be interpreted as binary</t>
+<t> The numbers above the boxes indicate the byte-offset from the start of that frame or section, as appropriate</t>
+</list>
+</t>
+<t> As an example:
+<figure>
+<artwork>
+     0         1         2       3
++--|------+--|------+--------+--------+
+|10|[PRI]0xEE|XXXXXX| Len(16)         |
++--|------+--|------+--------+--------+
+</artwork>
+</figure>
+This describes a frame which starts with 1 as the MSB, a 0 in the second most significant bit, followed by 0b11101110 (or 0xEE) as the "PRI" field, followed by 6 reserved bits, which will have all be zeroed, followed by a Len field which is 16 bits long.
+In other words, first two bytes would be: 0b10111011 0b10000000, followed by the Len field.
+</t>
+
+<t>
+Another example.  In this case, a single byte is represented with the most significant bit a 0, the second most significant bit a 1, the next bit the 'K' field, the next bit the 'L' field, and the next 4 bits are reserved and must be zeros. An indeterminate (presumably defined elsewhere) amount of data follows and ends on a byte boundary.
+<figure>
+<artwork>
+      0
++--|-|-|----+========+
+|01|K|L|XXXX|  data  |
++--|-|-|----+========+
+</artwork>
+</figure>
+</t>
+
+
+        </section>
         <section anchor="ControlFrames" title="Control frames">
 <figure>
   <artwork>
-+----------------------------------+
-|C| Version(15bits) | Type(16bits) |
-+----------------------------------+
-| Flags (8)  |  Length (24 bits)   |
-+----------------------------------+
-|               Data               |
-+----------------------------------+
+     0        1        2        3        4        5        6        7
++-|-------+--------+--------+--------+--------+--------+--------+--------+
+|C| Version(15)    |    Type(16)     |Flags(8)| Length(24)               | ->
++-|-------+--------+--------+--------+--------+--------+--------+--------+
+
+   8..N
++========+
+|  Data  |
++========+
   </artwork>
 </figure>
 <t>Control bit: The 'C' bit is a single bit indicating if this is a control message. For control frames this value is always 1.</t>
 
-<t>Version: The version number of the SPDY protocol.  This document describes SPDY version 3.</t>
+<t>Version: The version number of the SPDY protocol.  This document describes SPDY version 4.</t>
 
 <t>Type: The type of control frame. See <xref target="ControlFrameTypes">Control Frames</xref> for the complete list of control frames.</t>
 
@@ -124,13 +170,15 @@
         <section anchor="DataFrames" title="Data frames">
 <figure>
   <artwork>
-+----------------------------------+
-|C|       Stream-ID (31bits)       |
-+----------------------------------+
-| Flags (8)  |  Length (24 bits)   |
-+----------------------------------+
-|               Data               |
-+----------------------------------+
+     0        1        2        3        4        5        6        7
++-|-------+--------+--------+--------+--------+--------+--------+--------+
+|0| Stream ID (31)                   |Flags(8)| Length(24)               | ->
++-|-------+--------+--------+--------+--------+--------+--------+--------+
+
+   8..N
++========+
+|  Data  |
++========+
   </artwork>
 </figure>
 <t>Control bit: For data frames this value is always 0.</t>
@@ -234,7 +282,7 @@
 <t>The SPDY framing layer has only two types of errors, and they are always handled consistently.  Any reference in this specification to "issue a session error" refers to <xref target="SessionErrorHandler"></xref>.  Any reference to "issue a stream error" refers to <xref target="StreamErrorHandler"></xref>.</t>
 
         <section anchor="SessionErrorHandler" title="Session Error Handling">
-<t>A session error is any error which prevents further processing of the framing layer or which corrupts the session compression state.  When a session error occurs, the endpoint encountering the error MUST first send a <xref target="GOAWAY">GOAWAY</xref> frame with the stream id of most recently received stream from the remote endpoint, and the error code for why the session is terminating.  After sending the GOAWAY frame, the endpoint MUST close the TCP connection.</t>
+<t>A session error is any error which prevents further processing of the framing layer or which corrupts the session compression state.  When a session error occurs, the endpoint encountering the error MAY send a <xref target="SETTINGS">SETTINGS</xref> frame. Whether or not a <xref target="SETTINGS">SETTINGS</xref> frame is sent, the endpoint encountering the error MUST send a <xref target="GOAWAY">GOAWAY</xref> frame with the stream id of most recently received stream from the remote endpoint, and the error code for why the session is terminating.  After sending the GOAWAY frame, the endpoint MUST close the TCP connection.</t>
 
 <t>Note that the session compression state is dependent upon both endpoints always processing all compressed data.  If an endpoint partially processes a frame containing compressed data without updating compression state properly, future control frames which use compression will be always be errored.  Implementations SHOULD always try to process compressed data so that errors which could be handled as stream errors do not become session errors.</t>
 
@@ -253,32 +301,39 @@
       </section>
 
       <section anchor="ControlFrameTypes" title="Control frame types">
+        <texttable align='left'>
+          <ttcol align='center'>Type-field value</ttcol>
+          <ttcol align='center'>Control Frame-type</ttcol>
+          <c> 0x1</c> <c> <xref target="SYN_STREAM">SYN_STREAM</xref></c>
+          <c> 0x2</c> <c> <xref target="SYN_REPLY">SYN_REPLY</xref></c>
+          <c> 0x3</c> <c> <xref target="RST_STREAM">RST_STREAM</xref></c>
+          <c> 0x4</c> <c> <xref target="SETTINGS">SETTINGS</xref></c>
+          <c> 0x6</c> <c> <xref target="PING">PING</xref></c>
+          <c> 0x7</c> <c> <xref target="GOAWAY">GOAWAY</xref></c>
+          <c> 0x8</c> <c> <xref target="HEADERS">HEADERS</xref></c>
+          <c> 0x9</c> <c> <xref target="WINDOW_UPDATE">WINDOW_UPDATE</xref></c>
+          <c> 0xa</c> <c> <xref target="CREDENTIAL">CREDENTIAL</xref></c>
+        </texttable>
+        <t> Shared components of several control frames: <xref target="HeaderBlock">Name/Value Header Block</xref></t>
+
         <section anchor="SYN_STREAM" title="SYN_STREAM">
 <t>The SYN_STREAM control frame allows the sender to asynchronously create a stream between the endpoints.  See <xref target="StreamCreation">Stream Creation</xref></t>
           <figure>
             <artwork>
-+------------------------------------+
-|1|    version    |         1        |
-+------------------------------------+
-|  Flags (8)  |  Length (24 bits)    |
-+------------------------------------+
-|X|           Stream-ID (31bits)     |
-+------------------------------------+
-|X| Associated-To-Stream-ID (31bits) |
-+------------------------------------+
-| Pri|Unused | Slot |                |
-+-------------------+                |
-| Number of Name/Value pairs (int32) |   &lt;+
-+------------------------------------+    |
-|     Length of name (int32)         |    | This section is the "Name/Value
-+------------------------------------+    | Header Block", and is compressed.
-|           Name (string)            |    |
-+------------------------------------+    |
-|     Length of value  (int32)       |    |
-+------------------------------------+    |
-|          Value   (string)          |    |
-+------------------------------------+    |
-|           (repeats)                |   &lt;+
+     0        1        2        3        4        5        6        7
++-|-------+--------+--------+--------+--------+--------+--------+--------+
+|1| Version(15)    |     [Type]   0x1|Flags(8)| Length(24)               | ->
++-|-------+--------+--------+--------+--------+--------+--------+--------+
+
+     8        9        10       11       12       13       14       15
++-|-------+--------+--------+--------+-|-------+--------+--------+--------+
+|X| Stream Id(31)                    |X| Associated-To-Stream-ID(31)      | ->
++-|-------+--------+--------+--------+-|-------+--------+--------+--------+
+
+    16       17               18..N
++---|-----+--------+=========================+
+|Pri|XXXXX| HG(8)  | Name/Value Header Block |
++---|-----+--------+=========================+
             </artwork>
           </figure>
 
@@ -298,7 +353,7 @@
 
 <t>Unused: 5 bits of unused space, reserved for future use.</t>
 
-<t>Slot: An 8 bit unsigned integer specifying the index in the server's CREDENTIAL vector of the client certificate to be used for this request. <xref target="CREDENTIAL">see CREDENTIAL frame</xref>. If the stream is client-initiated, the value 0 means no client certificate should be associated with this stream. Otherwise, it represents the client certificate used for the stream that this stream is associated to.</t>
+<t>HG: (Header Group) An 8 bit unsigned integer specifying the header group for this stream. See the <xref target="HeaderBlock">Name/Value Header Block</xref> description for details about how this is to be interpreted.</t>
 
 <t>Name/Value Header Block:  A set of name/value pairs carried as part of the SYN_STREAM.  <xref target="HeaderBlock">see Name/Value Header Block</xref>.</t>
 
@@ -310,24 +365,15 @@
 <t>SYN_REPLY indicates the acceptance of a stream creation by the recipient of a SYN_STREAM frame.</t>
           <figure>
             <artwork>
-+------------------------------------+
-|1|    version    |         2        |
-+------------------------------------+
-|  Flags (8)  |  Length (24 bits)    |
-+------------------------------------+
-|X|           Stream-ID (31bits)     |
-+------------------------------------+
-| Number of Name/Value pairs (int32) |   &lt;+
-+------------------------------------+    |
-|     Length of name (int32)         |    | This section is the "Name/Value
-+------------------------------------+    | Header Block", and is compressed.
-|           Name (string)            |    |
-+------------------------------------+    |
-|     Length of value  (int32)       |    |
-+------------------------------------+    |
-|          Value   (string)          |    |
-+------------------------------------+    |
-|           (repeats)                |   &lt;+
+     0        1        2        3        4        5        6        7
++-|-------+--------+--------+--------+--------+--------+--------+--------+
+|1| Version(15)    | [Type]       0x2|Flags(8)| Length(24)               | ->
++-|-------+--------+--------+--------+--------+--------+--------+--------+
+
+     8        9        10       11         12..N
++--------+-|-------+--------+--------+--------+=========================+
+| HG(8)  |X| Stream Id(31)                    | Name/Value Header Block |
++--------+-|-------+--------+--------+--------+=========================+
             </artwork>
           </figure>
 
@@ -352,15 +398,15 @@
 <t>The RST_STREAM frame allows for abnormal termination of a stream.  When sent by the creator of a stream, it indicates the creator wishes to cancel the stream.  When sent by the recipient of a stream, it indicates an error or that the recipient did not want to accept the stream, so the stream should be closed.</t>
           <figure>
             <artwork>
-+----------------------------------+
-|1|   version    |         3       |
-+----------------------------------+
-| Flags (8)  |         8           |
-+----------------------------------+
-|X|          Stream-ID (31bits)    |
-+----------------------------------+
-|          Status code             |
-+----------------------------------+
+     0        1        2        3        4        5        6        7
++-|-------+--------+--------+--------+--------+--------+--------+--------+
+|1| Version(15)    | [Type]       0x3|Flags(8)| [Length]              0x8| ->
++-|-------+--------+--------+--------+--------+--------+--------+--------+
+
+     8        9        10       11       12       13       14       15
++-|-------+--------+--------+--------+--------+--------+--------+--------+
+|X| Stream-ID(31)                    | Status-Code(32)                   |
++-|-------+--------+--------+--------+--------+--------+--------+--------+
             </artwork>
           </figure>
 <t>Flags: Flags related to this frame. RST_STREAM does not define any flags.  This value must be 0.</t>
@@ -395,15 +441,15 @@
 <t>Persistence of SETTINGS ID/Value pairs is done on a per origin/IP pair (the "origin" is the set of scheme, host, and port from the URI.  See <xref target="RFC6454"></xref>).  That is, when a client connects to a server, and the server persists settings within the client, the client SHOULD return the persisted settings on future connections to the same origin AND IP address and TCP port. Clients MUST NOT request servers to use the persistence features of the SETTINGS frames, and servers MUST ignore persistence related flags sent by a client.</t>
           <figure>
             <artwork>
-+----------------------------------+
-|1|   version    |         4       |
-+----------------------------------+
-| Flags (8)  |  Length (24 bits)   |
-+----------------------------------+
-|         Number of entries        |
-+----------------------------------+
-|          ID/Value Pairs          |
-|             ...                  |
+     0        1        2        3        4        5        6        7
++-|-------+--------+--------+--------+--------+--------+--------+--------+
+|1| Version(15)    | [Type]       0x4|Flags(8)| Length(24)               | ->
++-|-------+--------+--------+--------+--------+--------+--------+--------+
+
+     8        9        10       11       12..n
++--------+--------+--------+--------+================+
+| Number-of-Entries(32)             | ID/Value-Pairs |
++--------+--------+--------+--------+================+
             </artwork>
           </figure>
 <t>Control bit: The control bit is always 1 for this message.</t>
@@ -421,11 +467,10 @@
 <t>Each ID/value pair is as follows:
           <figure>
             <artwork>
- +----------------------------------+
- | Flags(8) |      ID (24 bits)     |
- +----------------------------------+
- |          Value (32 bits)         |
- +----------------------------------+
+     0        1        2        3        4        5        6        7
++--------+--------+--------+--------+--------+--------+--------+--------+
+|Flags(8)| ID(24)                   | Value(32)                         |
++--------+--------+--------+--------+--------+--------+--------+--------+
             </artwork>
           </figure>
 </t>
@@ -461,13 +506,15 @@
 <t>The PING control frame is a mechanism for measuring a minimal round-trip time from the sender.  It can be sent from the client or the server.  Recipients of a PING frame should send an identical frame to the sender as soon as possible (if there is other pending data waiting to be sent, PING should take highest priority).  Each ping sent by a sender should use a unique ID.</t>
           <figure>
             <artwork>
-+----------------------------------+
-|1|   version    |         6       |
-+----------------------------------+
-| 0 (flags) |     4 (length)       |
-+----------------------------------|
-|            32-bit ID             |
-+----------------------------------+
+     0        1        2        3        4        5        6        7
++-|-------+--------+--------+--------+--------+--------+--------+--------+
+|1| Version(15)    | [Type]       0x6|XXXXXXXX| [Length]              0x4| ->
++-|-------+--------+--------+--------+--------+--------+--------+--------+
+
+     8        9        10       11
++--------+--------+--------+--------+
+| ID(32)                            |
++--------+--------+--------+--------+
             </artwork>
           </figure>
 <t>Control bit: The control bit is always 1 for this message.</t>
@@ -496,15 +543,15 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 <t>After sending a GOAWAY message, the sender must ignore all SYN_STREAM frames for new streams.</t>
           <figure>
             <artwork>
-+----------------------------------+
-|1|   version    |         7       |
-+----------------------------------+
-| 0 (flags) |     8 (length)       |
-+----------------------------------|
-|X|  Last-good-stream-ID (31 bits) |
-+----------------------------------+
-|          Status code             |
-+----------------------------------+
+     0        1        2        3        4        5        6        7
++-|-------+--------+--------+--------+--------+--------+--------+--------+
+|1| Version(15)    |     [Type]   0x7|XXXXXXXX|  [Length]             0x8| ->
++-|-------+--------+--------+--------+--------+--------+--------+--------+
+
+     8        9        10       11       12       13       14       15
++-|-------+--------+--------+--------+--------+--------+--------+--------+
+|X| Last-Good-Stream-ID(31)          |          Status-Code(32)          |
++-|-------+--------+--------+--------+--------+--------+--------+--------+
             </artwork>
           </figure>
 <t>Control bit: The control bit is always 1 for this message.</t>
@@ -527,27 +574,24 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
         </section>
 
         <section anchor="HEADERS" title="HEADERS">
-<t>The HEADERS frame augments a stream with additional headers. It may be optionally sent on an existing stream at any time.  Specific application of the headers in this frame is application-dependent.  The name/value header block within this frame is compressed.</t>
+<t> The HEADERS frame augments a group of streams or an individual stream with additional metadata by providing an opportunity to send a new <xref target="HeaderBlock">Name/Value Header Block</xref> associated with the stream</t>
+<t> Please see <xref target="HeaderBlock">Name/Value Header Block</xref> for further details about how it is to be interpreted.</t>
+<t>Here is the format of a headers frame and headers block:</t>
           <figure>
             <artwork>
-+------------------------------------+
-|1|   version     |          8       |
-+------------------------------------+
-| Flags (8)  |   Length (24 bits)    |
-+------------------------------------+
-|X|          Stream-ID (31bits)      |
-+------------------------------------+
-| Number of Name/Value pairs (int32) |   &lt;+
-+------------------------------------+    |
-|     Length of name (int32)         |    | This section is the "Name/Value
-+------------------------------------+    | Header Block", and is compressed.
-|           Name (string)            |    |
-+------------------------------------+    |
-|     Length of value  (int32)       |    |
-+------------------------------------+    |
-|          Value   (string)          |    |
-+------------------------------------+    |
-|           (repeats)                |   &lt;+
+     0        1        2        3        4        5        6        7
++-|-------+--------+--------+--------+--------+--------+--------+--------+
+|1| Version(15)    | [Type]       0x8|Flags(8)| Length(24)               | ->
++-|-------+--------+--------+--------+--------+--------+--------+--------+
+
+     8        9        10       11
++-|-------+--------+--------+--------+
+|X| Stream-ID(31)                    | ->
++-|-------+--------+--------+--------+
+
++=========================+
+| Name/Value Header Block |
++=========================+
             </artwork>
           </figure>
 <t>Flags: Flags related to this frame. Valid flags are:
@@ -644,24 +688,204 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
           </section>
 
           <section anchor="HeaderBlock" title="Name/Value Header Block">
+
+<t>A Name/Value Header Block augments the streams or group of streams identified by the <xref target="SYN_STREAM">SYN_STREAM</xref>, <xref target="HEADERS">HEADERS</xref>, or <xref target="SYN_REPLY">SYN_REPLY</xref> frame stream with additional metadata.
+This metadata is assumed to be layered: All streams of a particular group have all of a group's headers, which are then overridden by stream headers.
+ For HTTP layers, this metadata is interpreted as headers. It may be optionally sent on an existing stream at any time.   Specific application of the headers in this frame is application-dependent.  The name/value header block within this frame is compressed.</t>
+<t>It is expected that this scheme will achieve similar compression to the algorithm available in previous versions of SPDY for most requests, though the first request may be larger.</t>
+
+<t>
+Two levels of state are persisted between requests:
+<list>
+  <t>Connection level headers</t>
+  <t>Group      level headers</t>
+</list>
+</t>
+
+<t>
+At the connection level, a single hash-map of token-index to key-pair is maintained. Data in the connection-level hashmap applies to every stream on the connection.
+At the group level, a hash-map of token-index to key-pair is maintained for each defined group. Data in a group-level hashmap applies only to streams that have been assigned to that group.
+The assignment of a grouping is decided by the stream initiator, and is subject to constraints as defined in SETTINGS.
+</t>
+
+<t>These constraints are:
+<list>
+<t>TotalHeaderStorageSize :  default(16k)</t>
+<t>MaxHeaderGroups: default(1)</t>
+<t>MaxEntriesInTable: default(64)</t>
+</list>
+</t>
+
+<t> It is expected that either party will set these to larger values immediately upon connection establishment.</t>
+
+<t> The token-indexes for any hash-map are not required to be contiguous; the hash-map may be sparse.</t>
+<t>A token-index in one table has no meaning to the other; The address space for each is separate.</t>
+
+
+<t> Each request may also include key,value pairs which are not stored.</t>
+
+<t> The set of headers for any individual stream is the union of these, with the group headers overriding the connection headers, and any individually provided stream headers overriding both the group and connection headers.</t>
+
+<t> Thus, a stream which is part of group 'G' on connection 'C' will have headers as computed with the following pseudo-code:</t>
+
+<figure>
+<artwork>
+def compute_headers(stream):
+  headers = {}
+  for {key, value} in connection_headers[C]:
+    headers[key] = value
+  for {key, value} in stream_group_headers[G]:
+    headers[key] = value
+  for {key, value} in headers_frame:
+    headers[key] = value
+  return headers
+</artwork>
+</figure>
+
+<t>A smart implementation will be able to interpret a headers frame without reconstructing the headers, and thus be able to represent and interpret headers with less memory and CPU.</t>
+
+
             <t>The Name/Value Header Block is found in the SYN_STREAM, SYN_REPLY
             and HEADERS control frames, and shares a common format:</t>
-          <figure>
+            <figure>
             <artwork>
-+------------------------------------+
-| Number of Name/Value pairs (int32) |
-+------------------------------------+
-|     Length of name (int32)         |
-+------------------------------------+
-|           Name (string)            |
-+------------------------------------+
-|     Length of value  (int32)       |
-+------------------------------------+
-|          Value   (string)          |
-+------------------------------------+
-|           (repeats)                |
+
++--------+--------+=====+
+| Num Ops(16)     | Ops |    &lt;- This is all gzip compressed.
++--------+--------+=====+
             </artwork>
-          </figure>
+            </figure>
+<t>
+
+The entire Name/Value Header Block is compressed with gzip. The sender may choose to use whatever level of compression works best, which may be uncompressed.
+An implementation should be able to easily write an uncompressed block which is inflatable with the gzip library with minimal effort and complexity if this is necessary, though the user's experience may possibly be impacted.
+Please see RFC 1952 for a description of the gzip container, and RFC 1951 for a description of its DEFLATE payload. For any connection, there is one gzip context for decompressing, and one gzip context for compressing.
+</t>
+
+
+
+<t>
+All Name/Value Ops share a common flag byte defined like so:
+</t>
+
+            <figure>
+            <artwork>
++--|-|-|----+
+|OP|K|L|XXXX|
++--|-|-|----+
+            </artwork>
+            </figure>
+
+<t>
+<list>
+<t>OP - Opcode field. One of 0x0, 0x1, or 0x2.</t>
+<t> K - IsKey field. One of 0x0 or 0x1. Indicates whether or not we're addressing a key or value.</t>
+<t> L - Level field. One of 0x0 or 0x1. Indicates for certain operations which level of headers table is being modified.</t>
+<t> X   Reserved</t>
+</list>
+</t>
+
+<t>
+The Opcode field indicates the type of operation.
+
+  0x0 indicates that the data will not be stored, and two string literals will follow
+      The Level and Key fields are ignored in this case.
+  0x1 indicates the data which follows should be stored into the specified table entry.
+      The table entry is found by examining the Level field, and selecting the table appropriate, then examining the IsKey field, and selecting either the key or value entry.
+  0x2 indicates that the specified table entry should me modified by truncating the tail of the current entry to the length specified and then appending the provided string.
+      Arguably this operation renders 0x1 redundant, but it would take up more bytes and so we leave in 0x1 for now.
+</t>
+
+
+<t>
+The Level field encodes the headers overlay-level being selected by the current frame.
+Valid Level fields are 0x0, and 0x1.
+
+  0x0 is for the current stream group
+  0x1 is for the connection
+
+The IsKey field indicates whether the following string value represents a key or value
+  0x0 indicates the stored string is for a value
+  0x1 indicates the stored string is for a key
+</t>
+
+
+
+<t>
+Detail of an operation with an opcode of 0x0:
+</t>
+            <figure>
+            <artwork>
+
+     0        1        2        3       4..k
++--|------+--------+--------+--------+========+
+|00|XXXXXX| Key String Len(24)       | String | ->
++--|------+--------+--------+--------+========+
+
+   k+1       k+2     k+3     k+4..n
++--------+--------+--------+========+
+| Value String Len(24)     | String |
++--------+--------+--------+========+
+            </artwork>
+            </figure>
+
+
+<t>
+Detail of an operation with an opcode of 0x1:
+
+An operation with an Opcode field of 0x1 indicates that the field encodes a replacement to a key or value field of a line in the headers table designated by the L field.
+
+If the 'K' (IsKey) field is 0x0, the subsequent string length and string represents a value.
+If the 'K' (IsKey) field is 0x1, the subsequent string length and string represent a key.
+If the 'L' (Level) field is 0x0, the header table for the stream group is modified.
+If the 'L' (Level) field ix 0x1, the header table for the connection is modified.
+</t>
+
+            <figure>
+            <artwork>
+      0         1        2        3        4        5
++--|-|-|----+--------+--------+--------+--------+--------+
+|01|K|L|XXXX| Token Index (16)| String Len(24)           | ->
++--|-|-|----+--------+--------+--------+--------+--------+
+
+   6..n
++========+
+| String |
++========+
+            </artwork>
+            </figure>
+
+<t>
+If the token-index refers to an index that is already in use, the string transmitted here replaces it.
+
+
+Keys must always be stored before the associated value is stored. If a value is stored before the key, the recipient MUST issue a session error (Section 2.4.1) with the status code PROTOCOL_ERROR.
+
+If 'K' field is 0x0 and the specified header table does not yet have a key associated with that token-index, the recipient MUST issue a session error (Section 2.4.1) with the status code PROTOCOL_ERROR.
+
+If String Length field is zero, this indicates that the line at the referenced token-index should be removed from the specified table.
+
+
+The same entry in any table should be modified at most once in any HEADERS block. If an entry is modified more than once in a HEADERS block, the recipient MUST issue a session error (Section 2.4.1) with the status code PROTOCOL_ERROR.
+
+
+An operation with an Op field of 0x2 indicates that the field encodes a truncate-and-append to the pre-existing table value. If no value exists, it should instead be inserted into the table at the specified position.
+If a value is being set, and no key has been set, the recipient MUST issue a session error (Section 2.4.2) with the status code PROTOCOL_ERROR.
+</t>
+
+            <figure>
+            <artwork>
+      0         1        2        3        4        5        6        7
++--|-|-|----+--------+--------+--------+--------+--------+--------+--------+
+|10|K|L|XXXX| Truncate To(16) | Token Index(16) | String Len (24)          | ->
++--|-|-|----+--------+--------+--------+--------+--------+--------+--------+
+
+   8..N
++========+
+| String |
++========+
+            </artwork>
+            </figure>
 
 <t>Number of Name/Value pairs: The number of repeating name/value pairs following this field.</t>
 
@@ -872,6 +1096,121 @@ const unsigned char SPDY_dictionary_txt[] = {
 
 <t>Implementation notes: the compression engine can be tuned to favor speed or size. Optimizing for size increases memory use and CPU consumption.  Because header blocks are generally small, implementors may want to reduce the window-size of the compression engine from the default 15bits (a 32KB window) to more like 11bits (a 2KB window).  The exact setting is chosen by the compressor, the decompressor will work with any setting.</t>
           </section>
+          <section anchor="HeaderBlockExample" title="Header Block Example">
+          <t> This example only expresses what the client-side would send and how the other side would interpret it. Since the protocol is symmetric, this is true for any sender of a headers-block and any receiver of a headers block, and so is equivalent for both sides of the connection.</t>
+<figure>
+<artwork>
+Request 1 (for index.html):
+SYN_STREAM 1, stream-group (G)=0
+  Header-block:
+  Store(0x1): level(C),index(0),k: ":method"
+  Store(0x1): level(C),index(0),v: "GET"
+  Store(0x1): level(C),index(1),k: ":version"
+  Store(0x1): level(C),index(1),v: "HTTP/1.1"
+  Store(0x1): level(C),index(2),k: "user-agent"
+  Store(0x1): level(C),index(2),v: "blah blah browser version blah blah"
+  Store(0x1): level(C),index(3),k: "accept-encoding"
+  Store(0x1): level(C),index(3),v: "sdch, bzip, compress"
+  Store(0x1): level(G),index(0),k: ":host"
+  Store(0x1): level(G),index(0),v: "www.foo.com"
+  Store(0x1): level(G),index(1),k: "cookie"
+  Store(0x1): level(G),index(1),v: "SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJHBLA"
+  Store(0x1): level(G),index(2),k: ":path"
+  Store(0x1): level(G),index(2),v: "/index.html"
+  Store(0x1): level(G),index(3),k: "date"
+  Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:43 2012"
+
+At this point the connection headers table looks like this:
+  0: ":method", "GET"
+  1: ":version", "HTTP/1.1"
+  2: "user-agent", "blah blah browser version blah blah"
+  3: "accept-encoding", "sdch, bzip, compress"
+
+The stream-group table for group zero looks like this:
+  0: ":host", "www.foo.com"
+  1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;BLAJHBLA"
+  2: ":path", "/index.html"
+  3: "date", "Wed Jul 18 11:50:43 2012"
+
+Request 1 (on stream 1) would look like the following if forwarded on HTTP/1.1:
+  GET /index.html HTTP/1.1
+  host: www.foo.com
+  date: Wed Jul 18 11:50:43 2012
+  cookie: SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJHBLA
+  user-agent: blah blah browser version blah blah
+  accept-encoding: sdch, bzip, compress
+
+
+Request 2 (for index.js):
+SYN_STREAM 3, stream-group (G)=0
+  Header-block:
+  Store(0x1): level(G),index(2),v: "/index.js"
+  Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:44 2012"
+
+At this point the connection headers table is unchanged:
+  0: ":method", "GET"
+  1: ":version", "HTTP/1.1"
+  2: "user-agent", "blah blah browser version blah blah"
+  3: "accept-encoding", "sdch, bzip, compress"
+
+The stream-group table for group zero looks like this:
+  0: ":host", "www.foo.com"
+  1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;BLAJHBLA"
+  2: ":path", "/index.js"
+  3: "date", "Wed Jul 18 11:50:44 2012"
+Both the path and the date have changed.
+
+Request 2 (on stream 3) would look like the following if forwarded on HTTP/1.1:
+  GET /index.js HTTP/1.1
+  host: www.foo.com
+  date: Wed Jul 18 11:50:44 2012
+  cookie: SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJHBLA
+  user-agent: blah blah browser version blah blah
+  accept-encoding: sdch, bzip, compress
+
+
+Request 3 (for index.css):
+SYN_STREAM 5, stream-group (G)=0
+  Header-block:
+  Store(0x1): level(G),index(2),v: "/index.css"
+  Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:44 PDT 2012"
+
+Connection level-headers are implied.
+Stream-group level headers are implied.
+
+For this example, using TaCo (truncate and concatenate) wasn't useful.
+If the user, however, changes the cookie on the next request...
+
+Request 3 (for somepage.html):
+SYN_STREAM 5, stream-group (G)=0
+  Header-block:
+  Store(0x1): level(G),index(2),v: "/somepage.html"
+  TaCo(0x1): level(G),index(1),v,TruncTo(40),"FOOBLA"
+
+At this point the connection headers table remains unchanged.
+  0: ":method", "GET"
+  1: ":version", "HTTP/1.1"
+  2: "user-agent", "blah blah browser version blah blah"
+  3: "accept-encoding", "sdch, bzip, compress"
+
+The stream-group table for group zero looks like this:
+  0: ":host", "www.foo.com"
+  1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;FOOBLA"
+  2: ":path", "/somepate.html"
+Both the path and the date have changed.
+
+Request 3 (on stream 5) would look like the following if forwarded on HTTP/1.1:
+  GET /somepage.html HTTP/1.1
+  host: www.foo.com
+  date: Wed Jul 18 11:50:44 2012
+  cookie: SOMELONGSTRINGTHATISMOSTLYOPAQUE;FOOBLA
+  user-agent: blah blah browser version blah blah
+  accept-encoding: sdch, bzip, compress
+
+</artwork>
+</figure>
+          </section>
+
         </section>
       </section>
     </section>
@@ -1109,22 +1448,17 @@ const unsigned char SPDY_dictionary_txt[] = {
       </section>
     </section>
 
-    <section title="Incompatibilities with SPDY draft #2">
+    <section title="Incompatibilities with SPDY draft #3">
       <t>
-Here is a list of the major changes between this draft and draft #2.
+Here is a list of the major changes between this draft #3 and this draft
 <list>
-<t>Addition of flow control</t>
-<t>Increased 16 bit length fields in SYN_STREAM and SYN_REPLY to 32 bits.</t>
-<t>Changed definition of compression for DATA frames</t>
-<t>Updated compression dictionary</t>
-<t>Fixed off-by-one on the compression dictionary for headers</t>
-<t>Increased priority field from 2bits to 3bits.</t>
-<t>Removed NOOP frame</t>
-<t>Split the request "url" into "scheme", "host", and "path"</t>
-<t>Added the requirement that POSTs contain content-length.</t>
-<t>Removed wasted 16bits of unused space from the end of the SYN_REPLY and HEADERS frames.</t>
-<t>Fixed bug: Priorities were described backward (0 was lowest instead of highest).</t>
-<t>Fixed bug: Name/Value header counts were duplicated in both the Name Value header block and also the containing frame.</t>
+<t>DONE: Different header compression technique which uses less CPU for proxies and which should result in higher compression</t>
+
+<t>DONE: Significant modifications to the header frame</t>
+<t>ONGOING: Modification of server push; addition of PUSH_PROMISE frame</t>
+<t>ONGOING: Definition of cert-data push</t>
+<t>ONGOING: Definition of name-resolution push</t>
+<t>ONGOING: Modification of flow-control; allow two-levels of flow control so as to allow greater stream concurrency safely</t>
 </list>
       </t>
     </section>
@@ -1143,7 +1477,7 @@ Here is a list of the major changes between this draft and draft #2.
         Adam Langley, Wan-Teh Chang, Jim Morrison, Mark Nottingham, Alyssa Wilk,
         Costin Manolache, William Chan, Vitaliy Lvin, Joe Chan, Adam Barth,
         Ryan Hamilton, Gavin Peters, Kent Alstad, Kevin Lindsay, Paul Amer,
-        Fan Yang, Jonathan Leighton
+        Fan Yang, Jonathan Leighton, Alex Strom
       </t>
     </section>
   </middle>
