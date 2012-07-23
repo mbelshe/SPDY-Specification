@@ -353,7 +353,7 @@ Overview</h3>
 <a name="rfc.section.1.1"></a><h3>1.1.&nbsp;
 Document Organization</h3>
 
-<p>The SPDY Specification is split into parts: <a class='info' href='#FramingLayer'>a framing layer<span> (</span><span class='info'>SPDY Framing Layer</span><span>)</span></a>, which multiplexes a TCP connection into independent, length-prefixed frames, and <a class='info' href='#HTTPLayer'>an HTTP layer<span> (</span><span class='info'>HTTP Layering over SPDY</span><span>)</span></a>, which specifies the mechanism for overlaying HTTP request/response pairs on top of the framing layer. While some of the framing layer concepts are isolated from the HTTP layer, building a generic framing layer has not been a goal. The framing layer is tailored to the needs of the HTTP protocol and server push. It is fully expected that other protocols such as WebSockets may end up represented on top of the base framing layer in the future.
+<p>The SPDY Specification is split into two parts: <a class='info' href='#FramingLayer'>a framing layer<span> (</span><span class='info'>SPDY Framing Layer</span><span>)</span></a>, which multiplexes a TCP connection into independent, length-prefixed frames, and <a class='info' href='#HTTPLayer'>an HTTP layer<span> (</span><span class='info'>HTTP Layering over SPDY</span><span>)</span></a>, which specifies the mechanism for overlaying HTTP request/response pairs on top of the framing layer. While some of the framing layer concepts are isolated from the HTTP layer, building a generic framing layer has not been a goal. The framing layer is tailored to the needs of the HTTP protocol and server push.
 </p>
 <a name="anchor2"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
@@ -421,11 +421,11 @@ Notational Conventions for Framing</h3>
 </p>
 <p> "-" denotes a bit 
 </p>
+<p> "=" denotes an unknown number of bits, typically bounded by one of the fields in the frame definition
+</p>
 <p> "|" denotes field separation, which may or may not be on a byte boundary
 </p>
 <p> "->" at the end of a line indicates that the structure is not yet fully described
-</p>
-<p> "=" denotes an unknown number of bits, typically bounded by one of the fields in the frame definition
 </p>
 <p> "(N)" indicates that the field is N bits long
 </p>
@@ -439,7 +439,9 @@ Notational Conventions for Framing</h3>
 </p>
 <p> The numbers above the boxes indicate the byte-offset from the start of that frame or section, as appropriate
 </p>
-</blockquote>
+</blockquote><p>
+
+</p>
 <p> As an example:
 </p>
 <div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
@@ -449,8 +451,20 @@ Notational Conventions for Framing</h3>
 +--|------+--|------+--------+--------+
 </pre></div><p>
 
-This describes a frame which starts with 1 as the MSB, a 0 in the second most significant bit, followed by 0b11101110 (or 0xEE) as the "PRI" field, followed by 6 reserved bits, which should all be zeroed, followed by a Len field which is 16 bits long.
+This describes a frame which starts with 1 as the MSB, a 0 in the second most significant bit, followed by 0b11101110 (or 0xEE) as the "PRI" field, followed by 6 reserved bits, which will have all be zeroed, followed by a Len field which is 16 bits long.
 In other words, first two bytes would be: 0b10111011 0b10000000, followed by the Len field.
+
+</p>
+<p>
+Another example.  In this case, a single byte is represented with the most significant bit a 0, the second most significant bit a 1, the next bit the 'K' field, the next bit the 'L' field, and the next 4 bits are reserved and must be zeros. An indeterminate (presumably defined elsewhere) amount of data follows and ends on a byte boundary.
+</p>
+<div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
+      0
++--|-|-|----+========+
+|01|K|L|XXXX|  data  |
++--|-|-|----+========+
+</pre></div><p>
+
 
 </p>
 <a name="ControlFrames"></a><br /><hr />
@@ -659,7 +673,7 @@ Error Handling</h3>
 <a name="rfc.section.2.4.1"></a><h3>2.4.1.&nbsp;
 Session Error Handling</h3>
 
-<p>A session error is any error which prevents further processing of the framing layer or which corrupts the session compression state.  When a session error occurs, the endpoint encountering the error MUST first send a <a class='info' href='#GOAWAY'>GOAWAY<span> (</span><span class='info'>GOAWAY</span><span>)</span></a> frame with the stream id of most recently received stream from the remote endpoint, and the error code for why the session is terminating.  After sending the GOAWAY frame, the endpoint MUST close the TCP connection.
+<p>A session error is any error which prevents further processing of the framing layer or which corrupts the session compression state.  When a session error occurs, the endpoint encountering the error MAY send a <a class='info' href='#SETTINGS'>SETTINGS<span> (</span><span class='info'>SETTINGS</span><span>)</span></a> frame. Whether or not a <a class='info' href='#SETTINGS'>SETTINGS<span> (</span><span class='info'>SETTINGS</span><span>)</span></a> frame is sent, the endpoint encountering the error MUST send a <a class='info' href='#GOAWAY'>GOAWAY<span> (</span><span class='info'>GOAWAY</span><span>)</span></a> frame with the stream id of most recently received stream from the remote endpoint, and the error code for why the session is terminating.  After sending the GOAWAY frame, the endpoint MUST close the TCP connection.
 </p>
 <p>Note that the session compression state is dependent upon both endpoints always processing all compressed data.  If an endpoint partially processes a frame containing compressed data without updating compression state properly, future control frames which use compression will be always be errored.  Implementations SHOULD always try to process compressed data so that errors which could be handled as stream errors do not become session errors.
 </p>
@@ -685,7 +699,50 @@ Data flow</h3>
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
 <a name="rfc.section.2.6"></a><h3>2.6.&nbsp;
 Control frame types</h3>
+<table class="full" align="left" border="0" cellpadding="2" cellspacing="2">
+<col align="center"><col align="center">
+<tr><th align="center">Type-field value</th><th align="center">Control Frame-type</th></tr>
+<tr>
+<td align="center"> 0x1</td>
+<td align="center"> <a class='info' href='#SYN_STREAM'>SYN_STREAM<span> (</span><span class='info'>SYN_STREAM</span><span>)</span></a></td>
+</tr>
+<tr>
+<td align="center"> 0x2</td>
+<td align="center"> <a class='info' href='#SYN_REPLY'>SYN_REPLY<span> (</span><span class='info'>SYN_REPLY</span><span>)</span></a></td>
+</tr>
+<tr>
+<td align="center"> 0x3</td>
+<td align="center"> <a class='info' href='#RST_STREAM'>RST_STREAM<span> (</span><span class='info'>RST_STREAM</span><span>)</span></a></td>
+</tr>
+<tr>
+<td align="center"> 0x4</td>
+<td align="center"> <a class='info' href='#SETTINGS'>SETTINGS<span> (</span><span class='info'>SETTINGS</span><span>)</span></a></td>
+</tr>
+<tr>
+<td align="center"> 0x6</td>
+<td align="center"> <a class='info' href='#PING'>PING<span> (</span><span class='info'>PING</span><span>)</span></a></td>
+</tr>
+<tr>
+<td align="center"> 0x7</td>
+<td align="center"> <a class='info' href='#GOAWAY'>GOAWAY<span> (</span><span class='info'>GOAWAY</span><span>)</span></a></td>
+</tr>
+<tr>
+<td align="center"> 0x8</td>
+<td align="center"> <a class='info' href='#HEADERS'>HEADERS<span> (</span><span class='info'>HEADERS</span><span>)</span></a></td>
+</tr>
+<tr>
+<td align="center"> 0x9</td>
+<td align="center"> <a class='info' href='#WINDOW_UPDATE'>WINDOW_UPDATE<span> (</span><span class='info'>WINDOW_UPDATE</span><span>)</span></a></td>
+</tr>
+<tr>
+<td align="center"> 0xa</td>
+<td align="center"> <a class='info' href='#CREDENTIAL'>CREDENTIAL<span> (</span><span class='info'>CREDENTIAL</span><span>)</span></a></td>
+</tr>
+</table>
+<br clear="all" />
 
+<p> Shared components of several control frames: <a class='info' href='#HeaderBlock'>Name/Value Header Block<span> (</span><span class='info'>Name/Value Header Block</span><span>)</span></a>
+</p>
 <a name="SYN_STREAM"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
 <a name="rfc.section.2.6.1"></a><h3>2.6.1.&nbsp;
@@ -703,10 +760,10 @@ SYN_STREAM</h3>
 |X| Stream Id(31)                    |X| Associated-To-Stream-ID(31)      | -&gt;
 +-|-------+--------+--------+--------+-|-------+--------+--------+--------+
 
-    16       17..N
-+---|-----+===============+
-|Pri|XXXXX| Headers Block |
-+---|-----+===============+
+    16       17               18..N
++---|-----+--------+=========================+
+|Pri|XXXXX| HG(8)  | Name/Value Header Block |
++---|-----+--------+=========================+
 </pre></div>
 <p>Flags: Flags related to this frame. Valid flags are:
 </p>
@@ -726,7 +783,7 @@ SYN_STREAM</h3>
 </p>
 <p>Unused: 5 bits of unused space, reserved for future use.
 </p>
-<p>Slot: An 8 bit unsigned integer specifying the index in the server's CREDENTIAL vector of the client certificate to be used for this request. <a class='info' href='#CREDENTIAL'>see CREDENTIAL frame<span> (</span><span class='info'>CREDENTIAL</span><span>)</span></a>. If the stream is client-initiated, the value 0 means no client certificate should be associated with this stream. Otherwise, it represents the client certificate used for the stream that this stream is associated to.
+<p>HG: (Header Group) An 8 bit unsigned integer specifying the header group for this stream. See the <a class='info' href='#HeaderBlock'>Name/Value Header Block<span> (</span><span class='info'>Name/Value Header Block</span><span>)</span></a> description for details about how this is to be interpreted.
 </p>
 <p>Name/Value Header Block:  A set of name/value pairs carried as part of the SYN_STREAM.  <a class='info' href='#HeaderBlock'>see Name/Value Header Block<span> (</span><span class='info'>Name/Value Header Block</span><span>)</span></a>.
 </p>
@@ -741,13 +798,13 @@ SYN_REPLY</h3>
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
      0        1        2        3        4        5        6        7
 +-|-------+--------+--------+--------+--------+--------+--------+--------+
-|1| Version(15)    |     [Type]   0x2|Flags(8)| Length(24)               | -&gt;
+|1| Version(15)    | [Type]       0x2|Flags(8)| Length(24)               | -&gt;
 +-|-------+--------+--------+--------+--------+--------+--------+--------+
 
      8        9        10       11         12..N
-+-|-------+--------+--------+--------+===============+
-|X| Stream Id(31)                    | Headers Block |
-+-|-------+--------+--------+--------+===============+
++--------+-|-------+--------+--------+--------+=========================+
+| HG(8)  |X| Stream Id(31)                    | Name/Value Header Block |
++--------+-|-------+--------+--------+--------+=========================+
 </pre></div>
 <p>Flags: Flags related to this frame. Valid flags are:
 </p>
@@ -776,12 +833,12 @@ RST_STREAM</h3>
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
      0        1        2        3        4        5        6        7
 +-|-------+--------+--------+--------+--------+--------+--------+--------+
-|1| Version(15)    |     [Type]   0x3|Flags(8)|  [Length]             0x8| -&gt;
+|1| Version(15)    | [Type]       0x3|Flags(8)| [Length]              0x8| -&gt;
 +-|-------+--------+--------+--------+--------+--------+--------+--------+
 
      8        9        10       11       12       13       14       15
 +-|-------+--------+--------+--------+--------+--------+--------+--------+
-|X| Stream-ID(31)                    |          Status-Code(32)          |
+|X| Stream-ID(31)                    | Status-Code(32)                   |
 +-|-------+--------+--------+--------+--------+--------+--------+--------+
 </pre></div>
 <p>Flags: Flags related to this frame. RST_STREAM does not define any flags.  This value must be 0.
@@ -833,7 +890,7 @@ SETTINGS</h3>
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
      0        1        2        3        4        5        6        7
 +-|-------+--------+--------+--------+--------+--------+--------+--------+
-|1| Version(15)    |     [Type]   0x4|Flags(8)| Length(24)               | -&gt;
+|1| Version(15)    | [Type]       0x4|Flags(8)| Length(24)               | -&gt;
 +-|-------+--------+--------+--------+--------+--------+--------+--------+
 
      8        9        10       11       12..n
@@ -911,7 +968,7 @@ PING</h3>
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
      0        1        2        3        4        5        6        7
 +-|-------+--------+--------+--------+--------+--------+--------+--------+
-|1| Version(15)    |     [Type]   0x6|XXXXXXXX| [Length]              0x4| -&gt;
+|1| Version(15)    | [Type]       0x6|XXXXXXXX| [Length]              0x4| -&gt;
 +-|-------+--------+--------+--------+--------+--------+--------+--------+
 
      8        9        10       11
@@ -949,7 +1006,7 @@ GOAWAY</h3>
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
      0        1        2        3        4        5        6        7
 +-|-------+--------+--------+--------+--------+--------+--------+--------+
-|1| Version(15)    |     [Type]   0x7|Flags(8)|  [Length]             0x8| -&gt;
+|1| Version(15)    |     [Type]   0x7|XXXXXXXX|  [Length]             0x8| -&gt;
 +-|-------+--------+--------+--------+--------+--------+--------+--------+
 
      8        9        10       11       12       13       14       15
@@ -984,54 +1041,15 @@ GOAWAY</h3>
 <a name="rfc.section.2.6.7"></a><h3>2.6.7.&nbsp;
 HEADERS</h3>
 
-<p>The HEADERS frame augments a group of streams or individual stream with additional metadata. This metadata is assumed to be layered: All streams of a particular group have all of a group's headers, which are then overridden by stream headers.  For HTTP layers, this metadata is interpreted as headers. It may be optionally sent on an existing stream at any time.   Specific application of the headers in this frame is application-dependent.  The name/value header block within this frame is compressed.
+<p> The HEADERS frame augments a group of streams or an individual stream with additional metadata by providing an opportunity to send a new <a class='info' href='#HeaderBlock'>Name/Value Header Block<span> (</span><span class='info'>Name/Value Header Block</span><span>)</span></a> associated with the stream
 </p>
-<p>It is expected that this scheme will achieve similar compression to the algorithm available in previous versions of SPDY for most requests, though the first request may be larger.
+<p> Please see <a class='info' href='#HeaderBlock'>Name/Value Header Block<span> (</span><span class='info'>Name/Value Header Block</span><span>)</span></a> for further details about how it is to be interpreted.
+</p>
+<p>Here is the format of a headers frame and headers block:
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-
-We'll maintain two levels of state between requests
-  Connection level headers
-  Group      level headers
-
-At the connection level, a single hash-map of token-index to key-pair is maintained. Data in the connection-level hashmap applies to every stream on the connection.
-At the group level, a hash-map of token-index to key-pair is maintained for each defined group. Data in a group-level hashmap applies only to streams that have been assigned to that group.
-The assignment of a grouping is decided by the stream initiator, and is subject to constraints as defined in SETTINGS.
-
-These constraints are:
-  TotalHeaderStorageSize :  default(16k)
-  MaxHeaderGroups: default(1)
-  MaxEntriesInTable: default(64)
-
-It is expected that either party will set these to larger values immediately upon connection establishment.
-
-The token-indexes for any hash-map are not required to be contiguous; the hash-map may be sparse.
-A token-index in one table has no meaning to the other; The address space for each is separate.
-
-
-Each request may also include key,value pairs which are not stored.
-
-The set of headers for any individual stream is the union of these, with the group headers overriding the connection headers, and any individually provided stream headers overriding both the group and connection headers.
-
-Thus, a stream which is part of group 'G' on connection 'C' will have headers as computed with the following pseudo-code:
-
-def compute_headers(stream):
-  headers = {}
-  for {key, value} in connection_headers[C]:
-    headers[key] = value
-  for {key, value} in stream_group_headers[G]:
-    headers[key] = value
-  for {key, value} in headers_frame:
-    headers[key] = value
-  return headers
-
-A smart implementation will be able to interpret a headers frame without reconstructing the headers, and thus be able to represent and interpret headers with less memory and CPU.
-
-
-
-Here is the format of a headers frame and headers block:
      0        1        2        3        4        5        6        7
 +-|-------+--------+--------+--------+--------+--------+--------+--------+
-|1| Version(15)    |     [Type]   0x8|Flags(8)| Length(24)               | -&gt;
+|1| Version(15)    | [Type]       0x8|Flags(8)| Length(24)               | -&gt;
 +-|-------+--------+--------+--------+--------+--------+--------+--------+
 
      8        9        10       11
@@ -1039,11 +1057,9 @@ Here is the format of a headers frame and headers block:
 |X| Stream-ID(31)                    | -&gt;
 +-|-------+--------+--------+--------+
 
-+===============+
-| Headers Block |
-+===============+
-
-
++=========================+
+| Name/Value Header Block |
++=========================+
 </pre></div>
 <p>Flags: Flags related to this frame. Valid flags are:
 </p>
@@ -1064,29 +1080,19 @@ Here is the format of a headers frame and headers block:
 <a name="rfc.section.2.6.8"></a><h3>2.6.8.&nbsp;
 WINDOW_UPDATE</h3>
 
-<p>The WINDOW_UPDATE control frame is used to implement per stream and per group flow control in SPDY. Though flow control in SPDY is per hop, that is, only between the two endpoints of a SPDY connection, a flow control group exists both to allow for proxies to indicate on one side about shared resources on the other side, and also to safely allow for asynchronous creation of a large number of sender streams. If there are one or more intermediaries between the client and the origin server, flow control signals are not explicitly forwarded by the intermediaries. (However, throttling of data transfer by any recipient may have the effect of indirectly propagating flow control information upstream back to the original sender.) Flow control only applies to the data portion of data frames. Recipients must buffer all control frames. If a recipient fails to buffer an entire control frame, it MUST issue a <a class='info' href='#StreamErrorHandler'>stream error<span> (</span><span class='info'>Stream Error Handling</span><span>)</span></a> with the status code FLOW_CONTROL_ERROR for the stream.
+<p>The WINDOW_UPDATE control frame is used to implement per stream flow control in SPDY. Flow control in SPDY is per hop, that is, only between the two endpoints of a SPDY connection. If there are one or more intermediaries between the client and the origin server, flow control signals are not explicitly forwarded by the intermediaries. (However, throttling of data transfer by any recipient may have the effect of indirectly propagating flow control information upstream back to the original sender.) Flow control only applies to the data portion of data frames. Recipients must buffer all control frames. If a recipient fails to buffer an entire control frame, it MUST issue a <a class='info' href='#StreamErrorHandler'>stream error<span> (</span><span class='info'>Stream Error Handling</span><span>)</span></a> with the status code FLOW_CONTROL_ERROR for the stream.
 </p>
-<p>Flow control in SPDY is implemented by a data transfer window kept by the sender both for each stream, and for each flow control group. A stream is a member of exactly one flow control group. A data transfer window is a simple uint32 which represents bytes a sender is allowed to send. A sender may send min(group data transfer window, stream data transfer window) bytes at any time. Whenever bytes have been sent, the data transfer window for the stream is decremented by the amount of bytes sent and the group data transfer window is similarly decremented by the number of bytes sent. When the window size becomes less than or equal to 0, the sender must pause transmitting data frames. The receiver may send a WINDOW_UPDATE to the sender to notify the sender that it has consumed the data and has freed up buffer space in which it may receive more data.
-
-When a new stream is created, its stream data transfer window is assigned a default transfer window size, and its group is assigned the default group of '0'.
-Upon creation of the connection, the default group (0) is assigned the default group window transfer size.
-
-  This window size is a measure of the buffering capability of the recipient. The group window should be used to indicate a shared resource, for example, the total amount of buffers the server wishes to use for the incoming connection, or, for a proxy, the total amount of available space in an outgoing server-side connection.
-
+<p>Flow control in SPDY is implemented by a data transfer window kept by the sender of each stream. The data transfer window is a simple uint32 that indicates how many bytes of data the sender can transmit. After a stream is created, but before any data frames have been transmitted, the sender begins with the initial window size. This window size is a measure of the buffering capability of the recipient. The sender must not send a data frame with data length greater than the transfer window size. After sending each data frame, the sender decrements its transfer window size by the amount of data transmitted. When the window size becomes less than or equal to 0, the sender must pause transmitting data frames. At the other end of the stream, the recipient sends a WINDOW_UPDATE control back to notify the sender that it has consumed some data and freed up buffer space to receive more data.
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-+-----------------------------------------+
-|1|   version      |            9         |
-+-----------------------------------------+
-|   0 (flags)   |       8 (length)        |
-+-----------------------------------------+
-|X|         Stream-ID (31-bits)           |
-+-----------------------------------------+
-|X|  Stream-Delta-Window-Size (31-bits)   |
-+-----------------------------------------+
-|X|         Group-ID (31-bits)            |
-+-----------------------------------------+
-|X|   Group-Delta-Window-Size (31-bits)   |
-+-----------------------------------------+
++----------------------------------+
+|1|   version    |         9       |
++----------------------------------+
+| 0 (flags) |     8 (length)       |
++----------------------------------+
+|X|     Stream-ID (31-bits)        |
++----------------------------------+
+|X|  Delta-Window-Size (31-bits)   |
++----------------------------------+
 </pre></div>
 <p>Control bit: The control bit is always 1 for this message.
 </p>
@@ -1098,16 +1104,14 @@ Upon creation of the connection, the default group (0) is assigned the default g
 </p>
 <p>Stream-ID: The stream ID that this WINDOW_UPDATE control frame is for.
 </p>
-<p>Stream-Delta-Window-Size: The additional number of bytes that the sender can transmit in addition to existing remaining stream window size. The legal range for this field is 1 to 2^31 - 1 (0x7fffffff) bytes.
-</p>
-<p>Group-Delta-Window-Size: The additional number of bytes that the sender can transmit in addition to existing remaining group window size for the group assigned to the stream. The legal range for this field is 1 to 2^31 - 1 (0x7fffffff) bytes.
+<p>Delta-Window-Size: The additional number of bytes that the sender can transmit in addition to existing remaining window size. The legal range for this field is 1 to 2^31 - 1 (0x7fffffff) bytes.
 </p>
 <p>The window size as kept by the sender must never exceed 2^31 (although it can become negative in one special case). If a sender receives a WINDOW_UPDATE that causes the its window size to exceed this limit, it must send RST_STREAM with status code FLOW_CONTROL_ERROR to terminate the stream.
 </p>
-<p>When a SPDY connection is first established, the default initial window size for all streams is 64KB. The default initial window size for the default group (0) is 64KB. An endpoint can use the SETTINGS control frame to adjust the initial window size for any new stream. That is, its peer can start out using the 64KB default initial window size when sending data frames before receiving the SETTINGS. Because SETTINGS is asynchronous, there may be a race condition if the recipient wants to decrease the initial window size, but its peer immediately sends 64KB on the creation of a new connection, before waiting for the SETTINGS to arrive. This is only case where the window size kept by the sender may become negative. Once the sender detects this condition, it must stop sending data frames and wait for the recipient to catch up. The recipient has two choices:
+<p>When a SPDY connection is first established, the default initial window size for all streams is 64KB. An endpoint can use the SETTINGS control frame to adjust the initial window size for the connection. That is, its peer can start out using the 64KB default initial window size when sending data frames before receiving the SETTINGS. Because SETTINGS  is asynchronous, there may be a race condition if the recipient wants to decrease the initial window size, but its peer immediately sends 64KB on the creation of a new connection, before waiting for the SETTINGS to arrive. This is one case where the window size kept by the sender will become negative. Once the sender detects this condition, it must stop sending data frames and wait for the recipient to catch up. The recipient has two choices:
 </p>
 <blockquote class="text">
-<p>immediately send RST_STREAM with FLOW_CONTROL_ERROR status code. This is safe for new streams where no data has been forwarded.
+<p>immediately send RST_STREAM with FLOW_CONTROL_ERROR status code.
 </p>
 <p>allow the head of line blocking (as there is only one stream for the session and the amount of data in flight is bounded by the default initial window size), and send WINDOW_UPDATE as it consumes data.
 </p>
@@ -1116,7 +1120,7 @@ Upon creation of the connection, the default group (0) is assigned the default g
 </p>
 <p>In the case of option 2, both sides must compute the window size based on the initial window size in the SETTINGS. For example, if the recipient sets the initial window size to be 16KB, and the sender sends 64KB immediately on connection establishment, the sender will discover its window size is -48KB on receipt of the SETTINGS. As the recipient consumes the first 16KB, it must send a WINDOW_UPDATE of 16KB back to the sender. This interaction continues until the sender's window size becomes positive again, and it can resume transmitting data frames.
 </p>
-<p>After the recipient reads in a data frame with FLAG_FIN that marks the end of the data stream, it should not send WINDOW_UPDATE frames as it consumes the last data frame. A sender may ignore all stream window updates for streams where the FLAG_FIN has been received. 
+<p>After the recipient reads in a data frame with FLAG_FIN that marks the end of the data stream, it should not send WINDOW_UPDATE frames as it consumes the last data frame. A sender should ignore all the WINDOW_UPDATE frames associated with the stream after it send the last frame for the stream.
 </p>
 <p>The data frames from the sender and the WINDOW_UPDATE frames from the recipient are completely asynchronous with respect to each other. This property allows a recipient to aggressively update the window size kept by the sender to prevent the stream from stalling.
 </p>
@@ -1125,7 +1129,7 @@ Upon creation of the connection, the default group (0) is assigned the default g
 <a name="rfc.section.2.6.9"></a><h3>2.6.9.&nbsp;
 CREDENTIAL</h3>
 
-<p>The CREDENTIAL control frame is used by the client to send additional certificates to the client from the server. This is intended to allow for SPDY connection reuse.
+<p>The CREDENTIAL control frame is used by the client to send additional client certificates to the server.  A SPDY client may decide to send requests for resources from different origins on the same SPDY session if it decides that that server handles both origins.  For example if the IP address associated with both hostnames matches and the SSL server certificate presented in the initial handshake is valid for both hostnames.  However, because the SSL connection can contain at most one client certificate, the client needs a mechanism to send additional client certificates to the server.
 </p>
 <p>The server is required to maintain a vector of client certificates associated with a SPDY session.  When the client needs to send a client certificate to the server, it will send a CREDENTIAL frame that specifies the index of the slot in which to store the certificate as well as proof that the client posesses the corresponding private key.  The initial size of this vector must be 8.  If the client provides a client certificate during the first TLS handshake, the contents of this certificate must be copied into the first slot (index 1) in the CREDENTIAL vector, though it may be overwritten by subsequent CREDENTIAL frames.  The server must exclusively use the CREDENTIAL vector when evaluating the client certificates associated with an origin.  The server may change the size of this vector by sending a SETTINGS frame with the setting SETTINGS_CLIENT_CERTIFICATE_VECTOR_SIZE value specified.  In the event that the new size is smaller than the current size, truncation occurs preserving lower-index slots as possible.
 </p>
@@ -1162,6 +1166,65 @@ CREDENTIAL</h3>
 <a name="rfc.section.2.6.10"></a><h3>2.6.10.&nbsp;
 Name/Value Header Block</h3>
 
+<p>A Name/Value Header Block augments the streams or group of streams identified by the <a class='info' href='#SYN_STREAM'>SYN_STREAM<span> (</span><span class='info'>SYN_STREAM</span><span>)</span></a>, <a class='info' href='#HEADERS'>HEADERS<span> (</span><span class='info'>HEADERS</span><span>)</span></a>, or <a class='info' href='#SYN_REPLY'>SYN_REPLY<span> (</span><span class='info'>SYN_REPLY</span><span>)</span></a> frame stream with additional metadata.
+This metadata is assumed to be layered: All streams of a particular group have all of a group's headers, which are then overridden by stream headers.
+ For HTTP layers, this metadata is interpreted as headers. It may be optionally sent on an existing stream at any time.   Specific application of the headers in this frame is application-dependent.  The name/value header block within this frame is compressed.
+</p>
+<p>It is expected that this scheme will achieve similar compression to the algorithm available in previous versions of SPDY for most requests, though the first request may be larger.
+</p>
+<p>
+Two levels of state are persisted between requests:
+</p>
+<blockquote class="text">
+<p>Connection level headers
+</p>
+<p>Group      level headers
+</p>
+</blockquote><p>
+
+</p>
+<p>
+At the connection level, a single hash-map of token-index to key-pair is maintained. Data in the connection-level hashmap applies to every stream on the connection.
+At the group level, a hash-map of token-index to key-pair is maintained for each defined group. Data in a group-level hashmap applies only to streams that have been assigned to that group.
+The assignment of a grouping is decided by the stream initiator, and is subject to constraints as defined in SETTINGS.
+
+</p>
+<p>These constraints are:
+</p>
+<blockquote class="text">
+<p>TotalHeaderStorageSize :  default(16k)
+</p>
+<p>MaxHeaderGroups: default(1)
+</p>
+<p>MaxEntriesInTable: default(64)
+</p>
+</blockquote><p>
+
+</p>
+<p> It is expected that either party will set these to larger values immediately upon connection establishment.
+</p>
+<p> The token-indexes for any hash-map are not required to be contiguous; the hash-map may be sparse.
+</p>
+<p>A token-index in one table has no meaning to the other; The address space for each is separate.
+</p>
+<p> Each request may also include key,value pairs which are not stored.
+</p>
+<p> The set of headers for any individual stream is the union of these, with the group headers overriding the connection headers, and any individually provided stream headers overriding both the group and connection headers.
+</p>
+<p> Thus, a stream which is part of group 'G' on connection 'C' will have headers as computed with the following pseudo-code:
+</p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
+def compute_headers(stream):
+  headers = {}
+  for {key, value} in connection_headers[C]:
+    headers[key] = value
+  for {key, value} in stream_group_headers[G]:
+    headers[key] = value
+  for {key, value} in headers_frame:
+    headers[key] = value
+  return headers
+</pre></div>
+<p>A smart implementation will be able to interpret a headers frame without reconstructing the headers, and thus be able to represent and interpret headers with less memory and CPU.
+</p>
 <p>The Name/Value Header Block is found in the SYN_STREAM, SYN_REPLY
             and HEADERS control frames, and shares a common format:
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
@@ -1169,24 +1232,37 @@ Name/Value Header Block</h3>
 +--------+--------+=====+
 | Num Ops(16)     | Ops |    &lt;- This is all gzip compressed.
 +--------+--------+=====+
+</pre></div>
+<p>
 
-The entire Headers Block is compressed with gzip. The sender may choose to use whatever level of compression works best, which may be uncompressed.
+The entire Name/Value Header Block is compressed with gzip. The sender may choose to use whatever level of compression works best, which may be uncompressed.
 An implementation should be able to easily write an uncompressed block which is inflatable with the gzip library with minimal effort and complexity if this is necessary, though the user's experience may possibly be impacted.
 Please see RFC 1952 for a description of the gzip container, and RFC 1951 for a description of its DEFLATE payload. For any connection, there is one gzip context for decompressing, and one gzip context for compressing.
 
-
-
+</p>
+<p>
 All Name/Value Ops share a common flag byte defined like so:
 
+</p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
 +--|-|-|----+
-|OO|K|L|XXXX|
+|OP|K|L|XXXX|
 +--|-|-|----+
+</pre></div>
+<p>
+</p>
+<blockquote class="text">
+<p>OP - Opcode field. One of 0x0, 0x1, or 0x2.
+</p>
+<p> K - IsKey field. One of 0x0 or 0x1. Indicates whether or not we're addressing a key or value.
+</p>
+<p> L - Level field. One of 0x0 or 0x1. Indicates for certain operations which level of headers table is being modified.
+</p>
+<p> X   Reserved
+</p>
+</blockquote><p>
 
-OO -&gt; Opcode field. One of 0x0, 0x1, or 0x2.
- K -&gt;  IsKey field. One of 0x0 or 0x1. Indicates whether or not we're addressing a key or value.
- L -&gt;  Level field. One of 0x0 or 0x1. Indicates for certain operations which level of headers table is being modified.
- X -&gt;  Reserved
-
+</p>
+<p>
 The Opcode field indicates the type of operation.
 
   0x0 indicates that the data will not be stored, and two string literals will follow
@@ -1196,7 +1272,8 @@ The Opcode field indicates the type of operation.
   0x2 indicates that the specified table entry should me modified by truncating the tail of the current entry to the length specified and then appending the provided string.
       Arguably this operation renders 0x1 redundant, but it would take up more bytes and so we leave in 0x1 for now.
 
-
+</p>
+<p>
 The Level field encodes the headers overlay-level being selected by the current frame.
 Valid Level fields are 0x0, and 0x1.
 
@@ -1207,9 +1284,11 @@ The IsKey field indicates whether the following string value represents a key or
   0x0 indicates the stored string is for a value
   0x1 indicates the stored string is for a key
 
-
-
+</p>
+<p>
 Detail of an operation with an opcode of 0x0:
+
+</p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
 
      0        1        2        3       4..k
 +--|------+--------+--------+--------+========+
@@ -1220,8 +1299,8 @@ Detail of an operation with an opcode of 0x0:
 +--------+--------+--------+========+
 | Value String Len(24)     | String |
 +--------+--------+--------+========+
-
-
+</pre></div>
+<p>
 Detail of an operation with an opcode of 0x1:
 
 An operation with an Opcode field of 0x1 indicates that the field encodes a replacement to a key or value field of a line in the headers table designated by the L field.
@@ -1231,6 +1310,7 @@ If the 'K' (IsKey) field is 0x1, the subsequent string length and string represe
 If the 'L' (Level) field is 0x0, the header table for the stream group is modified.
 If the 'L' (Level) field ix 0x1, the header table for the connection is modified.
 
+</p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
       0         1        2        3        4        5
 +--|-|-|----+--------+--------+--------+--------+--------+
 |01|K|L|XXXX| Token Index (16)| String Len(24)           | -&gt;
@@ -1240,7 +1320,8 @@ If the 'L' (Level) field ix 0x1, the header table for the connection is modified
 +========+
 | String |
 +========+
-
+</pre></div>
+<p>
 If the token-index refers to an index that is already in use, the string transmitted here replaces it.
 
 
@@ -1257,6 +1338,7 @@ The same entry in any table should be modified at most once in any HEADERS block
 An operation with an Op field of 0x2 indicates that the field encodes a truncate-and-append to the pre-existing table value. If no value exists, it should instead be inserted into the table at the specified position.
 If a value is being set, and no key has been set, the recipient MUST issue a session error (Section 2.4.2) with the status code PROTOCOL_ERROR.
 
+</p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
       0         1        2        3        4        5        6        7
 +--|-|-|----+--------+--------+--------+--------+--------+--------+--------+
 |10|K|L|XXXX| Truncate To(16) | Token Index(16) | String Len (24)          | -&gt;
@@ -1481,6 +1563,121 @@ const unsigned char SPDY_dictionary_txt[] = {
 </p>
 <p>Implementation notes: the compression engine can be tuned to favor speed or size. Optimizing for size increases memory use and CPU consumption.  Because header blocks are generally small, implementors may want to reduce the window-size of the compression engine from the default 15bits (a 32KB window) to more like 11bits (a 2KB window).  The exact setting is chosen by the compressor, the decompressor will work with any setting.
 </p>
+<a name="HeaderBlockExample"></a><br /><hr />
+<table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
+<a name="rfc.section.2.6.10.2"></a><h3>2.6.10.2.&nbsp;
+Header Block Example</h3>
+
+<p> This example only expresses what the client-side would send and how the other side would interpret it. Since the protocol is symmetric, this is true for any sender of a headers-block and any receiver of a headers block, and so is equivalent for both sides of the connection.
+</p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
+Request 1 (for index.html):
+SYN_STREAM 1, stream-group (G)=0
+  Header-block:
+  Store(0x1): level(C),index(0),k: ":method"
+  Store(0x1): level(C),index(0),v: "GET"
+  Store(0x1): level(C),index(1),k: ":version"
+  Store(0x1): level(C),index(1),v: "HTTP/1.1"
+  Store(0x1): level(C),index(2),k: "user-agent"
+  Store(0x1): level(C),index(2),v: "blah blah browser version blah blah"
+  Store(0x1): level(C),index(3),k: "accept-encoding"
+  Store(0x1): level(C),index(3),v: "sdch, bzip, compress"
+  Store(0x1): level(G),index(0),k: ":host"
+  Store(0x1): level(G),index(0),v: "www.foo.com"
+  Store(0x1): level(G),index(1),k: "cookie"
+  Store(0x1): level(G),index(1),v: "SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJHBLA"
+  Store(0x1): level(G),index(2),k: ":path"
+  Store(0x1): level(G),index(2),v: "/index.html"
+  Store(0x1): level(G),index(3),k: "date"
+  Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:43 2012"
+
+At this point the connection headers table looks like this:
+  0: ":method", "GET"
+  1: ":version", "HTTP/1.1"
+  2: "user-agent", "blah blah browser version blah blah"
+  3: "accept-encoding", "sdch, bzip, compress"
+
+The stream-group table for group zero looks like this:
+  0: ":host", "www.foo.com"
+  1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;BLAJHBLA"
+  2: ":path", "/index.html"
+  3: "date", "Wed Jul 18 11:50:43 2012"
+
+Request 1 (on stream 1) would look like the following if forwarded on HTTP/1.1:
+  GET /index.html HTTP/1.1
+  host: www.foo.com
+  date: Wed Jul 18 11:50:43 2012
+  cookie: SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJHBLA
+  user-agent: blah blah browser version blah blah
+  accept-encoding: sdch, bzip, compress
+
+
+Request 2 (for index.js):
+SYN_STREAM 3, stream-group (G)=0
+  Header-block:
+  Store(0x1): level(G),index(2),v: "/index.js"
+  Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:44 2012"
+
+At this point the connection headers table is unchanged:
+  0: ":method", "GET"
+  1: ":version", "HTTP/1.1"
+  2: "user-agent", "blah blah browser version blah blah"
+  3: "accept-encoding", "sdch, bzip, compress"
+
+The stream-group table for group zero looks like this:
+  0: ":host", "www.foo.com"
+  1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;BLAJHBLA"
+  2: ":path", "/index.js"
+  3: "date", "Wed Jul 18 11:50:44 2012"
+Both the path and the date have changed.
+
+Request 2 (on stream 3) would look like the following if forwarded on HTTP/1.1:
+  GET /index.js HTTP/1.1
+  host: www.foo.com
+  date: Wed Jul 18 11:50:44 2012
+  cookie: SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJHBLA
+  user-agent: blah blah browser version blah blah
+  accept-encoding: sdch, bzip, compress
+
+
+Request 3 (for index.css):
+SYN_STREAM 5, stream-group (G)=0
+  Header-block:
+  Store(0x1): level(G),index(2),v: "/index.css"
+  Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:44 PDT 2012"
+
+Connection level-headers are implied.
+Stream-group level headers are implied.
+
+For this example, using TaCo (truncate and concatenate) wasn't useful.
+If the user, however, changes the cookie on the next request...
+
+Request 3 (for somepage.html):
+SYN_STREAM 5, stream-group (G)=0
+  Header-block:
+  Store(0x1): level(G),index(2),v: "/somepage.html"
+  TaCo(0x1): level(G),index(1),v,TruncTo(40),"FOOBLA"
+
+At this point the connection headers table remains unchanged.
+  0: ":method", "GET"
+  1: ":version", "HTTP/1.1"
+  2: "user-agent", "blah blah browser version blah blah"
+  3: "accept-encoding", "sdch, bzip, compress"
+
+The stream-group table for group zero looks like this:
+  0: ":host", "www.foo.com"
+  1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;FOOBLA"
+  2: ":path", "/somepate.html"
+Both the path and the date have changed.
+
+Request 3 (on stream 5) would look like the following if forwarded on HTTP/1.1:
+  GET /somepage.html HTTP/1.1
+  host: www.foo.com
+  date: Wed Jul 18 11:50:44 2012
+  cookie: SOMELONGSTRINGTHATISMOSTLYOPAQUE;FOOBLA
+  user-agent: blah blah browser version blah blah
+  accept-encoding: sdch, bzip, compress
+
+</pre></div>
 <a name="HTTPLayer"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
 <a name="rfc.section.3"></a><h3>3.&nbsp;
@@ -1849,19 +2046,17 @@ Incompatibilities with SPDY draft #3</h3>
 Here is a list of the major changes between this draft #3 and this draft
 </p>
 <blockquote class="text">
-<p>Modification of flow control to safely allow for large concurrency limits
+<p>DONE: Different header compression technique which uses less CPU for proxies and which should result in higher compression
 </p>
-<p>Different header compression technique which uses less CPU
+<p>DONE: Significant modifications to the header frame
 </p>
-<p>Significant modifications to the header frame
+<p>ONGOING: Modification of server push; addition of PUSH_PROMISE frame
 </p>
-<p>Different compression dictionary
+<p>ONGOING: Definition of cert-data push
 </p>
-<p>Modification of server push; addition of PUSH_PROMISE frame
+<p>ONGOING: Definition of name-resolution push
 </p>
-<p>Definition of cert-data push
-</p>
-<p>Definition of name-resolution push
+<p>ONGOING: Modification of flow-control; allow two-levels of flow control so as to allow greater stream concurrency safely
 </p>
 </blockquote><p>
       
@@ -1887,7 +2082,7 @@ Acknowledgements</h3>
         Adam Langley, Wan-Teh Chang, Jim Morrison, Mark Nottingham, Alyssa Wilk,
         Costin Manolache, William Chan, Vitaliy Lvin, Joe Chan, Adam Barth,
         Ryan Hamilton, Gavin Peters, Kent Alstad, Kevin Lindsay, Paul Amer,
-        Fan Yang, Jonathan Leighton, Alex Storm
+        Fan Yang, Jonathan Leighton, Alex Strom
       
 </p>
 <a name="rfc.references1"></a><br /><hr />
