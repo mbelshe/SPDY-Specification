@@ -5,6 +5,94 @@ import sys
 import array
 import struct
 
+def IntTo3B(val):
+  if val > 16777215:
+    raise StandardError()
+  return struct.pack("!L", val)[1:]
+
+def IntTo2B(val):
+  if val > 65535:
+    raise StandardError()
+  return struct.pack("!L", val)[2:]
+
+def B3ToInt(val):
+  arg = "%c%c%c%c" % (0,val[0],val[1],val[2])
+  return struct.unpack("!L", arg)[0]
+
+def B2ToInt(val):
+  arg = "%c%c%c%c" % (0,0,val[0],val[1])
+  return struct.unpack("!L", arg)[0]
+
+def ListToStr(val):
+  return ''.join(["%c" % c for c in val])
+
+def RealMakeFB(opcode, k, l):
+  if k:
+    k = 1
+  else:
+    k = 0
+  if l == 1 or l == 'c':
+    l = 1
+  else:
+    l = 0
+  if opcode == 'ERef':
+    opcode = 0
+  elif opcode == 'Store':
+    opcode = 0x1
+  elif opcode == 'TaCo':
+    opcode = 0x2
+  elif opcode == 'KVSto':
+    opcode = 0x3
+  elif opcode == 'Rem':
+    opcode = 0x4
+  return struct.pack("!B", opcode << 5 | (k << 4) | (l << 3))
+
+def ParseFB(byte):
+  return (((byte >> 5) & 0x7), ((byte >> 4) & 0x1), ((byte >> 3) & 0x1))
+
+
+def RealMakeERef(key, val):
+  retval = []
+  retval.append(RealMakeFB('ERef',0,0))
+  retval.append(IntTo3B(len(key)))
+  retval.append(key)
+  retval.append(IntTo3B(len(val)))
+  retval.append(val)
+  return ''.join(retval)
+
+def RealMakeTaCo(is_key, dict_level, index, truncate_to, str_val):
+  retval = []
+  retval.append(RealMakeFB('TaCo', is_key, dict_level))
+  retval.append(IntTo3B(truncate_to))
+  retval.append(IntTo2B(index))
+  retval.append(IntTo3B(len(str_val)))
+  retval.append(str_val)
+  return ''.join(retval)
+
+def RealMakeRem(dict_level, index):
+  retval = []
+  retval.append(RealMakeFB('Rem', 0, dict_level))
+  retval.append(IntTo2B(index))
+  return ''.join(retval)
+
+def RealMakeStore(is_key, dict_level, index, str_val):
+  retval = []
+  retval.append(RealMakeFB('Store', is_key, dict_level))
+  retval.append(IntTo2B(index))
+  retval.append(IntTo3B(len(str_val)))
+  retval.append(str_val)
+  return ''.join(retval)
+
+def RealMakeKVSto(dict_level, index, key, val):
+  retval = []
+  retval.append(RealMakeFB('KVSto', 0, dict_level))
+  retval.append(IntTo2B(index))
+  retval.append(IntTo3B(len(key)))
+  retval.append(key)
+  retval.append(IntTo3B(len(val)))
+  retval.append(val)
+  return ''.join(retval)
+
 def MakeERef(key, value):
   op = {'opcode': 'ERef',
         'key_str_len': len(key),
@@ -13,68 +101,21 @@ def MakeERef(key, value):
         'val_str': value}
   return op
 
-def RealMakeERef(key, val):
-  key_len = len(key)
-  val_len = len(val)
-  if len(key) > 16777215:
-    raise StandardError()
-  if len(val) > 16777215:
-    raise StandardError()
-  retval = []
-  a = 0
-  b = ((key_len & 0xff0000) >> 16)
-  c = ((key_len & 0x00ff00) >> 8)
-  d = ((key_len & 0x0000ff) >> 0)
-  e = key
-  f = ((val_len & 0xff0000) >> 16)
-  g = ((val_len & 0x00ff00) >> 8)
-  h = ((val_len & 0x0000ff) >> 0)
-  i = val
-  return struct.pack("!BBBB%dsBBB%ds" % (key_len, val_len), a,b,c,d,e,f,g,h,i)
-
 def MakeTaCo(is_key, dict_level, index, truncate_to, str_val):
   op = {'opcode': 'TaCo',
         'k': is_key,
         'dict_level': dict_level,
         'index': index,
         'truncate_to': truncate_to,
-        'str_len': len(str_val) - truncate_to,
-        'str_val': str_val[truncate_to:]}
+        'str_len': len(str_val),
+        'str_val': str_val}
   return op
 
-def RealMakeTaCo(is_key, dict_level, index, truncate_to, str_val):
-  str_len = len(str_val)
-  k = 0
-  if is_key:
-    k = 1
-  l = 0
-  if dict_level == 'c':
-    l = 1
-  if str_len > 16777215:
-    raise StandardError()
-  if truncate_to > 16777215:
-    raise StandardError()
-  if index > 65535:
-    raise StandardError()
-  truncto = truncate_to
-  retval = []
-  a = (0x80 | (k << 5) | (l << 4))
-  b = ((truncto & 0xff0000) >> 16)
-  c = ((truncto & 0x00ff00) >> 8)
-  d = ((truncto & 0x0000ff) >> 0)
-  e = ((index & 0xff00) >> 8)
-  f = ((index & 0x00ff) >> 0)
-  g = ((str_len & 0xff0000) >> 16)
-  h = ((str_len & 0x00ff00) >> 8)
-  i = ((str_len & 0x0000ff) >> 0)
-  j = str_val
-  return struct.pack("!BBBBBBBBB%ds" % str_len, a,b,c,d,e,f,g,h,i,j)
-
-def MakeRemove(dict_level, index):
-  return MakeStore(0, dict_level, index, '')
-
-def RealMakeRemove(dict_level, index):
-  return RealMakeStore(0, dict_level, index, '')
+def MakeRem(dict_level, index):
+  op = {'opcode': 'Rem',
+      'dict_level': dict_level,
+      'index': index}
+  return op
 
 def MakeStore(is_key, dict_level, index, str_val):
   op = {'opcode': 'Store',
@@ -85,46 +126,99 @@ def MakeStore(is_key, dict_level, index, str_val):
         'str_val': str_val}
   return op
 
-def RealMakeStore(is_key, dict_level, index, str_val):
-  str_len = len(str_val)
-  k = 0
-  if is_key:
-    k = 1
-  l = 0
-  if dict_level == 'c':
-    l = 1
-  if str_len > 16777215:
-    raise StandardError()
-  if index > 65535:
-    raise StandardError()
-  a = (0x40 | (k << 5) | (l << 4))
-  b = ((index & 0xff00) >> 8)
-  c = ((index & 0x00ff) >> 0)
-  d = ((str_len & 0xff0000) >> 16)
-  e = ((str_len & 0x00ff00) >> 8)
-  f = ((str_len & 0x0000ff) >> 0)
-  return struct.pack("!BBBBBB%ds" % str_len, a,b,c,d,e,f, str_val)
+def MakeKVSto(dict_level, index, key, val):
+  op = {'opcode': 'KVSto',
+        'dict_level': dict_level,
+        'index': index,
+        'key_len': len(key),
+        'key_str': key,
+        'val_len': len(val),
+        'val_str': val}
+  return op
 
-def OpSize(op):
-  if op['opcode'] == 'Store':
-    return 1+2+3+ op['str_len']
-  if op['opcode'] == 'TaCo':
-    return 1+2+3+3+ op['str_len']
-  if op['opcode'] == 'ERef':
-    return 1+3+3+op['key_str_len'] + op['val_str_len']
-  raise StandardError()
 
 def OpToRealOp(op):
   if op['opcode'] == 'Store':
     return RealMakeStore(op['k'], op['dict_level'], op['index'], op['str_val'])
   if op['opcode'] == 'TaCo':
     return RealMakeTaCo(op['k'], op['dict_level'], op['index'],
-        op['truncate_to'],op['str_val'])
+        op['truncate_to'],op['str_val'][op['truncate_to']:])
   if op['opcode'] == 'ERef':
-    return RealMakeERef(op['key'], op['value'])
+    return RealMakeERef(op['key_str'], op['val_str'])
+  if op['opcode'] == 'KVSto':
+    return RealMakeKVSto(op['dict_level'], op['index'],
+                         op['key_str'], op['val_str'])
+  if op['opcode'] == 'Rem':
+    return RealMakeRem(op['dict_level'], op['index'])
   raise StandardError()
 
-def PrintOp(op):
+def RealOpsToOps(realops):
+  input_size = len(realops)
+  idx = 0
+  ops = []
+  realop = [ord(c) for c in realops]
+  #print "input_size: ", input_size
+  while input_size > idx:
+    (opcode, k, l) = ParseFB(realop[idx])
+    if l:
+      l = 'c'
+    else:
+      l = 'g'
+    idx += 1
+
+    if opcode == 0x0:  # ERef
+      key_len = B3ToInt(realop[idx+0:idx+3])
+      idx += 3
+      key = ListToStr(realop[idx:idx+key_len])
+      idx += key_len
+      val_len = B3ToInt(realop[idx+0:idx+3])
+      idx += 3
+      val = ListToStr(realop[idx:idx+val_len])
+      idx += val_len
+      ops.append(MakeERef(key, val))
+      continue
+    if opcode == 0x1:  # Store
+      index   = B2ToInt(realop[idx+0:idx+2])
+      str_len = B3ToInt(realop[idx+2:idx+5])
+      idx += 5
+      str_val = ListToStr(realop[idx:idx+str_len])
+      idx += str_len
+      ops.append(MakeStore(k, l, index, str_val))
+      continue
+    if opcode == 0x2:  # TaCo
+      truncto = B3ToInt(realop[idx+0:idx+3])
+      index   = B2ToInt(realop[idx+3:idx+5])
+      str_len = B3ToInt(realop[idx+5:idx+8])
+      idx += 8
+      str_val = ListToStr(realop[idx:idx+str_len])
+      idx += str_len
+      ops.append(MakeTaCo(k, l, index, truncto, str_val))
+      continue
+    if opcode == 0x3:  # KVSto
+      index   = B2ToInt(realop[idx+0:idx+2])
+      idx += 2
+      key_len = B3ToInt(realop[idx+0:idx+3])
+      idx += 3
+      key = ListToStr(realop[idx:idx+key_len])
+      idx += key_len
+      val_len = B3ToInt(realop[idx+0:idx+3])
+      idx += 3
+      val = ListToStr(realop[idx:idx+val_len])
+      idx += val_len
+      ops.append(MakeKVSto(l, index, key, val))
+      continue
+    if opcode == 0x4:  # Rem
+      index   = B2ToInt(realop[idx+0:idx+2])
+      idx += 2
+      ops.append(MakeRem(l, index))
+      continue
+
+    print "unknown opcode: ", hex(opcode)
+    raise StandardError()  # unknown opcode.
+  return ops
+
+
+def FormatOp(op):
   order = ['opcode', 'k', 'dict_level', 'index', 'truncate_to', 'str_len',
       'str_val', 'key_str_len', 'key_str', 'val_str_len', 'val_str']
   outp = ['{']
@@ -133,14 +227,14 @@ def PrintOp(op):
     if key in op and key is not 'opcode':
       inp.append("'%s': %s" % (key, repr(op[key])))
     if key in op and key is 'opcode':
-      inp.append(("'%s': " % key).ljust(8) + repr(op[key]))
+      inp.append("'%s': %s" % (key, repr(op[key]).ljust(7)))
   for (key, val) in op.iteritems():
     if key in order:
       continue
     inp.append("'%s': " % key, " ", repr(op[key]))
   outp.append(', '.join(inp))
   outp.append('}')
-  print ''.join(outp)
+  return ''.join(outp)
 
 def NextIndex(dict):
   indices = [idx for (idx, val) in dict.iteritems()]
@@ -174,6 +268,8 @@ def KeyIndexInDict(dict, key):
 
 class CompressorDecompressor:
   def __init__(self):
+    self.use_zlib = 1
+    self.ephemereal_headers = {}
     self.compressor = zlib.compressobj()
     self.decompressor = zlib.decompressobj()
     self.generation = 0
@@ -203,12 +299,15 @@ class CompressorDecompressor:
 
   def MakeOps(self, key, value, stream_group):
     ops = []
+    # ops.append(MakeERef(key, value))
+    # return ops
     (dict, dict_level, key_idx) = self.FindAppropriateEntry(key, stream_group)
 
     if key_idx == -1:  # store a new one.
       key_idx = NextIndex(dict)
-      ops.extend([MakeStore(1, dict_level, key_idx, key),
-                  MakeStore(0, dict_level, key_idx, value)])
+      ops.append(MakeKVSto(dict_level, key_idx, key, value))
+      #ops.extend([MakeStore(1, dict_level, key_idx, key),
+      #            MakeStore(0, dict_level, key_idx, value)])
     else:
       dict_value = ''
       if key_idx in dict:
@@ -222,19 +321,18 @@ class CompressorDecompressor:
         ops.append(MakeStore(0, dict_level, key_idx, value))
 
     for op in ops: # gotta keep our state up-to-date.
-      #print "executing: ", PrintOp(op)
+      #print "executing: ", FormatOp(op)
       self.ExecuteOp(op, stream_group, {})
     return ops
 
-
-  def GenerateAllHeaders(self, stream_group, ephemereal_headers):
+  def GenerateAllHeaders(self, stream_group):
     headers = {}
     for (idx, item) in self.connection_dict.iteritems():
       headers[item[1]] = item[0]
     for (idx, item) in self.stream_group_dicts[stream_group].iteritems():
       headers[item[1]] = item[0]
-      for (key, value) in ephemereal_headers.iteritems():
-        headers[key] = value
+    for (key, value) in self.ephemereal_headers.iteritems():
+      headers[key] = value
     return headers
 
   def Touch(self, dict, index):
@@ -258,6 +356,16 @@ class CompressorDecompressor:
       raise StandardError()
     #print self.total_storage
 
+  def Decompress(self, op_blob):
+    if not self.use_zlib:
+      return op_blob
+    return self.decompressor.decompress(op_blob)
+
+  def DeTokenify(self, realops, stream_group):
+    ops = RealOpsToOps(realops)
+    self.ephemereal_headers = {}
+    self.ExecuteOps(ops, stream_group, self.ephemereal_headers)
+
   def ExecuteOps(self, ops, stream_group, ephemereal_headers):
     for op in ops:
       self.ExecuteOp(op, stream_group, ephemereal_headers)
@@ -278,21 +386,31 @@ class CompressorDecompressor:
 
     dict = self.connection_dict
     dict_level = op['dict_level']
-    is_key = op['k']
     index = op['index']
-    str_val = op['str_val']
-    str_len = op['str_len']
 
     if dict_level != 'c':
       dict = self.stream_group_dicts[stream_group]
     if opcode == 'Store':
+      is_key = op['k']
+      str_val = op['str_val']
+      str_len = op['str_len']
+      if str_len == 0:
+        raise StandardError()
       self.ModifyDictEntry(dict, index, is_key, str_val)
     elif opcode == 'TaCo':
+      is_key = op['k']
+      str_val = op['str_val']
+      str_len = op['str_len']
       truncate_to = op['truncate_to']
       if str_len == 0:
         raise StandardError()
       self.ModifyDictEntry(dict, index, is_key,
           dict[index][is_key][:truncate_to] + str_val)
+    elif opcode == 'KVSto':
+      self.ModifyDictEntry(dict, index, 1, op['key_str'])
+      self.ModifyDictEntry(dict, index, 0, op['val_str'])
+    elif opcode == 'Rem':
+      self.ModifyDictEntry(dict, index, 0, '')
     else:
       # unknown opcode
       raise StandardError()
@@ -301,16 +419,25 @@ class CompressorDecompressor:
     remove_ops = []
     for (idx, item) in self.connection_dict.iteritems():
       if self.NotCurrent(item):
-        remove_ops.append(MakeRemove('c', idx))
+        remove_ops.append(MakeRem('c', idx))
     for (idx, item) in self.stream_group_dicts[stream_group].iteritems():
       if self.NotCurrent(item):
-        remove_ops.append(MakeRemove('g', idx))
+        remove_ops.append(MakeRem('g', idx))
     for op in remove_ops:
       self.ExecuteOp(op, stream_group, {})
     return remove_ops
 
+  def Compress(self, ops):
+    realops = [OpToRealOp(op) for op in ops]
+    ba = ''.join(realops)
+    if not self.use_zlib:
+      return ba
+    retval = self.compressor.compress(ba)
+    retval += self.compressor.flush(zlib.Z_SYNC_FLUSH)
+    return retval
+
   # returns a list of operations
-  def Compress(self, headers, stream_group):
+  def Tokenify(self, headers, stream_group):
     self.generation += 1
     ops = []
     for (key, value) in headers.iteritems():
@@ -319,6 +446,16 @@ class CompressorDecompressor:
       ops.extend(self.MakeOps(key, value, stream_group))
     remove_ops = self.MakeRemovalOps(stream_group)
     return remove_ops + ops
+
+
+def Spdy3HeadersFormat(request):
+  out_frame = []
+  for (key, val) in request.iteritems():
+    out_frame.append(struct.pack("!L", len(key)))
+    out_frame.append(key)
+    out_frame.append(struct.pack("!L", len(val)))
+    out_frame.append(val)
+  return ''.join(out_frame)
 
 def main():
   requests = [ {':method': "get",
@@ -359,29 +496,58 @@ def main():
                 'cookie': 'SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJBLA',
                 'date': 'Wed Jul 18 11:50:46 2012'},
                ]
-  frame_list = []
-  compressor = CompressorDecompressor()
-  decompressor = CompressorDecompressor()
+  spdy4_frame_list = []
+  zlib_frame_list = []
+  spdy4_compressor = CompressorDecompressor()
+  spdy4_decompressor = CompressorDecompressor()
+  use_zlib = 1
+  spdy4_compressor.use_zlib = use_zlib
+  spdy4_decompressor.use_zlib = use_zlib
+
+  zlib_compressor = zlib.compressobj()
   for request in requests:
-    print "Compressing: ", request
-    frame_list.append(compressor.Compress(request, 0))
+    print "Tokenify: ", request
+    in_ops = spdy4_compressor.Tokenify(request, 0)
+    #for op in in_ops:
+    #  print FormatOp(op)
+    #print
+    in_frame = spdy4_compressor.Compress(in_ops)
+    spdy4_frame_list.append(in_frame)
+    spdy3_frame = Spdy3HeadersFormat(request)
+    zlib_frame_list.append(zlib_compressor.compress(spdy3_frame) +
+                           zlib_compressor.flush(zlib.Z_SYNC_FLUSH))
   print
-  print "Opcodes: "
-  for ops in frame_list:
-    frame_size = 11  # that is the size of the header's frame preamble
-    for op in ops:
-      PrintOp(op)
-      frame_size += OpSize(op)
-      # realop = OpToRealOp(op)
-      # sys.stdout.write(str.format("\\0b{0:08b}" , ord(realop[0])))
-      # for i in xrange(1,len(realop)):
-      #   sys.stdout.write("\\%s" % hex(ord(realop[i])))
-      # print
-      # print
-    print
-  for ops in frame_list:
-    decompressor.ExecuteOps(ops, 0, {})
-    print "Decompressed: ", decompressor.GenerateAllHeaders(0, {})
+  for frame in requests:
+    print "origl frame size: 11+%d" % len(Spdy3HeadersFormat(frame))
+  print
+  for frame in spdy4_frame_list:
+    print "spdy4 frame size: 11+%d" % len(frame)
+  print
+  for frame in zlib_frame_list:
+    print "spdy3 frame size: 11+%d" % len(frame)
+  print
+
+  out_requests = []
+  for frame in spdy4_frame_list:
+    out_ops = spdy4_decompressor.Decompress(frame)
+    #for op in RealOpsToOps(out_ops):
+    #  print FormatOp(op)
+    #print
+    out_frame = spdy4_decompressor.DeTokenify(out_ops, 0)
+    out_request = spdy4_decompressor.GenerateAllHeaders(0)
+    out_requests.append(out_request)
+    print "Detokened: ", out_request
+
+  if requests == out_requests:
+    print "Original requests == output"
+  else:
+    print "Something is wrong."
+    for i in xrange(len(requests)):
+      if requests[i] != out_requests[i]:
+        print requests[i]
+        print "   !="
+        print out_requests[i]
+        print
 
 main()
 
