@@ -875,15 +875,15 @@ If a value is being set, and no key has been set, the recipient MUST issue a ses
 
             <figure>
             <artwork>
-      0         1        2        3        4        5        6        7
-+--|-|-|----+--------+--------+--------+--------+--------+--------+--------+
-|10|K|L|XXXX| Truncate To(16) | Token Index(16) | String Len (24)          | ->
-+--|-|-|----+--------+--------+--------+--------+--------+--------+--------+
+      0         1        2        3        4        5
++--|-|-|----+--------+--------+--------+--------+--------+
+|10|K|L|XXXX| Truncate To(24)          | Token Index(16) | ->
++--|-|-|----+--------+--------+--------+--------+--------+
 
-   8..N
-+========+
-| String |
-+========+
+    6        7        8         9..N
++--------+--------+--------+ +========+
+| String Len (24)          | | String |
++--------+--------+--------+ +========+
             </artwork>
             </figure>
 
@@ -1458,7 +1458,12 @@ Here is a list of the major changes between this draft #3 and this draft
 <t>ONGOING: Modification of server push; addition of PUSH_PROMISE frame</t>
 <t>ONGOING: Definition of cert-data push</t>
 <t>ONGOING: Definition of name-resolution push</t>
+<t>ONGOING: Addition of message delimiter flag in data frames</t>
+<t>ONGOING: Addition of end-of-header-section delimiter flag in any frame which has a header block</t>
 <t>ONGOING: Modification of flow-control; allow two-levels of flow control so as to allow greater stream concurrency safely</t>
+<t>ONGOING: Modification of flow-control; headers-blocks (thus syn-stream) gets its own pool of memory, separate from data frames</t>
+<t>ONGOING: Everything after the first header-block-section possibly treated as flow-control</t>
+<t>ONGOING: Session-error status code added for UNRECOGNIZED_SCHEME for new streams. This triggers when the recipient doesn't know how to handle a stream of that type.</t>
 </list>
       </t>
     </section>
