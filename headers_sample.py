@@ -234,8 +234,6 @@ def Idem(x):
 def LenPlusStr(x):
   return ''.join([IntTo2B(len(x)), x])
 
-def StrAndLen(x):
-
 
 # first byte, top_block, str_block
 separate_packing_instructions = {
@@ -260,11 +258,11 @@ inline_packing_instructions = {
   'val_str'    : ( None, LenPlusStr, None),
 }
 
-inverse = {
-    None: None,
-    IntTo2B: B2ToInt,
-    IntTo1B: B1ToInt,
-    LenPlusStr: StrAndLen
+#inverse = {
+#    None: None,
+#    IntTo2B: B2ToInt,
+#    IntTo1B: B1ToInt,
+#    LenPlusStr: StrAndLen
 
 packing_order = ['opcode',
                  'k',
@@ -790,28 +788,30 @@ def main():
     spdy4a_frame_list.append((spdy4a_frame,
                               spdy4a_compressor.compress(spdy4a_frame) +
                               spdy4a_compressor.flush(zlib.Z_SYNC_FLUSH)))
-  print
-  for item in http1_frame_list:
-    (uncom, com) = map(len, item)
-    print "http1  frame size: %4d / %4d  %2.2f" % (uncom, com, 1.0*com/uncom)
+  print "                    UC  |  CM  |  RH  | CH  "
+  for i in xrange(len(http1_frame_list)):
+    (uncom, com) = map(len, http1_frame_list[i])
+    httplen = len(http1_frame_list[i][0])
+    fmtarg = (uncom, com, 1.0*uncom/httplen, 1.0*com/httplen)
+    print "http1  frame size: %4d | %4d | %2.2f | %2.2f" % fmtarg
   print
   for i in xrange(len(spdy3_frame_list)):
     (uncom, com) = map(len, spdy3_frame_list[i])
     httplen = len(http1_frame_list[i][0])
     fmtarg = (uncom+11, com+11, (11.+uncom)/httplen, (11.+com)/httplen)
-    print "spdy3  frame size: %4d / %4d %2.2f / %2.2f" % fmtarg
+    print "spdy3  frame size: %4d | %4d | %2.2f | %2.2f" % fmtarg
   print
   for i in xrange(len(spdy4_frame_list)):
     (uncom, com) = map(len, spdy4_frame_list[i])
     httplen = len(http1_frame_list[i][0])
     fmtarg = (uncom+11, com+11, (11.+uncom)/httplen, (11.+com)/httplen)
-    print "spdy4  frame size: %4d / %4d %2.2f / %2.2f" % fmtarg
+    print "spdy4  frame size: %4d | %4d | %2.2f | %2.2f" % fmtarg
   print
   for i in xrange(len(spdy4a_frame_list)):
     (uncom, com) = map(len, spdy4a_frame_list[i])
     httplen = len(http1_frame_list[i][0])
     fmtarg = (uncom+11, com+11, (11.+uncom)/httplen, (11.+com)/httplen)
-    print "spdy4a frame size: %4d / %4d %2.2f / %2.2f" % fmtarg
+    print "spdy4a frame size: %4d | %4d | %2.2f | %2.2f" % fmtarg
   print
 
   out_requests = []
