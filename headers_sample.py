@@ -4,6 +4,49 @@ import string
 import sys
 import array
 import struct
+import re
+
+default_requests = [
+{':method': "get",
+	':path': '/index.html',
+	':version': 'HTTP/1.1',
+	'user-agent': 'blah blah browser version blah blah',
+	'accept-encoding': 'sdch, bzip, compress',
+	':host': 'www.foo.com',
+  'referrer': 'www.foo.com/ILoveBugs',
+	'cookie': 'SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJBLA',
+	'date': 'Wed Jul 18 11:50:43 2012'},
+{':method': "get",
+	':path': '/index.js',
+	':version': 'HTTP/1.1',
+	'user-agent': 'blah blah browser version blah blah',
+	'accept-encoding': 'sdch, bzip, compress',
+	':host': 'www.foo.com',
+  'referrer': 'www.foo.com/ILoveBugsALot',
+	'cookie': 'SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJBLA',
+	'date': 'Wed Jul 18 11:50:44 2012'},
+{':method': "get",
+	':path': '/index.css',
+	':version': 'HTTP/1.1',
+	'user-agent': 'blah blah',
+	'accept-encoding': 'sdch, bzip, compress',
+	':host': 'www.foo.com',
+	'cookie': 'SOMELONGSTRINGTHATISMOSTLYOPAQUE;FOOBLA',
+	'date': 'Wed Jul 18 11:50:45 2012'},
+{':method': "get",
+	':path': '/generate_foo.html',
+	':version': 'HTTP/1.1',
+	':host': 'www.foo.com',
+	'date': 'Wed Jul 18 11:50:45 2012'},
+{':method': "get",
+	':path': '/index.css',
+	':version': 'HTTP/1.1',
+	'user-agent': 'blah blah browser version blah blah',
+	'accept-encoding': 'sdch, bzip, compress',
+	':host': 'www.foo.com',
+	'cookie': 'SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJBLA',
+	'date': 'Wed Jul 18 11:50:46 2012'},
+	]
 
 def ListToStr(val):
   return ''.join(["%c" % c for c in val])
@@ -539,12 +582,12 @@ class CompressorDecompressor:
       if key_idx in dict:
         dict_value = dict[key_idx][0]
       prefix_match_len = CommonPrefixLen(dict_value, value)
-      if prefix_match_len == len(value):
+      if prefix_match_len == len(value) and prefix_match_len == len(dict_value):
         self.Touch(dict, key_idx)
         if not dict[key_idx][3]:
           ops.append(MakeShow(dict_level, key_idx))
           self.MakeVisible(dict, key_idx)
-      elif prefix_match_len > 3:  # 3 == trunc_to len
+      elif prefix_match_len > 2:  # 2 == trunc_to len
         ops.append(MakeTaCo(0, dict_level, key_idx, prefix_match_len,
                             value[prefix_match_len:]))
       else:
@@ -586,6 +629,7 @@ class CompressorDecompressor:
     dict[index][is_key] = str_val
     self.Touch(dict, index);
     if dict[index][1] == '':
+      print "ERROR: ", dict, index, is_key, str_val
       raise StandardError()
     #print self.total_storage
 
@@ -642,7 +686,7 @@ class CompressorDecompressor:
       str_val = op['str_val']
       str_len = len(str_val)
       truncate_to = op['truncate_to']
-      if str_len == 0:
+      if str_len == 0 and truncate_to == 0:
         raise StandardError()
       self.ModifyDictEntry(dict, index, is_key,
           dict[index][is_key][:truncate_to] + str_val)
@@ -697,7 +741,13 @@ class CompressorDecompressor:
 
 def HTTPHeadersFormat(request):
   out_frame = []
+  fl = "%s %s %s\r\n" % (request[":method"],request[":path"],request[":version"])
+  out_frame.append(fl)
   for (key, val) in request.iteritems():
+    if key in [":method", ":path", ":version"]:
+      continue
+    if key == ":host":
+      key = "host"
     out_frame.append(key)
     out_frame.append(": ")
     out_frame.append(val)
@@ -713,45 +763,40 @@ def Spdy3HeadersFormat(request):
     out_frame.append(val)
   return ''.join(out_frame)
 
+def ReadHarFile(filename):
+  f = open(filename)
+  null = None
+  true = 1
+  false = 0
+  s = f.read()
+  o = eval(s)
+  headers = []
+  for entry in o["log"]["entries"]:
+    request = entry["request"]
+    header = {}
+    header[":method"] = request["method"]
+    header[":path"] = re.sub("^[^:]*://[^/]*/","/", request["url"])
+    header[":version"] = request["httpVersion"]
+    header[":scheme"] = re.sub("^([^:]*):.*", '\\1', request["url"])
+    for kvdict in request["headers"]:
+      key = kvdict["name"]
+      key = key.lower()
+      if key == "host":
+        key = ":host"
+      elif key == "connection":
+        continue
+      
+      value = kvdict["value"]
+      header[key] = value
+    headers.append(header)
+  return headers
+
 def main():
-  requests = [ {':method': "get",
-                ':path': '/index.html',
-                ':version': 'HTTP/1.1',
-                'user-agent': 'blah blah browser version blah blah',
-                'accept-encoding': 'sdch, bzip, compress',
-                ':host': 'www.foo.com',
-                'cookie': 'SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJBLA',
-                'date': 'Wed Jul 18 11:50:43 2012'},
-               {':method': "get",
-                ':path': '/index.js',
-                ':version': 'HTTP/1.1',
-                'user-agent': 'blah blah browser version blah blah',
-                'accept-encoding': 'sdch, bzip, compress',
-                ':host': 'www.foo.com',
-                'cookie': 'SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJBLA',
-                'date': 'Wed Jul 18 11:50:44 2012'},
-               {':method': "get",
-                ':path': '/index.css',
-                ':version': 'HTTP/1.1',
-                'user-agent': 'blah blah browser version blah blah',
-                'accept-encoding': 'sdch, bzip, compress',
-                ':host': 'www.foo.com',
-                'cookie': 'SOMELONGSTRINGTHATISMOSTLYOPAQUE;FOOBLA',
-                'date': 'Wed Jul 18 11:50:45 2012'},
-               {':method': "get",
-                ':path': '/generate_foo.html',
-                ':version': 'HTTP/1.1',
-                ':host': 'www.foo.com',
-                'date': 'Wed Jul 18 11:50:45 2012'},
-               {':method': "get",
-                ':path': '/index.css',
-                ':version': 'HTTP/1.1',
-                'user-agent': 'blah blah browser version blah blah',
-                'accept-encoding': 'sdch, bzip, compress',
-                ':host': 'www.foo.com',
-                'cookie': 'SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJBLA',
-                'date': 'Wed Jul 18 11:50:46 2012'},
-               ]
+  requests = default_requests
+  if len(sys.argv) > 1:
+    requests = []
+    for filename in sys.argv[1:]:
+      requests.extend(ReadHarFile(filename))
   spdy4a_frame_list = []
   spdy4_frame_list = []
   spdy3_frame_list = []
@@ -768,7 +813,7 @@ def main():
   http1_compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, 11)
   http1_compressor.compress(spdy_dictionary); http1_compressor.flush(zlib.Z_SYNC_FLUSH)
   for request in requests:
-    print "request: ", request
+    #print "request: ", request
     http1_frame = HTTPHeadersFormat(request)
     http1_frame_list.append((http1_frame,
                              http1_compressor.compress(http1_frame) +
@@ -788,42 +833,54 @@ def main():
     spdy4a_frame_list.append((spdy4a_frame,
                               spdy4a_compressor.compress(spdy4a_frame) +
                               spdy4a_compressor.flush(zlib.Z_SYNC_FLUSH)))
-  print "                    UC  |  CM  |  RH  | CH  "
-  for i in xrange(len(http1_frame_list)):
-    (uncom, com) = map(len, http1_frame_list[i])
-    httplen = len(http1_frame_list[i][0])
-    fmtarg = (uncom, com, 1.0*uncom/httplen, 1.0*com/httplen)
-    print "http1  frame size: %4d | %4d | %2.2f | %2.2f" % fmtarg
-  print
-  for i in xrange(len(spdy3_frame_list)):
-    (uncom, com) = map(len, spdy3_frame_list[i])
-    httplen = len(http1_frame_list[i][0])
-    fmtarg = (uncom+11, com+11, (11.+uncom)/httplen, (11.+com)/httplen)
-    print "spdy3  frame size: %4d | %4d | %2.2f | %2.2f" % fmtarg
-  print
-  for i in xrange(len(spdy4_frame_list)):
-    (uncom, com) = map(len, spdy4_frame_list[i])
-    httplen = len(http1_frame_list[i][0])
-    fmtarg = (uncom+11, com+11, (11.+uncom)/httplen, (11.+com)/httplen)
-    print "spdy4  frame size: %4d | %4d | %2.2f | %2.2f" % fmtarg
-  print
-  for i in xrange(len(spdy4a_frame_list)):
-    (uncom, com) = map(len, spdy4a_frame_list[i])
-    httplen = len(http1_frame_list[i][0])
-    fmtarg = (uncom+11, com+11, (11.+uncom)/httplen, (11.+com)/httplen)
-    print "spdy4a frame size: %4d | %4d | %2.2f | %2.2f" % fmtarg
-  print
-
+  print "        UC: UnCompressed frame size"
+  print "        CM: CoMpressed frame size"
+  print "        UR: Uncompressed / Http uncompressed"
+  print "        CR:   Compressed / Http compressed"
   out_requests = []
-  for (tokens, frame) in spdy4_frame_list:
-    out_ops = spdy4_decompressor.Decompress(frame)
-    for op in RealOpsToOps(out_ops):
-      print FormatOp(op)
-    print
+  def framelen(x):
+    return  len(x)
+
+  h1us = 0
+  h1cs = 0
+  s3us = 0
+  s3cs = 0
+  s4us = 0
+  s4cs = 0
+  for i in xrange(len(http1_frame_list)):
+    out_ops = spdy4_decompressor.Decompress(spdy4_frame_list[i][1])
     out_frame = spdy4_decompressor.DeTokenify(out_ops, 0)
     out_request = spdy4_decompressor.GenerateAllHeaders(0)
     out_requests.append(out_request)
-    print "request: ", out_request
+    print '"%s"' % out_request[":path"][:70]
+    #print http1_frame_list[i][0]
+    #print "request: ", out_request
+    #for op in RealOpsToOps(out_ops):
+    #  print FormatOp(op)
+    #print
+    print "                    UC  |  CM  |  UR  |  CR"
+    (h1uncom, h1com) = map(len, http1_frame_list[i])
+    h1us += h1uncom; h1cs += h1com
+    (s3uncom, s3com) = map(framelen, spdy3_frame_list[i])
+    s3us += s3uncom; s3cs += s3com
+    (s4uncom, s4com) = map(framelen, spdy4_frame_list[i])
+    s4us += s4uncom; s4cs += s4com
+    (s5uncom, s5com) = map(framelen, spdy4a_frame_list[i])
+    lines= [
+    ("http1 ", h1uncom, h1com, 1.0*h1uncom/h1uncom, 1.0*h1com/h1com),
+    ("spdy3 ", s3uncom, s3com, 1.0*s3uncom/h1uncom, 1.0*s3com/h1com),
+    ("spdy4 ", s4uncom, s4com, 1.0*s4uncom/h1uncom, 1.0*s4com/h1com),
+    #("spdy4a", s5uncom, s5com, 1.0*s5uncom/h1uncom, 1.0*s5com/h1com),
+    ]
+    for fmtarg in lines:
+      print "%s frame size: %4d | %4d | %2.2f | %2.2f" % fmtarg
+  fmtarg = ( h1cs,  s3cs, s4cs)
+  print "  Compressed SUMS:   http1   |   spdy3   |   spdy4 "
+  print "                   % 8d  | % 8d  | % 8d  " % fmtarg        
+  fmtarg = (h1us, s3us, s4us)
+  print "UnCompressed SUMS:   http1   |   spdy3   |   spdy4 "
+  print "                   % 8d  | % 8d  | % 8d  " % fmtarg        
+
 
   if requests == out_requests:
     print "Original requests == output"
