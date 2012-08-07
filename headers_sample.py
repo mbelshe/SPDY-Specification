@@ -8,45 +8,45 @@ import re
 
 default_requests = [
 {':method': "get",
-	':path': '/index.html',
-	':version': 'HTTP/1.1',
-	'user-agent': 'blah blah browser version blah blah',
-	'accept-encoding': 'sdch, bzip, compress',
-	':host': 'www.foo.com',
+  ':path': '/index.html',
+  ':version': 'HTTP/1.1',
+  'user-agent': 'blah blah browser version blah blah',
+  'accept-encoding': 'sdch, bzip, compress',
+  ':host': 'www.foo.com',
   'referrer': 'www.foo.com/ILoveBugs',
-	'cookie': 'SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJBLA',
-	'date': 'Wed Jul 18 11:50:43 2012'},
+  'cookie': 'SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJBLA',
+  'date': 'Wed Jul 18 11:50:43 2012'},
 {':method': "get",
-	':path': '/index.js',
-	':version': 'HTTP/1.1',
-	'user-agent': 'blah blah browser version blah blah',
-	'accept-encoding': 'sdch, bzip, compress',
-	':host': 'www.foo.com',
+  ':path': '/index.js',
+  ':version': 'HTTP/1.1',
+  'user-agent': 'blah blah browser version blah blah',
+  'accept-encoding': 'sdch, bzip, compress',
+  ':host': 'www.foo.com',
   'referrer': 'www.foo.com/ILoveBugsALot',
-	'cookie': 'SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJBLA',
-	'date': 'Wed Jul 18 11:50:44 2012'},
+  'cookie': 'SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJBLA',
+  'date': 'Wed Jul 18 11:50:44 2012'},
 {':method': "get",
-	':path': '/index.css',
-	':version': 'HTTP/1.1',
-	'user-agent': 'blah blah',
-	'accept-encoding': 'sdch, bzip, compress',
-	':host': 'www.foo.com',
-	'cookie': 'SOMELONGSTRINGTHATISMOSTLYOPAQUE;FOOBLA',
-	'date': 'Wed Jul 18 11:50:45 2012'},
+  ':path': '/index.css',
+  ':version': 'HTTP/1.1',
+  'user-agent': 'blah blah',
+  'accept-encoding': 'sdch, bzip, compress',
+  ':host': 'www.foo.com',
+  'cookie': 'SOMELONGSTRINGTHATISMOSTLYOPAQUE;FOOBLA',
+  'date': 'Wed Jul 18 11:50:45 2012'},
 {':method': "get",
-	':path': '/generate_foo.html',
-	':version': 'HTTP/1.1',
-	':host': 'www.foo.com',
-	'date': 'Wed Jul 18 11:50:45 2012'},
+  ':path': '/generate_foo.html',
+  ':version': 'HTTP/1.1',
+  ':host': 'www.foo.com',
+  'date': 'Wed Jul 18 11:50:45 2012'},
 {':method': "get",
-	':path': '/index.css',
-	':version': 'HTTP/1.1',
-	'user-agent': 'blah blah browser version blah blah',
-	'accept-encoding': 'sdch, bzip, compress',
-	':host': 'www.foo.com',
-	'cookie': 'SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJBLA',
-	'date': 'Wed Jul 18 11:50:46 2012'},
-	]
+  ':path': '/index.css',
+  ':version': 'HTTP/1.1',
+  'user-agent': 'blah blah browser version blah blah',
+  'accept-encoding': 'sdch, bzip, compress',
+  ':host': 'www.foo.com',
+  'cookie': 'SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJBLA',
+  'date': 'Wed Jul 18 11:50:46 2012'},
+  ]
 
 def ListToStr(val):
   return ''.join(["%c" % c for c in val])
@@ -274,47 +274,86 @@ def GetBitsInByte(least_significant_bit, bit_width):
 def Idem(x):
   return x
 
-def LenPlusStr(x):
+def PackB2LenPlusStr(x):
   return ''.join([IntTo2B(len(x)), x])
+
+def XtrtB2LenPlusStr(x):
+  len = B2ToInt(x)
+  return (2 + len, x[2:len+2])
 
 
 # first byte, top_block, str_block
-separate_packing_instructions = {
-  'opcode'     : ((0,3),       None, None),
-  'k'          : ((3,1),       None, None),
-  'dict_level' : ((4,1),       None, None),
-  'truncate_to': ( None,    IntTo2B, None),
-  'index'      : ( None,    IntTo1B, None),
-  'str_val'    : ( None, LenIntTo2B, Idem),
-  'key_str'    : ( None, LenIntTo2B, Idem),
-  'val_str'    : ( None, LenIntTo2B, Idem),
-}
+#separate_packing_instructions = {
+#  'opcode'     : ((0,3),       None, None),
+#  'k'          : ((3,1),       None, None),
+#  'dict_level' : ((4,1),       None, None),
+#  'truncate_to': ( None,    IntTo2B, None),
+#  'index'      : ( None,    IntTo1B, None),
+#  'str_val'    : ( None, LenIntTo2B, Idem),
+#  'key_str'    : ( None, LenIntTo2B, Idem),
+#  'val_str'    : ( None, LenIntTo2B, Idem),
+#}
+#
+#separate_unpacking_instructions = {
+#  'opcode'     : ((0,3),       None, None),
+#  'k'          : ((3,1),       None, None),
+#  'dict_level' : ((4,1),       None, None),
+#  'truncate_to': ( None,    B2ToInt, None),
+#  'index'      : ( None,    B1ToInt, None),
+#  'str_val'    : ( None, B2ToIntLen, ExtractN),
+#  'key_str'    : ( None, B2ToIntLen, ExtractN),
+#  'val_str'    : ( None, B2ToIntLen, ExtractN),
 
 inline_packing_instructions = {
-  'opcode'     : ((0,3),       None, None),
-  'k'          : ((3,1),       None, None),
-  'dict_level' : ((4,1),       None, None),
-  'truncate_to': ( None,    IntTo2B, None),
-  'index'      : ( None,    IntTo1B, None),
-  'str_val'    : ( None, LenPlusStr, None),
-  'key_str'    : ( None, LenPlusStr, None),
-  'val_str'    : ( None, LenPlusStr, None),
+  'opcode'     : ((0,3),             None, None),
+  'k'          : ((3,1),             None, None),
+  'dict_level' : ((4,1),             None, None),
+  'truncate_to': ( None,          IntTo2B, None),
+  'index'      : ( None,          IntTo1B, None),
+  'str_val'    : ( None, PackB2LenPlusStr, None),
+  'key_str'    : ( None, PackB2LenPlusStr, None),
+  'val_str'    : ( None, PackB2LenPlusStr, None),
 }
 
-#inverse = {
-#    None: None,
-#    IntTo2B: B2ToInt,
-#    IntTo1B: B1ToInt,
-#    LenPlusStr: StrAndLen
+inline_unpacking_instructions = {
+  'opcode'     : ((0,3),             None, None),
+  'k'          : ((3,1),             None, None),
+  'dict_level' : ((4,1),             None, None),
+  'truncate_to': ( None,          B2ToInt, None),
+  'index'      : ( None,          B1ToInt, None),
+  'str_val'    : ( None, XtrtB2LenPlusStr, None),
+  'key_str'    : ( None, XtrtB2LenPlusStr, None),
+  'val_str'    : ( None, XtrtB2LenPlusStr, None),
+}
 
 packing_order = ['opcode',
                  'k',
                  'dict_level',
                  'truncate_to',
+                 'pos',
+                 'len',
+                 'npos',
                  'index',
                  'str_val',
                  'key_str',
                  'val_str']
+
+# The opcodes that should be: #
+###############################
+#            eref
+#            insert
+#            del
+#            move
+#            show/hide
+#            remove
+# opcodes = {
+#    'ERef' : (0x0, 'key_str', 'val_str'),
+#    'Nsrt' : (0x1, 'k', 'dict_level', 'index', 'pos', 'str_val'),
+#    'Dele' : (0x2, 'k', 'dict_level', 'index', 'pos', 'len'),
+#    'Move' : (0x3, 'k', 'dict_level', 'index', 'pos', 'len', 'npos'),
+#    'HiSh' : (0x4, 'index'),
+#    'Remo' : (0x5, 'index'),
+
 
 opcodes = {
     'ERef' : (0x0, 'key_str', 'val_str'),
@@ -503,6 +542,12 @@ def FormatOp(op):
   outp.append('}')
   return ''.join(outp)
 
+def KtoV(dict):
+  retval = {}
+  for (k, v) in dict.iteritems():
+    retval[v] = k
+  return retval
+
 def NextIndex(dict):
   indices = [idx for (idx, val) in dict.iteritems()]
   if len(indices) == 0:
@@ -543,6 +588,7 @@ class CompressorDecompressor:
                                  self.compressor.flush(zlib.Z_SYNC_FLUSH))
     self.generation = 0
     self.connection_dict = {}
+    self.stream_group_indices = {}
     self.stream_group_dicts = {0: {}}
 
     self.connection_headers = [":method", ":version", "user-agent" ]
@@ -550,13 +596,44 @@ class CompressorDecompressor:
                    'MaxHeaderGroups': 1,
                    'MaxEntriesInTable': 64}
     self.total_storage = 0
+    self.SetDictKVsAndMakeInvisible(self.connection_dict,
+        { ":method": "get",
+          ":version": "1.1",
+          "user-agent": "",
+          "accept-language": "",
+          "accept": "",
+          "accept-encoding": "",
+          "accept-charset": "",
+          "accept-ranges": "",
+          "allow": "",
+          })
+
+  def SetDictKVsAndMakeInvisible(self, dict, kv_pairs):
+    for (key, val) in kv_pairs.iteritems():
+      index = NextIndex(dict)
+      self.ModifyDictEntry(dict, index, 1, key)
+      self.ModifyDictEntry(dict, index, 0, val)
+      self.MakeInvisible(dict, index)
+
+  def GetHostnameForStreamGroup(self, stream_group):
+    if stream_group == 0:
+      return "<default>"
+    dict = KtoV(self.stream_group_indices)
+    return dict[stream_group]
+
+  def GetStreamGroupDict(self, stream_group):
+    if stream_group in self.stream_group_dicts:
+      return self.stream_group_dicts[stream_group]
+    self.stream_group_dicts[stream_group] = {}
+    self.SeedStreamGroup(self.stream_group_dicts[stream_group])
+    return self.stream_group_dicts[stream_group]
 
   def FindAppropriateEntry(self, key, stream_group):
     dict = self.connection_dict
     dict_level = 1
     key_idx = KeyIndexInDict(dict, key)
     if key_idx == -1:  # if not in connection headers, try stream-group
-      dict = self.stream_group_dicts[stream_group]
+      dict = self.GetStreamGroupDict(stream_group)
       dict_level = 0
       key_idx = KeyIndexInDict(dict, key)
       if key_idx == -1: # also not in stream-group. Add to appropriate level.
@@ -587,9 +664,9 @@ class CompressorDecompressor:
         if not dict[key_idx][3]:
           ops.append(MakeShow(dict_level, key_idx))
           self.MakeVisible(dict, key_idx)
-      elif prefix_match_len > 2:  # 2 == trunc_to len
-        ops.append(MakeTaCo(0, dict_level, key_idx, prefix_match_len,
-                            value[prefix_match_len:]))
+      #elif prefix_match_len > 2:  # 2 == trunc_to len
+      #  ops.append(MakeTaCo(0, dict_level, key_idx, prefix_match_len,
+      #                      value[prefix_match_len:]))
       else:
         ops.append(MakeStore(0, dict_level, key_idx, value))
 
@@ -617,14 +694,18 @@ class CompressorDecompressor:
   def NotCurrent(self, item):
     return item[2] != self.generation
 
+  def IsVisible(self, item):
+    return item[3] == 1
+
+  def RemoveDictEntry(self, dict, index):
+    self.total_storage -= len(dict[index][not is_key])
+    del dict[index]
+    return
+
   def ModifyDictEntry(self, dict, index, is_key, str_val):
     if index not in dict:
       dict[index] = ['', '', 0, 1]  # v, k, gen, visible?
     self.total_storage -= len(dict[index][is_key])
-    if str_val == '':
-      self.total_storage -= len(dict[index][not is_key])
-      del dict[index]
-      return
     self.total_storage += len(str_val)
     dict[index][is_key] = str_val
     self.Touch(dict, index);
@@ -672,7 +753,7 @@ class CompressorDecompressor:
     index = op['index']
 
     if dict_level != 1:
-      dict = self.stream_group_dicts[stream_group]
+      dict = self.GetStreamGroupDict(stream_group)
     if opcode == 'Store':
       is_key = op['k']
       str_val = op['str_val']
@@ -696,7 +777,7 @@ class CompressorDecompressor:
       self.ModifyDictEntry(dict, index, 0, op['val_str'])
       self.MakeVisible(dict, index)
     elif opcode == 'Rem':
-      self.ModifyDictEntry(dict, index, 0, '')
+      self.RemoveDictEntry(dict, index)
     elif opcode == 'Hide':
       self.MakeInvisible(dict, index)
     elif opcode == 'Show':
@@ -708,11 +789,12 @@ class CompressorDecompressor:
   def MakeRemovalOps(self, stream_group):
     remove_ops = []
     for (idx, item) in self.connection_dict.iteritems():
-      if self.NotCurrent(item):
+      if self.NotCurrent(item) and self.IsVisible(item):
+        print "Hiding: ", item
         #remove_ops.append(MakeRem(1, idx))
         remove_ops.append(MakeHide(1, idx))
     for (idx, item) in self.stream_group_dicts[stream_group].iteritems():
-      if self.NotCurrent(item):
+      if self.NotCurrent(item) and self.IsVisible(item):
         #remove_ops.append(MakeRem(0, idx))
         remove_ops.append(MakeHide(0, idx))
     for op in remove_ops:
@@ -728,23 +810,102 @@ class CompressorDecompressor:
     retval += self.compressor.flush(zlib.Z_SYNC_FLUSH)
     return retval
 
+  def SetDictKVsAndMakeInvisible(self, dict, kv_pairs):
+    for (key, val) in kv_pairs.iteritems():
+      index = NextIndex(dict)
+      self.ModifyDictEntry(dict, index, 1, key)
+      self.ModifyDictEntry(dict, index, 0, val)
+      self.MakeInvisible(dict, index)
+
+  def SeedStreamGroup(self, dict):
+    self.SetDictKVsAndMakeInvisible(dict,
+      { ":path": "",
+        ":scheme": "https",
+        ":host": "",
+        "cookie": "",
+        "authorizations": "",
+        "cache-control": "",
+        "content-base": "",
+        "content-encoding": "",
+        "content-length": "",
+        "content-location": "",
+        "content-md5": "",
+        "content-range": "",
+        "content-type": "",
+        "date": "",
+        "etag": "",
+        "expect": "",
+        "expires": "",
+        "from": "",
+        "if-match": "",
+        "if-modified-since": "",
+        "if-none-match": "",
+        "if-range": "",
+        "if-unmodified-since": "",
+        "last-modified": "",
+        "location": "",
+        "max-forwards": "",
+        "pragma": "",
+        "proxy-authenticate": "",
+        "proxy-authorization": "",
+        "range": "",
+        "referer": "",
+        "retry-after": "",
+        "server": "",
+        "status": "",
+        "status-text": "",
+        "te": "",
+        "trailer": "",
+        "transfer-encoding": "",
+        "upgrade": "",
+        "user-agent": "",
+        "vary": "",
+        "via": "",
+        "warning": "",
+        "www-authenticate": "",
+        "status": "",
+        "set-cookie": "",
+        "origin": "",
+        })
+
   # returns a list of operations
+  def FindStreamGroup(self, headers):
+    stream_group = 0
+    if headers[":host"] in self.stream_group_indices:
+      stream_group = self.stream_group_indices[headers[":host"]]
+    else:
+      stream_group = NextIndex(KtoV(self.stream_group_indices))
+      self.stream_group_indices[headers[":host"]] = stream_group
+      self.stream_group_dicts[stream_group] = {}
+      self.SeedStreamGroup(self.stream_group_dicts[stream_group])
+    return stream_group
+
   def Tokenify(self, headers, stream_group):
     self.generation += 1
     ops = []
     for (key, value) in headers.iteritems():
       if not stream_group in self.stream_group_dicts:
-        self.stream_group_dict[stream_group] = {}
+        self.stream_group_dicts[stream_group] = {}
+        self.SeedStreamGroup(self.stream_group_dicts[stream_group])
       ops.extend(self.MakeOps(key, value, stream_group))
     remove_ops = self.MakeRemovalOps(stream_group)
     return remove_ops + ops
 
 def HTTPHeadersFormat(request):
   out_frame = []
-  fl = "%s %s %s\r\n" % (request[":method"],request[":path"],request[":version"])
+  is_request = 0
+  fl = ""
+  avoid_list = []
+  if ":method" in request:
+    is_request = true;
+    fl = "%s %s %s\r\n" % (request[":method"],request[":path"],request[":version"])
+    avoid_list = [":method", ":path", ":version"]
+  else:
+    fl = "%s %s %s\r\n" % (request[":version"],request[":status"],request[":status-text"])
+    avoid_list = [":version", ":status", ":status-text"]
   out_frame.append(fl)
   for (key, val) in request.iteritems():
-    if key in [":method", ":path", ":version"]:
+    if key in avoid_list:
       continue
     if key == ":host":
       key = "host"
@@ -770,14 +931,17 @@ def ReadHarFile(filename):
   false = 0
   s = f.read()
   o = eval(s)
-  headers = []
+  request_headers = []
+  response_headers = []
   for entry in o["log"]["entries"]:
     request = entry["request"]
     header = {}
-    header[":method"] = request["method"]
+    header[":method"] = request["method"].lower()
     header[":path"] = re.sub("^[^:]*://[^/]*/","/", request["url"])
-    header[":version"] = request["httpVersion"]
-    header[":scheme"] = re.sub("^([^:]*):.*", '\\1', request["url"])
+    header[":version"] = re.sub("^[^/]*/","", request["httpVersion"])
+    header[":scheme"] = re.sub("^([^:]*):.*", '\\1', request["url"]).lower()
+    if not header[":scheme"] in ["http", "https"]:
+      continue
     for kvdict in request["headers"]:
       key = kvdict["name"]
       key = key.lower()
@@ -785,24 +949,46 @@ def ReadHarFile(filename):
         key = ":host"
       elif key == "connection":
         continue
-      
       value = kvdict["value"]
-      header[key] = value
-    headers.append(header)
-  return headers
+      if key in header:
+        header[key] = header[key] + '\0' + value
+      else:
+        header[key] = value
+    request_headers.append(header)
+
+    response = entry["response"]
+    header = {}
+    header[":status"] = str(response["status"])
+    header[":status-text"] = response["statusText"]
+    header[":version"] = re.sub("^[^/]*/","", response["httpVersion"])
+    for kvdict in response["headers"]:
+      key = kvdict["name"]
+      key = key.lower()
+      if key == "host":
+        key = ":host"
+      elif key == "connection":
+        continue
+      value = kvdict["value"]
+      if key in header:
+        header[key] = header[key] + '\0' + value
+      else:
+        header[key] = value
+    response_headers.append(header)
+  return (request_headers, response_headers)
 
 def main():
   requests = default_requests
+  responses = []
   if len(sys.argv) > 1:
     requests = []
+    responses = []
     for filename in sys.argv[1:]:
-      requests.extend(ReadHarFile(filename))
-  spdy4a_frame_list = []
+      (har_requests, har_responses) = ReadHarFile(filename)
+      requests.extend(har_requests)
+      responses.extend(har_responses)
   spdy4_frame_list = []
   spdy3_frame_list = []
   http1_frame_list = []
-  spdy4a_compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, 11)
-  spdy4a_compressor.compress(spdy_dictionary); spdy4a_compressor.flush(zlib.Z_SYNC_FLUSH)
   spdy4_compressor = CompressorDecompressor()
   spdy4_decompressor = CompressorDecompressor()
   use_zlib = 1
@@ -812,32 +998,34 @@ def main():
   spdy3_compressor.compress(spdy_dictionary); spdy3_compressor.flush(zlib.Z_SYNC_FLUSH)
   http1_compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, 11)
   http1_compressor.compress(spdy_dictionary); http1_compressor.flush(zlib.Z_SYNC_FLUSH)
-  for request in requests:
+
+  headers_to_compress = responses
+  for i in xrange(len(requests)):
+    request = requests[i]
+    obj_to_compress = headers_to_compress[i]
     #print "request: ", request
-    http1_frame = HTTPHeadersFormat(request)
+    http1_frame = HTTPHeadersFormat(obj_to_compress)
     http1_frame_list.append((http1_frame,
                              http1_compressor.compress(http1_frame) +
                              http1_compressor.flush(zlib.Z_SYNC_FLUSH)))
-    spdy3_frame = Spdy3HeadersFormat(request)
+    spdy3_frame = Spdy3HeadersFormat(obj_to_compress)
     spdy3_frame_list.append((spdy3_frame,
                              spdy3_compressor.compress(spdy3_frame) +
                              spdy3_compressor.flush(zlib.Z_SYNC_FLUSH)))
 
-    in_ops = spdy4_compressor.Tokenify(request, 0)
+    spdy_4_stream_group = spdy4_compressor.FindStreamGroup(request)
+    #spdy_4_stream_group = 0
+    in_ops = spdy4_compressor.Tokenify(obj_to_compress, spdy_4_stream_group)
     in_frame = spdy4_compressor.Compress(in_ops)
     spdy4_frame = PackSpdy4Ops(inline_packing_instructions, in_ops)
 
-    spdy4_frame_list.append((spdy4_frame,in_frame))
+    spdy4_frame_list.append((spdy4_frame,in_frame, spdy_4_stream_group))
 
-    spdy4a_frame = PackSpdy4Ops(separate_packing_instructions, in_ops)
-    spdy4a_frame_list.append((spdy4a_frame,
-                              spdy4a_compressor.compress(spdy4a_frame) +
-                              spdy4a_compressor.flush(zlib.Z_SYNC_FLUSH)))
   print "        UC: UnCompressed frame size"
   print "        CM: CoMpressed frame size"
   print "        UR: Uncompressed / Http uncompressed"
   print "        CR:   Compressed / Http compressed"
-  out_requests = []
+  out_headers = []
   def framelen(x):
     return  len(x)
 
@@ -849,48 +1037,54 @@ def main():
   s4cs = 0
   for i in xrange(len(http1_frame_list)):
     out_ops = spdy4_decompressor.Decompress(spdy4_frame_list[i][1])
-    out_frame = spdy4_decompressor.DeTokenify(out_ops, 0)
-    out_request = spdy4_decompressor.GenerateAllHeaders(0)
-    out_requests.append(out_request)
-    print '"%s"' % out_request[":path"][:70]
+    out_frame = spdy4_decompressor.DeTokenify(out_ops, spdy4_frame_list[i][2])
+    out_header = spdy4_decompressor.GenerateAllHeaders(spdy4_frame_list[i][2])
+    out_headers.append(out_header)
+    print
+    print '"%s"' % requests[i][":path"][:70]
+    print "stream group: %2d, %s" % (spdy4_frame_list[i][2],
+        spdy4_compressor.GetHostnameForStreamGroup(spdy4_frame_list[i][2]))
+    #print "request: ", out_header
     #print http1_frame_list[i][0]
-    #print "request: ", out_request
-    #for op in RealOpsToOps(out_ops):
-    #  print FormatOp(op)
+    for op in RealOpsToOps(out_ops):
+      print FormatOp(op)
     #print
-    print "                    UC  |  CM  |  UR  |  CR"
+
     (h1uncom, h1com) = map(len, http1_frame_list[i])
     h1us += h1uncom; h1cs += h1com
     (s3uncom, s3com) = map(framelen, spdy3_frame_list[i])
     s3us += s3uncom; s3cs += s3com
-    (s4uncom, s4com) = map(framelen, spdy4_frame_list[i])
+    (s4uncom, s4com) = map(framelen, spdy4_frame_list[i][:2])
     s4us += s4uncom; s4cs += s4com
-    (s5uncom, s5com) = map(framelen, spdy4a_frame_list[i])
     lines= [
     ("http1 ", h1uncom, h1com, 1.0*h1uncom/h1uncom, 1.0*h1com/h1com),
     ("spdy3 ", s3uncom, s3com, 1.0*s3uncom/h1uncom, 1.0*s3com/h1com),
     ("spdy4 ", s4uncom, s4com, 1.0*s4uncom/h1uncom, 1.0*s4com/h1com),
-    #("spdy4a", s5uncom, s5com, 1.0*s5uncom/h1uncom, 1.0*s5com/h1com),
     ]
+    print "                                 UC  |  CM  |  UR  |  CR"
     for fmtarg in lines:
-      print "%s frame size: %4d | %4d | %2.2f | %2.2f" % fmtarg
-  fmtarg = ( h1cs,  s3cs, s4cs)
-  print "  Compressed SUMS:   http1   |   spdy3   |   spdy4 "
-  print "                   % 8d  | % 8d  | % 8d  " % fmtarg        
+      print "             %s frame size: %4d | %4d | %2.2f | %2.2f" % fmtarg
+    print
   fmtarg = (h1us, s3us, s4us)
-  print "UnCompressed SUMS:   http1   |   spdy3   |   spdy4 "
-  print "                   % 8d  | % 8d  | % 8d  " % fmtarg        
+  print "                                   http1   |   spdy3   |   spdy4 "
+  print "             Uncompressed Sums:  % 8d  | % 8d  | % 8d  " % fmtarg
+  fmtarg = (h1cs,  s3cs, s4cs)
+  print "               Compressed Sums:  % 8d  | % 8d  | % 8d  " % fmtarg
+  fmtarg = (h1us*1./h1us,  s3us*1./h1us, s4us*1./h1us)
+  print "Uncompressed/uncompressed HTTP:  % 2.5f  | % 2.5f  | % 2.5f  " % fmtarg
+  fmtarg = (h1cs*1./h1us,  s3cs*1./h1us, s4cs*1./h1us)
+  print "  Compressed/uncompressed HTTP:  % 2.5f  | % 2.5f  | % 2.5f  " % fmtarg
+  print
 
-
-  if requests == out_requests:
-    print "Original requests == output"
+  if headers_to_compress == out_headers:
+    print "Original headers == output"
   else:
     print "Something is wrong."
-    for i in xrange(len(requests)):
-      if requests[i] != out_requests[i]:
-        print requests[i]
+    for i in xrange(len(objects_tO_compress)):
+      if headers_to_compress[i] != out_headers[i]:
+        print headers_to_compress[i]
         print "   !="
-        print out_requests[i]
+        print out_headers[i]
         print
 
 main()
