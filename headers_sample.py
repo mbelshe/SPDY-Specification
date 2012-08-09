@@ -7,45 +7,45 @@ import struct
 import re
 
 default_requests = [
-{':method': "get",
-  ':path': '/index.html',
-  ':version': 'HTTP/1.1',
-  'user-agent': 'blah blah browser version blah blah',
-  'accept-encoding': 'sdch, bzip, compress',
-  ':host': 'www.foo.com',
-  'referrer': 'www.foo.com/ILoveBugs',
-  'cookie': 'SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJBLA',
-  'date': 'Wed Jul 18 11:50:43 2012'},
-{':method': "get",
-  ':path': '/index.js',
-  ':version': 'HTTP/1.1',
-  'user-agent': 'blah blah browser version blah blah',
-  'accept-encoding': 'sdch, bzip, compress',
-  ':host': 'www.foo.com',
-  'referrer': 'www.foo.com/ILoveBugsALot',
-  'cookie': 'SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJBLA',
-  'date': 'Wed Jul 18 11:50:44 2012'},
-{':method': "get",
-  ':path': '/index.css',
-  ':version': 'HTTP/1.1',
-  'user-agent': 'blah blah',
-  'accept-encoding': 'sdch, bzip, compress',
-  ':host': 'www.foo.com',
-  'cookie': 'SOMELONGSTRINGTHATISMOSTLYOPAQUE;FOOBLA',
-  'date': 'Wed Jul 18 11:50:45 2012'},
-{':method': "get",
-  ':path': '/generate_foo.html',
-  ':version': 'HTTP/1.1',
-  ':host': 'www.foo.com',
-  'date': 'Wed Jul 18 11:50:45 2012'},
-{':method': "get",
-  ':path': '/index.css',
-  ':version': 'HTTP/1.1',
-  'user-agent': 'blah blah browser version blah blah',
-  'accept-encoding': 'sdch, bzip, compress',
-  ':host': 'www.foo.com',
-  'cookie': 'SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJBLA',
-  'date': 'Wed Jul 18 11:50:46 2012'},
+  {':method': "get",
+    ':path': '/index.html',
+    ':version': 'HTTP/1.1',
+    'user-agent': 'blah blah browser version blah blah',
+    'accept-encoding': 'sdch, bzip, compress',
+    ':host': 'www.foo.com',
+    'referrer': 'www.foo.com/ILoveBugs',
+    'cookie': 'SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJBLA',
+    'date': 'Wed Jul 18 11:50:43 2012'},
+  {':method': "get",
+    ':path': '/index.js',
+    ':version': 'HTTP/1.1',
+    'user-agent': 'blah blah browser version blah blah',
+    'accept-encoding': 'sdch, bzip, compress',
+    ':host': 'www.foo.com',
+    'referrer': 'www.foo.com/ILoveBugsALot',
+    'cookie': 'SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJBLA',
+    'date': 'Wed Jul 18 11:50:44 2012'},
+  {':method': "get",
+    ':path': '/index.css',
+    ':version': 'HTTP/1.1',
+    'user-agent': 'blah blah',
+    'accept-encoding': 'sdch, bzip, compress',
+    ':host': 'www.foo.com',
+    'cookie': 'SOMELONGSTRINGTHATISMOSTLYOPAQUE;FOOBLA',
+    'date': 'Wed Jul 18 11:50:45 2012'},
+  {':method': "get",
+    ':path': '/generate_foo.html',
+    ':version': 'HTTP/1.1',
+    ':host': 'www.foo.com',
+    'date': 'Wed Jul 18 11:50:45 2012'},
+  {':method': "get",
+    ':path': '/index.css',
+    ':version': 'HTTP/1.1',
+    'user-agent': 'blah blah browser version blah blah',
+    'accept-encoding': 'sdch, bzip, compress',
+    ':host': 'www.foo.com',
+    'cookie': 'SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJBLA',
+    'date': 'Wed Jul 18 11:50:46 2012'},
   ]
 
 def ListToStr(val):
@@ -256,9 +256,15 @@ def B2ToInt(val):
   arg = "%c%c%c%c" % (0,0, val[0],val[1])
   return struct.unpack("!L", arg)[0]
 
+def LB2ToInt(val):
+  return (2, B2ToInt(val))
+
 def B1ToInt(val):
   arg = "%c%c%c%c" % (0,0,0,val[0])
   return struct.unpack("!L", arg)[0]
+
+def LB1ToInt(val):
+  return (1, B1ToInt(val))
 
 def LenIntTo2B(val):
   return IntTo2B(len(val))
@@ -267,63 +273,37 @@ def SetBitsInByte(lsb_bw, x):
   (lsb, bw) = lsb_bw
   return (x & ( ~(255 << bw))) << (7 - lsb - (bw - 1))
 
-def GetBitsInByte(least_significant_bit, bit_width):
-  def GetIt(x):
-    return (x >> (7-least_significant_bit-(bit_width-1))) & (~(255<<bit_width))
-
-def Idem(x):
-  return x
+def GetBitsInByte(lsb_bw, x):
+  (lsb, bw) = lsb_bw
+  return (x >> (7 - lsb - (bw - 1))) & (~(255 << bw))
 
 def PackB2LenPlusStr(x):
   return ''.join([IntTo2B(len(x)), x])
 
 def XtrtB2LenPlusStr(x):
   len = B2ToInt(x)
-  return (2 + len, x[2:len+2])
-
-
-# first byte, top_block, str_block
-#separate_packing_instructions = {
-#  'opcode'     : ((0,3),       None, None),
-#  'k'          : ((3,1),       None, None),
-#  'dict_level' : ((4,1),       None, None),
-#  'truncate_to': ( None,    IntTo2B, None),
-#  'index'      : ( None,    IntTo1B, None),
-#  'str_val'    : ( None, LenIntTo2B, Idem),
-#  'key_str'    : ( None, LenIntTo2B, Idem),
-#  'val_str'    : ( None, LenIntTo2B, Idem),
-#}
-#
-#separate_unpacking_instructions = {
-#  'opcode'     : ((0,3),       None, None),
-#  'k'          : ((3,1),       None, None),
-#  'dict_level' : ((4,1),       None, None),
-#  'truncate_to': ( None,    B2ToInt, None),
-#  'index'      : ( None,    B1ToInt, None),
-#  'str_val'    : ( None, B2ToIntLen, ExtractN),
-#  'key_str'    : ( None, B2ToIntLen, ExtractN),
-#  'val_str'    : ( None, B2ToIntLen, ExtractN),
+  return (2 + len, ''.join([chr(i) for i in x[2:len+2]]))
 
 inline_packing_instructions = {
-  'opcode'     : ((0,3),             None, None),
-  'k'          : ((3,1),             None, None),
-  'dict_level' : ((4,1),             None, None),
-  'truncate_to': ( None,          IntTo2B, None),
-  'index'      : ( None,          IntTo1B, None),
-  'str_val'    : ( None, PackB2LenPlusStr, None),
-  'key_str'    : ( None, PackB2LenPlusStr, None),
-  'val_str'    : ( None, PackB2LenPlusStr, None),
+  'opcode'     : ((0,3),             None),
+  'k'          : ((3,1),             None),
+  'dict_level' : ((4,1),             None),
+  'truncate_to': ( None,          IntTo2B),
+  'index'      : ( None,          IntTo1B),
+  'str_val'    : ( None, PackB2LenPlusStr),
+  'key_str'    : ( None, PackB2LenPlusStr),
+  'val_str'    : ( None, PackB2LenPlusStr),
 }
 
 inline_unpacking_instructions = {
-  'opcode'     : ((0,3),             None, None),
-  'k'          : ((3,1),             None, None),
-  'dict_level' : ((4,1),             None, None),
-  'truncate_to': ( None,          B2ToInt, None),
-  'index'      : ( None,          B1ToInt, None),
-  'str_val'    : ( None, XtrtB2LenPlusStr, None),
-  'key_str'    : ( None, XtrtB2LenPlusStr, None),
-  'val_str'    : ( None, XtrtB2LenPlusStr, None),
+  'opcode'     : ((0,3),             None),
+  'k'          : ((3,1),             None),
+  'dict_level' : ((4,1),             None),
+  'truncate_to': ( None,         LB2ToInt),
+  'index'      : ( None,         LB1ToInt),
+  'str_val'    : ( None, XtrtB2LenPlusStr),
+  'key_str'    : ( None, XtrtB2LenPlusStr),
+  'val_str'    : ( None, XtrtB2LenPlusStr),
 }
 
 packing_order = ['opcode',
@@ -338,38 +318,56 @@ packing_order = ['opcode',
                  'key_str',
                  'val_str']
 
-# The opcodes that should be: #
-###############################
-#            eref
-#            insert
-#            del
-#            move
-#            show/hide
-#            remove
-# opcodes = {
-#    'ERef' : (0x0, 'key_str', 'val_str'),
-#    'Nsrt' : (0x1, 'k', 'dict_level', 'index', 'pos', 'str_val'),
-#    'Dele' : (0x2, 'k', 'dict_level', 'index', 'pos', 'len'),
-#    'Move' : (0x3, 'k', 'dict_level', 'index', 'pos', 'len', 'npos'),
-#    'HiSh' : (0x4, 'index'),
-#    'Remo' : (0x5, 'index'),
-
-
 opcodes = {
-    'ERef' : (0x0, 'key_str', 'val_str'),
-    'Store': (0x1, 'k', 'dict_level', 'index', 'str_val'),
-    'TaCo' : (0x2, 'k', 'dict_level', 'truncate_to', 'str_val'),
-    'KVSto': (0x3, 'index', 'key_str', 'val_str'),
-    'Rem'  : (0x4, 'index'),
-    'Hide' : (0x5, 'index'),
-    'Show' : (0x6, 'index'),
+    'Store': (0x0, 'k', 'dict_level', 'index', 'str_val'),
+    'TaCo' : (0x1, 'k', 'dict_level', 'index', 'truncate_to', 'str_val'),
+    'Rem'  : (0x2,      'dict_level', 'index'),
+    'Tggl' : (0x3,      'dict_level', 'index'),
+    'KVSto': (0x5,      'dict_level', 'index', 'key_str', 'val_str'),
+    'ERef' : (0x6,                             'key_str', 'val_str'),
     }
+
+def OpcodeSize(unpacking_instructions, opcode):
+  retval = 1
+  instructions = opcodes[opcode][1:]
+  fake_data = [0,0,0,0,0,0,0,0,0,0,0,0]  # should be larger than any field.
+  for field_name in instructions:
+    (_, tp_func) = unpacking_instructions[field_name]
+    if tp_func:
+      (advance, _) = tp_func(fake_data)
+      retval += advance
+  return retval
 
 def OpcodeToVal(x):
   return opcodes[x][0]
 
-def UnpackSPDY4Ops(ops):
-  out = []
+def UnpackSPDY4Ops(unpacking_instructions, real_ops):
+  opcode_to_op = {}
+  for (key, val) in opcodes.iteritems():
+    opcode_to_op[val[0]] = [key] + list(val[1:])
+
+  ops = []
+  while len(real_ops):
+    opcode = GetBitsInByte(unpacking_instructions['opcode'][0], real_ops[0])
+    op = {}
+    op['opcode'] = opcode_to_op[opcode][0]
+    fb = real_ops[0]
+    real_ops = real_ops[1:]
+    for field_name in opcode_to_op[opcode][1:]:
+      if field_name == 'opcode':
+        continue
+      if not field_name in unpacking_instructions:
+        print field_name, " is not in instructions"
+        raise StandardError();
+      (fb_func_params, tp_func) = unpacking_instructions[field_name]
+      if fb_func_params is not None:
+        op[field_name] = GetBitsInByte(fb_func_params, fb)
+      if tp_func is not None:
+        (advance, result) = tp_func(real_ops)
+        op[field_name] = result
+        real_ops = real_ops[advance:]
+    ops.append(op)
+  return ops
 
 def PackSpdy4Ops(packing_instructions, ops):
   top_block = []
@@ -377,11 +375,10 @@ def PackSpdy4Ops(packing_instructions, ops):
   for op in ops:
     fb = 0
     tb = []
-    sb = []
     for field_name in packing_order:
       if not field_name in op:
         continue
-      (fb_func_params, tp_func, sr_func) = packing_instructions[field_name]
+      (fb_func_params, tp_func) = packing_instructions[field_name]
       val = op[field_name]
       if field_name == 'opcode':
         val = OpcodeToVal(op[field_name])
@@ -389,17 +386,10 @@ def PackSpdy4Ops(packing_instructions, ops):
         fb = fb | SetBitsInByte(fb_func_params, val)
       if tp_func is not None:
         tb.append(tp_func(val))
-      if sr_func is not None:
-        sb.append(sr_func(val))
     top_block.append(chr(fb))
     top_block.extend(tb)
-    str_block.extend(sb)
   top_block_str = ''.join(top_block)
-  str_block_str = ''.join(str_block)
-  return top_block_str + str_block_str
-
-def ParseFB(byte):
-  return (((byte >> 5) & 0x7), ((byte >> 4) & 0x1), ((byte >> 3) & 0x1))
+  return top_block_str
 
 def MakeERef(key, value):
   op = {'opcode': 'ERef',
@@ -422,14 +412,8 @@ def MakeRem(dict_level, index):
         'index': index}
   return op
 
-def MakeHide(dict_level, index):
-  op = {'opcode': 'Hide',
-        'dict_level': dict_level,
-        'index': index}
-  return op
-
-def MakeShow(dict_level, index):
-  op = {'opcode': 'Show',
+def MakeTggl(dict_level, index):
+  op = {'opcode': 'Tggl',
         'dict_level': dict_level,
         'index': index}
   return op
@@ -451,78 +435,8 @@ def MakeKVSto(dict_level, index, key, val):
   return op
 
 def RealOpsToOps(realops):
-  input_size = len(realops)
-  idx = 0
-  ops = []
   realop = [ord(c) for c in realops]
-  #print "input_size: ", input_size
-  while input_size > idx:
-    (opcode, k, l) = ParseFB(realop[idx])
-    idx += 1
-
-    if opcode == 0x0:  # ERef
-      key_len = B2ToInt(realop[idx+0:idx+2])
-      idx += 2#
-      key = ListToStr(realop[idx:idx+key_len])
-      idx += key_len
-      val_len = B2ToInt(realop[idx+0:idx+2])
-      idx += 2#
-      val = ListToStr(realop[idx:idx+val_len])
-      idx += val_len
-      ops.append(MakeERef(key, val))
-      continue
-    if opcode == 0x1:  # Store
-      index   = B1ToInt(realop[idx+0:idx+1])
-      idx += 1#
-      str_len = B2ToInt(realop[idx+0:idx+2])
-      idx += 2#
-      str_val = ListToStr(realop[idx:idx+str_len])
-      idx += str_len
-      ops.append(MakeStore(k, l, index, str_val))
-      continue
-    if opcode == 0x2:  # TaCo
-      truncto = B2ToInt(realop[idx+0:idx+2])
-      idx += 2#
-      index   = B1ToInt(realop[idx+0:idx+1])
-      idx += 1#
-      str_len = B2ToInt(realop[idx+0:idx+2])
-      idx += 2#
-      str_val = ListToStr(realop[idx:idx+str_len])
-      idx += str_len
-      ops.append(MakeTaCo(k, l, index, truncto, str_val))
-      continue
-    if opcode == 0x3:  # KVSto
-      index   = B1ToInt(realop[idx+0:idx+1])
-      idx += 1#
-      key_len = B2ToInt(realop[idx+0:idx+2])
-      idx += 2#
-      key = ListToStr(realop[idx:idx+key_len])
-      idx += key_len
-      val_len = B2ToInt(realop[idx+0:idx+2])
-      idx += 2#
-      val = ListToStr(realop[idx:idx+val_len])
-      idx += val_len
-      ops.append(MakeKVSto(l, index, key, val))
-      continue
-    if opcode == 0x4:  # Rem
-      index   = B1ToInt(realop[idx+0:idx+1])
-      idx += 1#
-      ops.append(MakeRem(l, index))
-      continue
-    if opcode == 0x5:
-      index   = B1ToInt(realop[idx+0:idx+1])
-      idx += 1#
-      ops.append(MakeHide(l, index))
-      continue
-    if opcode == 0x6:
-      index   = B1ToInt(realop[idx+0:idx+1])
-      idx += 1#
-      ops.append(MakeShow(l, index))
-      continue
-
-    print "unknown opcode: ", hex(opcode)
-    raise StandardError()  # unknown opcode.
-  return ops
+  return UnpackSPDY4Ops(inline_unpacking_instructions, realop)
 
 def FormatOp(op):
   order = ['opcode', 'k', 'dict_level', 'index', 'truncate_to', 'str_len',
@@ -558,10 +472,8 @@ def NextIndex(dict):
   for idx in indices:
     if idx - prev_idx > 1:
       # jumped up by more than one.
-      #print "ni: ", prev_idx + 1
       return prev_idx + 1
     prev_idx = idx
-  #print "ni: ", idx + 1
   return idx + 1
 
 def CommonPrefixLen(str1, str2):
@@ -607,13 +519,15 @@ class CompressorDecompressor:
           "accept-ranges": "",
           "allow": "",
           })
+  def GetDictSize(self):
+    return self.total_storage
 
   def SetDictKVsAndMakeInvisible(self, dict, kv_pairs):
     for (key, val) in kv_pairs.iteritems():
       index = NextIndex(dict)
       self.ModifyDictEntry(dict, index, 1, key)
       self.ModifyDictEntry(dict, index, 0, val)
-      self.MakeInvisible(dict, index)
+      self.SetVisibility(dict, index, 0)
 
   def GetHostnameForStreamGroup(self, stream_group):
     if stream_group == 0:
@@ -643,17 +557,14 @@ class CompressorDecompressor:
         # otherwise it'll get added to the group level
     return (dict, dict_level, key_idx)
 
-  def MakeOps(self, key, value, stream_group):
+  def MakeOpsForHeaderLine(self, key, value, stream_group):
     ops = []
-    # ops.append(MakeERef(key, value))
-    # return ops
     (dict, dict_level, key_idx) = self.FindAppropriateEntry(key, stream_group)
+    op = None
 
     if key_idx == -1:  # store a new one.
       key_idx = NextIndex(dict)
-      ops.append(MakeKVSto(dict_level, key_idx, key, value))
-      #ops.extend([MakeStore(1, dict_level, key_idx, key),
-      #            MakeStore(0, dict_level, key_idx, value)])
+      op = MakeKVSto(dict_level, key_idx, key, value)
     else:
       dict_value = ''
       if key_idx in dict:
@@ -661,19 +572,16 @@ class CompressorDecompressor:
       prefix_match_len = CommonPrefixLen(dict_value, value)
       if prefix_match_len == len(value) and prefix_match_len == len(dict_value):
         self.Touch(dict, key_idx)
-        if not dict[key_idx][3]:
-          ops.append(MakeShow(dict_level, key_idx))
-          self.MakeVisible(dict, key_idx)
+        if not self.IsVisible(dict[key_idx]):
+          op = MakeTggl(dict_level, key_idx)
       #elif prefix_match_len > 2:  # 2 == trunc_to len
-      #  ops.append(MakeTaCo(0, dict_level, key_idx, prefix_match_len,
-      #                      value[prefix_match_len:]))
+      #  op = MakeTaCo(0, dict_level, key_idx, prefix_match_len,
+      #                      value[prefix_match_len:])
       else:
-        ops.append(MakeStore(0, dict_level, key_idx, value))
-
-
-    for op in ops: # gotta keep our state up-to-date.
-      #print "executing: ", FormatOp(op)
+        op = MakeStore(0, dict_level, key_idx, value)
+    if op is not None:
       self.ExecuteOp(op, stream_group, {})
+      ops.append(op)
     return ops
 
   def GenerateAllHeaders(self, stream_group):
@@ -702,9 +610,19 @@ class CompressorDecompressor:
     del dict[index]
     return
 
+  def CleanupDict(self, dict):
+    pass
+
+  def PossiblyCleanupState(self):
+    if self.total_storage > self.limits["TotalHeaderStorageSize"]:
+      pass
+
   def ModifyDictEntry(self, dict, index, is_key, str_val):
     if index not in dict:
+      if len(dict) > self.limits["MaxEntriesInTable"]:
+        self.CleanupDict(dict)
       dict[index] = ['', '', 0, 1]  # v, k, gen, visible?
+
     self.total_storage -= len(dict[index][is_key])
     self.total_storage += len(str_val)
     dict[index][is_key] = str_val
@@ -712,13 +630,13 @@ class CompressorDecompressor:
     if dict[index][1] == '':
       print "ERROR: ", dict, index, is_key, str_val
       raise StandardError()
-    #print self.total_storage
+    self.PossiblyCleanupState()
 
-  def MakeInvisible(self, dict, index):
-    dict[index][3] = 0
+  def ToggleVisibility(self, dict, index):
+    dict[index][3] = not dict[index][3]
 
-  def MakeVisible(self, dict, index):
-    dict[index][3] = 1
+  def SetVisibility(self, dict, index, visible):
+    dict[index][3] = visible
 
   def Decompress(self, op_blob):
     if not self.use_zlib:
@@ -761,7 +679,7 @@ class CompressorDecompressor:
       if str_len == 0:
         raise StandardError()
       self.ModifyDictEntry(dict, index, is_key, str_val)
-      self.MakeVisible(dict, index)
+      self.SetVisibility(dict, index, 1)
     elif opcode == 'TaCo':
       is_key = op['k']
       str_val = op['str_val']
@@ -771,17 +689,15 @@ class CompressorDecompressor:
         raise StandardError()
       self.ModifyDictEntry(dict, index, is_key,
           dict[index][is_key][:truncate_to] + str_val)
-      self.MakeVisible(dict, index)
+      self.SetVisibility(dict, index, 1)
     elif opcode == 'KVSto':
       self.ModifyDictEntry(dict, index, 1, op['key_str'])
       self.ModifyDictEntry(dict, index, 0, op['val_str'])
-      self.MakeVisible(dict, index)
+      self.SetVisibility(dict, index, 1)
     elif opcode == 'Rem':
       self.RemoveDictEntry(dict, index)
-    elif opcode == 'Hide':
-      self.MakeInvisible(dict, index)
-    elif opcode == 'Show':
-      self.MakeVisible(dict, index)
+    elif opcode == 'Tggl':
+      self.ToggleVisibility(dict, index)
     else:
       # unknown opcode
       raise StandardError()
@@ -790,13 +706,10 @@ class CompressorDecompressor:
     remove_ops = []
     for (idx, item) in self.connection_dict.iteritems():
       if self.NotCurrent(item) and self.IsVisible(item):
-        print "Hiding: ", item
-        #remove_ops.append(MakeRem(1, idx))
-        remove_ops.append(MakeHide(1, idx))
+        remove_ops.append(MakeTggl(1, idx))
     for (idx, item) in self.stream_group_dicts[stream_group].iteritems():
       if self.NotCurrent(item) and self.IsVisible(item):
-        #remove_ops.append(MakeRem(0, idx))
-        remove_ops.append(MakeHide(0, idx))
+        remove_ops.append(MakeTggl(0, idx))
     for op in remove_ops:
       self.ExecuteOp(op, stream_group, {})
     return remove_ops
@@ -815,7 +728,7 @@ class CompressorDecompressor:
       index = NextIndex(dict)
       self.ModifyDictEntry(dict, index, 1, key)
       self.ModifyDictEntry(dict, index, 0, val)
-      self.MakeInvisible(dict, index)
+      self.SetVisibility(dict, index, 0)
 
   def SeedStreamGroup(self, dict):
     self.SetDictKVsAndMakeInvisible(dict,
@@ -852,8 +765,8 @@ class CompressorDecompressor:
         "referer": "",
         "retry-after": "",
         "server": "",
-        "status": "",
-        "status-text": "",
+        ":status": "",
+        ":status-text": "",
         "te": "",
         "trailer": "",
         "transfer-encoding": "",
@@ -866,6 +779,14 @@ class CompressorDecompressor:
         "status": "",
         "set-cookie": "",
         "origin": "",
+        'x-xss-protection': "",
+        'x-content-type-options': "",
+        'x-frame-options': "",
+        'content-disposition': "",
+        'access-control-allow-origin': "",
+        'get-dictionary': "",
+        'p3p': "",
+        'x-powered-by': "",
         })
 
   # returns a list of operations
@@ -887,21 +808,21 @@ class CompressorDecompressor:
       if not stream_group in self.stream_group_dicts:
         self.stream_group_dicts[stream_group] = {}
         self.SeedStreamGroup(self.stream_group_dicts[stream_group])
-      ops.extend(self.MakeOps(key, value, stream_group))
+      ops.extend(self.MakeOpsForHeaderLine(key, value, stream_group))
     remove_ops = self.MakeRemovalOps(stream_group)
     return remove_ops + ops
 
 def HTTPHeadersFormat(request):
   out_frame = []
-  is_request = 0
   fl = ""
   avoid_list = []
   if ":method" in request:
-    is_request = true;
-    fl = "%s %s %s\r\n" % (request[":method"],request[":path"],request[":version"])
+    fl = "%s %s HTTP/%s\r\n" % (
+        request[":method"],request[":path"],request[":version"])
     avoid_list = [":method", ":path", ":version"]
   else:
-    fl = "%s %s %s\r\n" % (request[":version"],request[":status"],request[":status-text"])
+    fl = "HTTP/%s %s %s\r\n" % (
+        request[":version"],request[":status"],request[":status-text"])
     avoid_list = [":version", ":status", ":status-text"]
   out_frame.append(fl)
   for (key, val) in request.iteritems():
@@ -909,10 +830,11 @@ def HTTPHeadersFormat(request):
       continue
     if key == ":host":
       key = "host"
-    out_frame.append(key)
-    out_frame.append(": ")
-    out_frame.append(val)
-    out_frame.append("\r\n")
+    for individual_val in val.split('\x00'):
+      out_frame.append(key)
+      out_frame.append(": ")
+      out_frame.append(individual_val)
+      out_frame.append("\r\n")
   return ''.join(out_frame)
 
 def Spdy3HeadersFormat(request):
@@ -994,12 +916,17 @@ def main():
   use_zlib = 1
   spdy4_compressor.use_zlib = use_zlib
   spdy4_decompressor.use_zlib = use_zlib
-  spdy3_compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, 11)
-  spdy3_compressor.compress(spdy_dictionary); spdy3_compressor.flush(zlib.Z_SYNC_FLUSH)
-  http1_compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, 11)
-  http1_compressor.compress(spdy_dictionary); http1_compressor.flush(zlib.Z_SYNC_FLUSH)
+  spdy3_compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
+      zlib.DEFLATED, 11)
+  spdy3_compressor.compress(spdy_dictionary);
+  spdy3_compressor.flush(zlib.Z_SYNC_FLUSH)
+  http1_compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
+      zlib.DEFLATED, 11)
+  http1_compressor.compress(spdy_dictionary);
+  http1_compressor.flush(zlib.Z_SYNC_FLUSH)
 
-  headers_to_compress = responses
+  #headers_to_compress = responses
+  headers_to_compress = requests
   for i in xrange(len(requests)):
     request = requests[i]
     obj_to_compress = headers_to_compress[i]
@@ -1040,12 +967,14 @@ def main():
     out_frame = spdy4_decompressor.DeTokenify(out_ops, spdy4_frame_list[i][2])
     out_header = spdy4_decompressor.GenerateAllHeaders(spdy4_frame_list[i][2])
     out_headers.append(out_header)
-    print
-    print '"%s"' % requests[i][":path"][:70]
-    print "stream group: %2d, %s" % (spdy4_frame_list[i][2],
+    print '####################################################################'
+    print '####### request-path: "%s"' % requests[i][":path"][:80]
+    print "####### stream group: %2d, %s" % (spdy4_frame_list[i][2],
         spdy4_compressor.GetHostnameForStreamGroup(spdy4_frame_list[i][2]))
-    #print "request: ", out_header
-    #print http1_frame_list[i][0]
+    print "####### dict size: %3d" % spdy4_decompressor.GetDictSize()
+    print
+    #print "header: ", out_header
+    print http1_frame_list[i][0]
     for op in RealOpsToOps(out_ops):
       print FormatOp(op)
     #print
@@ -1066,6 +995,9 @@ def main():
       print "             %s frame size: %4d | %4d | %2.2f | %2.2f" % fmtarg
     print
   fmtarg = (h1us, s3us, s4us)
+  print "######################################################################"
+  print "######################################################################"
+  print
   print "                                   http1   |   spdy3   |   spdy4 "
   print "             Uncompressed Sums:  % 8d  | % 8d  | % 8d  " % fmtarg
   fmtarg = (h1cs,  s3cs, s4cs)
@@ -1080,12 +1012,16 @@ def main():
     print "Original headers == output"
   else:
     print "Something is wrong."
-    for i in xrange(len(objects_tO_compress)):
+    for i in xrange(len(headers_to_compress)):
       if headers_to_compress[i] != out_headers[i]:
         print headers_to_compress[i]
         print "   !="
         print out_headers[i]
         print
+  print
+  for (opcode, ignore) in opcodes.iteritems():
+    print "opcode: % 7s size: % 3d" % ("'" + opcode + "'",
+        OpcodeSize(inline_unpacking_instructions, opcode))
 
 main()
 

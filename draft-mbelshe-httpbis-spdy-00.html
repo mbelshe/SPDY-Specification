@@ -144,9 +144,9 @@
 <table summary="layout" width="66%" border="0" cellpadding="0" cellspacing="0"><tr><td><table summary="layout" width="100%" border="0" cellpadding="2" cellspacing="1">
 <tr><td class="header">Network Working Group</td><td class="header">M. Belshe</td></tr>
 <tr><td class="header">Internet-Draft</td><td class="header">Twist</td></tr>
-<tr><td class="header">Expires: August 4, 2012</td><td class="header">R. Peon</td></tr>
+<tr><td class="header">Expires: February 10, 2013</td><td class="header">R. Peon</td></tr>
 <tr><td class="header">&nbsp;</td><td class="header">Google, Inc</td></tr>
-<tr><td class="header">&nbsp;</td><td class="header">February 2012</td></tr>
+<tr><td class="header">&nbsp;</td><td class="header">August 9, 2012</td></tr>
 </table></td></tr></table>
 <h1><br />SPDY Protocol<br />draft-mbelshe-httpbis-spdy-00</h1>
 
@@ -175,7 +175,7 @@ The list of current Internet-Drafts can be accessed at
 The list of Internet-Draft Shadow Directories can be accessed at
 <a href='http://www.ietf.org/shadow.html'>http://www.ietf.org/shadow.html</a>.</p>
 <p>
-This Internet-Draft will expire on August 4, 2012.</p>
+This Internet-Draft will expire on February 10, 2013.</p>
 
 <h3>Copyright Notice</h3>
 <p>
@@ -252,7 +252,9 @@ HEADERS<br />
 WINDOW_UPDATE<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#CREDENTIAL">2.6.9.</a>&nbsp;
 CREDENTIAL<br />
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#HeaderBlock">2.6.10.</a>&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#PUSH_PROMISE">2.6.10.</a>&nbsp;
+PUSH_PROMISE<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#HeaderBlock">2.6.11.</a>&nbsp;
 Name/Value Header Block<br />
 <a href="#HTTPLayer">3.</a>&nbsp;
 HTTP Layering over SPDY<br />
@@ -403,11 +405,11 @@ Session (Connections)</h3>
 <a name="rfc.section.2.2"></a><h3>2.2.&nbsp;
 Framing</h3>
 
-<p>Once the connection is established, clients and servers exchange framed messages. There are two types of frames: <a class='info' href='#ControlFrames'>control frames<span> (</span><span class='info'>Control frames</span><span>)</span></a> and <a class='info' href='#DataFrames'>data frames<span> (</span><span class='info'>Data frames</span><span>)</span></a>.  All frames have a common header which is 8 bytes in length.
+<p>Once the connection is established, clients and servers exchange framed messages. There are two types of frames: <a class='info' href='#ControlFrames'>control frames<span> (</span><span class='info'>Control frames</span><span>)</span></a> and <a class='info' href='#DataFrames'>data frames<span> (</span><span class='info'>Data frames</span><span>)</span></a>. 
 </p>
-<p>The first bit of any frame indicates whether a frame is a control frame or data frame. Control frames carry a version number, a frame type, flags, and a length. Data frames contain the stream ID, flags, and the length for the payload carried after the common header. The simple header is designed to make reading and writing of frames easy.
+<p>The first bit of any frame indicates whether a frame is a control frame or data frame. Control frames carry a frame type, flags, and a length. Data frames contain the stream ID, flags, and the length for the payload carried after the common header. The simple header is designed to make reading and writing of frames easy.
 </p>
-<p>All integer values, including length, version, and type, are in network byte order.  SPDY does not enforce alignment of types in dynamically sized frames.
+<p>All integer values, including length, and type, are in network byte order.  SPDY does not enforce alignment of types in dynamically sized frames.
 </p>
 <a name="NotationalConventions"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
@@ -423,7 +425,7 @@ Notational Conventions for Framing</h3>
 </p>
 <p> "=" denotes an unknown number of bits, typically bounded by one of the fields in the frame definition
 </p>
-<p> "|" denotes field separation, which may or may not be on a byte boundary
+<p> "|" denotes field separation, which may or may not be on a byte boundary. This does not count as a bit
 </p>
 <p> "->" at the end of a line indicates that the structure is not yet fully described
 </p>
@@ -456,13 +458,18 @@ In other words, first two bytes would be: 0b10111011 0b10000000, followed by the
 
 </p>
 <p>
-Another example.  In this case, a single byte is represented with the most significant bit a 0, the second most significant bit a 1, the next bit the 'K' field, the next bit the 'L' field, and the next 4 bits are reserved and must be zeros. An indeterminate (presumably defined elsewhere) amount of data follows and ends on a byte boundary.
+Another example.  In this case, a single byte is represented with the most significant bit a 0, the second most significant bit a 1, the next bit the 'K' field, the next bit the 'L' field, and the next 4 bits are reserved and must be zeros. The frame description continues, describing that an indeterminate (presumably defined elsewhere) amount of data follows and ends on a byte boundary.
 </p>
 <div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
       0
-+--|-|-|----+========+
-|01|K|L|XXXX|  data  |
-+--|-|-|----+========+
++--|-|-|----+
+|01|K|L|XXXX|  -&gt;
++--|-|-|----+
+
+   1..N
++========+
+|  data  |
++========+
 </pre></div><p>
 
 
@@ -472,32 +479,25 @@ Another example.  In this case, a single byte is represented with the most signi
 <a name="rfc.section.2.2.2"></a><h3>2.2.2.&nbsp;
 Control frames</h3>
 <div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-     0        1        2        3        4        5        6        7
-+-|-------+--------+--------+--------+--------+--------+--------+--------+
-|C| Version(15)    |    Type(16)     |Flags(8)| Length(24)               | -&gt;
-+-|-------+--------+--------+--------+--------+--------+--------+--------+
-
-   8..N
-+========+
-|  Data  |
-+========+
+     0        1        2        3       4..N
++-|-------+--------+--------+--------+========+
+|C|Type(7)|Flags(8)| Length(16)      |  Data  |-&gt;
++-|-------+--------+--------+--------+========+
 </pre></div>
 <p>Control bit: The 'C' bit is a single bit indicating if this is a control message. For control frames this value is always 1.
-</p>
-<p>Version: The version number of the SPDY protocol.  This document describes SPDY version 4.
 </p>
 <p>Type: The type of control frame. See <a class='info' href='#ControlFrameTypes'>Control Frames<span> (</span><span class='info'>Control frame types</span><span>)</span></a> for the complete list of control frames.
 </p>
 <p>Flags: Flags related to this frame. Flags for control frames and data frames are different.
 </p>
-<p>Length: An unsigned 24-bit value representing the number of bytes after the length field.
+<p>Length: An unsigned 16-bit value representing the number of bytes after the length field.
 </p>
 <p>Data: data associated with this control frame. The format and length of this data is controlled by the control frame type.
 </p>
 <p>Control frame processing requirements:
 </p>
 <blockquote class="text">
-<p>Note that full length control frames (16MB) can be large for implementations running on resource-limited hardware.  In such cases, implementations MAY limit the maximum length frame supported.  However, all implementations MUST be able to receive control frames of at least 8192 octets in length.
+<p>Note that full length control frames (16kb) can be large for implementations running on resource-limited hardware.  In such cases, implementations MAY limit the maximum length frame supported.  However, all implementations MUST be able to receive control frames of at least 8192 octets in length.
 </p>
 </blockquote><p>
 
@@ -507,15 +507,10 @@ Control frames</h3>
 <a name="rfc.section.2.2.3"></a><h3>2.2.3.&nbsp;
 Data frames</h3>
 <div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-     0        1        2        3        4        5        6        7
-+-|-------+--------+--------+--------+--------+--------+--------+--------+
-|0| Stream ID (31)                   |Flags(8)| Length(24)               | -&gt;
-+-|-------+--------+--------+--------+--------+--------+--------+--------+
-
-   8..N
-+========+
-|  Data  |
-+========+
+     0        1        2        3        4        5        6       7..N
++-|-------+--------+--------+--------+--------+--------+--------+========+
+|0| Stream ID (31)                   |Flags(8)| Length(16)      |  Data  |
++-|-------+--------+--------+--------+--------+--------+--------+========+
 </pre></div>
 <p>Control bit: For data frames this value is always 0.
 </p>
@@ -526,10 +521,12 @@ Data frames</h3>
 <blockquote class="text">
 <p>0x01 = FLAG_FIN - signifies that this frame represents the last frame to be transmitted on this stream.  See <a class='info' href='#StreamClose'>Stream Close<span> (</span><span class='info'>Stream close</span><span>)</span></a> below.
 </p>
+<p>0x02 = MSG_DONE - signifies that this frame represents the last frame of a message. This is relevant for layering of message-based protocols on top of SPDY.
+</p>
 </blockquote><p>
 
 </p>
-<p>Length: An unsigned 24-bit value representing the number of bytes after the length field. The total size of a data frame is 8 bytes + length. It is valid to have a zero-length data frame.
+<p>Length: An unsigned 16-bit value representing the number of bytes after the length field. The total size of a data frame is 8 bytes + length. It is valid to have a zero-length data frame.
 </p>
 <p>Data: The variable-length data payload; the length was defined in the length field.
 </p>
@@ -738,6 +735,10 @@ Control frame types</h3>
 <td align="center"> 0xa</td>
 <td align="center"> <a class='info' href='#CREDENTIAL'>CREDENTIAL<span> (</span><span class='info'>CREDENTIAL</span><span>)</span></a></td>
 </tr>
+<tr>
+<td align="center"> 0xb</td>
+<td align="center"> <a class='info' href='#PUSH_PROMISE'>PUSH_PROMISE<span> (</span><span class='info'>PUSH_PROMISE</span><span>)</span></a></td>
+</tr>
 </table>
 <br clear="all" />
 
@@ -750,20 +751,15 @@ SYN_STREAM</h3>
 
 <p>The SYN_STREAM control frame allows the sender to asynchronously create a stream between the endpoints.  See <a class='info' href='#StreamCreation'>Stream Creation<span> (</span><span class='info'>Stream creation</span><span>)</span></a>
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-     0        1        2        3        4        5        6        7
-+-|-------+--------+--------+--------+--------+--------+--------+--------+
-|1| Version(15)    |     [Type]   0x1|Flags(8)| Length(24)               | -&gt;
-+-|-------+--------+--------+--------+--------+--------+--------+--------+
-
-     8        9        10       11       12       13       14       15
+     0        1        2        3         4         5        6        7
 +-|-------+--------+--------+--------+-|-------+--------+--------+--------+
-|X| Stream Id(31)                    |X| Associated-To-Stream-ID(31)      | -&gt;
+|1|    0x1|Flags(8)| Length(16)      |X| Stream Id(31)                    | -&gt;
 +-|-------+--------+--------+--------+-|-------+--------+--------+--------+
 
-    16       17               18..N
-+---|-----+--------+=========================+
-|Pri|XXXXX| HG(8)  | Name/Value Header Block |
-+---|-----+--------+=========================+
+     8        9,10,11..N
++---|-----+=========================+
+|Pri|XXXXX| Name/Value Header Block |
++---|-----+=========================+
 </pre></div>
 <p>Flags: Flags related to this frame. Valid flags are:
 </p>
@@ -773,7 +769,7 @@ SYN_STREAM</h3>
 </blockquote><p>
 
 </p>
-<p>Length: The length is the number of bytes which follow the length field in the frame.  For SYN_STREAM frames, this is 10 bytes plus the length of the compressed Name/Value block.
+<p>Length: The length is the number of bytes which follow the length field in the frame.  For SYN_STREAM frames, this is 6 bytes plus the length of the Name/Value Header Block.
 </p>
 <p>Stream-ID: The 31-bit identifier for this stream.  This stream-id will be used in frames which are part of this stream.
 </p>
@@ -782,8 +778,6 @@ SYN_STREAM</h3>
 <p>Priority: A 3-bit <a class='info' href='#StreamPriority'>priority<span> (</span><span class='info'>Stream priority</span><span>)</span></a> field.
 </p>
 <p>Unused: 5 bits of unused space, reserved for future use.
-</p>
-<p>HG: (Header Group) An 8 bit unsigned integer specifying the header group for this stream. See the <a class='info' href='#HeaderBlock'>Name/Value Header Block<span> (</span><span class='info'>Name/Value Header Block</span><span>)</span></a> description for details about how this is to be interpreted.
 </p>
 <p>Name/Value Header Block:  A set of name/value pairs carried as part of the SYN_STREAM.  <a class='info' href='#HeaderBlock'>see Name/Value Header Block<span> (</span><span class='info'>Name/Value Header Block</span><span>)</span></a>.
 </p>
@@ -796,15 +790,15 @@ SYN_REPLY</h3>
 
 <p>SYN_REPLY indicates the acceptance of a stream creation by the recipient of a SYN_STREAM frame.
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-     0        1        2        3        4        5        6        7
-+-|-------+--------+--------+--------+--------+--------+--------+--------+
-|1| Version(15)    | [Type]       0x2|Flags(8)| Length(24)               | -&gt;
-+-|-------+--------+--------+--------+--------+--------+--------+--------+
+     0        1        2        3         4         5        6        7
++-|-------+--------+--------+--------+-|-------+--------+--------+--------+
+|1|    0x2|Flags(8)| Length(16)      |X| Stream Id(31)                    | -&gt;
++-|-------+--------+--------+--------+-|-------+--------+--------+--------+
 
-     8        9        10       11         12..N
-+--------+-|-------+--------+--------+--------+=========================+
-| HG(8)  |X| Stream Id(31)                    | Name/Value Header Block |
-+--------+-|-------+--------+--------+--------+=========================+
+     8         9,10,11..N
++--------+=========================+
+| HG(8)  | Name/Value Header Block |
++--------+=========================+
 </pre></div>
 <p>Flags: Flags related to this frame. Valid flags are:
 </p>
@@ -831,19 +825,19 @@ RST_STREAM</h3>
 
 <p>The RST_STREAM frame allows for abnormal termination of a stream.  When sent by the creator of a stream, it indicates the creator wishes to cancel the stream.  When sent by the recipient of a stream, it indicates an error or that the recipient did not want to accept the stream, so the stream should be closed.
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-     0        1        2        3        4        5        6        7
-+-|-------+--------+--------+--------+--------+--------+--------+--------+
-|1| Version(15)    | [Type]       0x3|Flags(8)| [Length]              0x8| -&gt;
-+-|-------+--------+--------+--------+--------+--------+--------+--------+
+     0        1        2        3         4         5        6        7
++-|-------+--------+--------+--------+-|-------+--------+--------+--------+
+|1|    0x3|Flags(8)| [Length]     0x8|X| Stream-ID(31)                    | -&gt;
++-|-------+--------+--------+--------+-|-------+--------+--------+--------+
 
-     8        9        10       11       12       13       14       15
-+-|-------+--------+--------+--------+--------+--------+--------+--------+
-|X| Stream-ID(31)                    | Status-Code(32)                   |
-+-|-------+--------+--------+--------+--------+--------+--------+--------+
+     8        9        10       11
++--------+--------+--------+--------+
+| Status-Code(32)                   |
++--------+--------+--------+--------+
 </pre></div>
 <p>Flags: Flags related to this frame. RST_STREAM does not define any flags.  This value must be 0.
 </p>
-<p>Length: An unsigned 24-bit value representing the number of bytes after the length field. For RST_STREAM  control frames, this value is always 8.
+<p>Length: An unsigned 16-bit value representing the number of bytes after the length field. For RST_STREAM  control frames, this value is always 8.
 </p>
 <p>Stream-ID: The 31-bit identifier for this stream.
 </p>
@@ -890,23 +884,21 @@ SETTINGS</h3>
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
      0        1        2        3        4        5        6        7
 +-|-------+--------+--------+--------+--------+--------+--------+--------+
-|1| Version(15)    | [Type]       0x4|Flags(8)| Length(24)               | -&gt;
+|1|    0x4|Flags(8)| Length(16)      | Number-of-Entries(32)             | -&gt;
 +-|-------+--------+--------+--------+--------+--------+--------+--------+
 
-     8        9        10       11       12..n
-+--------+--------+--------+--------+================+
-| Number-of-Entries(32)             | ID/Value-Pairs |
-+--------+--------+--------+--------+================+
+     8..n
++================+
+| ID/Value-Pairs |
++================+
 </pre></div>
 <p>Control bit: The control bit is always 1 for this message.
-</p>
-<p>Version: The SPDY version number.
 </p>
 <p>Type: The message type for a SETTINGS message is 4.
 </p>
 <p>Flags: FLAG_SETTINGS_CLEAR_SETTINGS (0x1): When set, the client should clear any previously persisted SETTINGS ID/Value pairs.  If this frame contains ID/Value pairs with the FLAG_SETTINGS_PERSIST_VALUE set, then the client will first clear its existing, persisted settings, and then persist the values with the flag set which are contained within this frame.  Because persistence is only implemented on the client, this flag can only be used when the sender is the server.
 </p>
-<p>Length: An unsigned 24-bit value representing the number of bytes after the length field. The total size of a SETTINGS frame is 8 bytes + length.
+<p>Length: An unsigned 16-bit value representing the number of bytes after the length field. The total size of a SETTINGS frame is 8 bytes + length.
 </p>
 <p>Number of entries: A 32-bit value representing the number of ID/value pairs in this message. 
 </p>
@@ -968,17 +960,11 @@ PING</h3>
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
      0        1        2        3        4        5        6        7
 +-|-------+--------+--------+--------+--------+--------+--------+--------+
-|1| Version(15)    | [Type]       0x6|XXXXXXXX| [Length]              0x4| -&gt;
+|1|    0x6|XXXXXXXX| [Length]     0x4| ID(32)                            |
 +-|-------+--------+--------+--------+--------+--------+--------+--------+
 
-     8        9        10       11
-+--------+--------+--------+--------+
-| ID(32)                            |
-+--------+--------+--------+--------+
 </pre></div>
 <p>Control bit: The control bit is always 1 for this message.
-</p>
-<p>Version: The SPDY version number.
 </p>
 <p>Type: The message type for a PING message is 6.
 </p>
@@ -1004,19 +990,17 @@ GOAWAY</h3>
 </p>
 <p>After sending a GOAWAY message, the sender must ignore all SYN_STREAM frames for new streams.
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-     0        1        2        3        4        5        6        7
-+-|-------+--------+--------+--------+--------+--------+--------+--------+
-|1| Version(15)    |     [Type]   0x7|XXXXXXXX|  [Length]             0x8| -&gt;
-+-|-------+--------+--------+--------+--------+--------+--------+--------+
+     0        1        2        3         4         5        6        7
++-|-------+--------+--------+--------+-|-------+--------+--------+--------+
+|1|    0x7|XXXXXXXX|  [Length]    0x8|X| Last-Good-Stream-ID(31)          | -&gt;
++-|-------+--------+--------+--------+-|-------+--------+--------+--------+
 
-     8        9        10       11       12       13       14       15
-+-|-------+--------+--------+--------+--------+--------+--------+--------+
-|X| Last-Good-Stream-ID(31)          |          Status-Code(32)          |
-+-|-------+--------+--------+--------+--------+--------+--------+--------+
+     8        9        10       11
++--------+--------+--------+--------+
+|          Status-Code(32)          |
++--------+--------+--------+--------+
 </pre></div>
 <p>Control bit: The control bit is always 1 for this message.
-</p>
-<p>Version: The SPDY version number.
 </p>
 <p>Type: The message type for a GOAWAY message is 7.
 </p>
@@ -1048,15 +1032,11 @@ HEADERS</h3>
 <p>Here is the format of a headers frame and headers block:
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
      0        1        2        3        4        5        6        7
-+-|-------+--------+--------+--------+--------+--------+--------+--------+
-|1| Version(15)    | [Type]       0x8|Flags(8)| Length(24)               | -&gt;
-+-|-------+--------+--------+--------+--------+--------+--------+--------+
++-|-------+--------+--------+--------+-|-------+--------+--------+--------+
+|1|    0x8|Flags(8)| Length(16)      |X| Stream-ID(31)                    | -&gt;
++-|-------+--------+--------+--------+-|-------+--------+--------+--------+
 
-     8        9        10       11
-+-|-------+--------+--------+--------+
-|X| Stream-ID(31)                    | -&gt;
-+-|-------+--------+--------+--------+
-
+     8,9,10..N
 +=========================+
 | Name/Value Header Block |
 +=========================+
@@ -1069,7 +1049,7 @@ HEADERS</h3>
 </blockquote><p>
 
 </p>
-<p>Length: An unsigned 24 bit value representing the number of bytes after the length field. The minimum length of the length field is 4 (when the number of name value pairs is 0).
+<p>Length: An unsigned 24 bit value representing the number of bytes after the length field. The minimum length of the length field is 7 (when the number of name value pairs is 0).
 </p>
 <p>Stream-ID: The stream this HEADERS block is associated with.
 </p>
@@ -1161,9 +1141,50 @@ CREDENTIAL</h3>
 </p>
 <p>If the server receives an invalid CREDENTIAL frame, it MUST respond with a GOAWAY frame and shutdown the session.  
 </p>
-<a name="HeaderBlock"></a><br /><hr />
+<a name="PUSH_PROMISE"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
 <a name="rfc.section.2.6.10"></a><h3>2.6.10.&nbsp;
+PUSH_PROMISE</h3>
+
+<p>The PUSH_PROMISE control frame allows the sender to signal a promise to create a stream and serve the referenced resource. Minimal data allowing the receiver to understand which resource(s) are to be pushed are to be included.
+          </p>
+<div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
+     0        1        2        3        4        5        6        7
++-|-------+--------+--------+--------+-|-------+--------+--------+--------+
+|1|    0x1|Flags(8)| Length(16)      |X| Associated-to-Stream-Id(31)      | -&gt;
++-|-------+--------+--------+--------+-|-------+--------+--------+--------+
+
+     8        9        10       11       12       13,14,15..N
++-|-------+--------+--------+--------+--------+=========================+
+|X| Promised-Stream-Id(31)           | HG(8)  | Name/Value Header Block |
++-|-------+--------+--------+--------+--------+=========================+
+</pre></div><p>
+
+
+</p>
+<p>Flags: Flags related to this frame. Valid flags are:
+</p>
+<blockquote class="text">
+<p>0x01 = FLAG_FIN - marks this frame as the last frame to be transmitted on this stream and puts the sender in the <a class='info' href='#StreamHalfClose'>half-closed<span> (</span><span class='info'>Stream half-close</span><span>)</span></a> state.
+</p>
+</blockquote><p>
+
+</p>
+<p>Length: The length is the number of bytes which follow the length field in the frame.  For PUSH_PROMISE frames, this is 10 bytes plus the length of the compressed Name/Value block.
+</p>
+<p>Stream-ID: The 31-bit identifier for this stream.  This stream-id will be used in frames which are part of this stream.
+</p>
+<p>Associated-To-Stream-ID: The 31-bit identifier for a stream which this stream is associated to.  If this stream is independent of all other streams, it should be 0.
+</p>
+<p>Promised-Stream-ID: The 31-bit identifier indicating the stream-id on which the resource will be pushed. If multiple headers are indicated within the Name/Value Header Block, each subsequent resource as indicated in the Header Block will increment the Promised-Stream-Id by two. The Promised-Stream-ID is subject to the same rules as any other stream-id-- when defined and transmitted, the Promised-Stream-ID MUST be part of a monotonically increasing sequence of stream-ids. There is no requirement that the streams referred to by the this frame are created in the order referenced.
+</p>
+<p>Name/Value Header Block:  A set of name/value pairs carried as part of the PUSH_PROMISE.  <a class='info' href='#HeaderBlock'>see Name/Value Header Block<span> (</span><span class='info'>Name/Value Header Block</span><span>)</span></a>.
+</p>
+<p>If an endpoint receives a PUSH_PROMISE which is larger than the implementation supports, it MAY send a RST_STREAM with error code FRAME_TOO_LARGE.  All implementations MUST support the minimum size limits defined in <a class='info' href='#ControlFrames'>the Control Frames section<span> (</span><span class='info'>Control frames</span><span>)</span></a>.
+</p>
+<a name="HeaderBlock"></a><br /><hr />
+<table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
+<a name="rfc.section.2.6.11"></a><h3>2.6.11.&nbsp;
 Name/Value Header Block</h3>
 
 <p>A Name/Value Header Block augments the streams or group of streams identified by the <a class='info' href='#SYN_STREAM'>SYN_STREAM<span> (</span><span class='info'>SYN_STREAM</span><span>)</span></a>, <a class='info' href='#HEADERS'>HEADERS<span> (</span><span class='info'>HEADERS</span><span>)</span></a>, or <a class='info' href='#SYN_REPLY'>SYN_REPLY<span> (</span><span class='info'>SYN_REPLY</span><span>)</span></a> frame stream with additional metadata.
@@ -1226,19 +1247,18 @@ def compute_headers(stream):
 <p>A smart implementation will be able to interpret a headers frame without reconstructing the headers, and thus be able to represent and interpret headers with less memory and CPU.
 </p>
 <p>The Name/Value Header Block is found in the SYN_STREAM, SYN_REPLY
-            and HEADERS control frames, and shares a common format:
+and HEADERS control frames, and shares a common format:
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-
-+--------+--------+=====+
-| Num Ops(16)     | Ops |    &lt;- This is all gzip compressed.
-+--------+--------+=====+
+     0        1        2     3..N
++--------+--------+--------+=====+
+| HG(8)  | Num-Ops(16)     | Ops |
++--------+--------+--------+=====+
 </pre></div>
-<p>
-
-The entire Name/Value Header Block is compressed with gzip. The sender may choose to use whatever level of compression works best, which may be uncompressed.
-An implementation should be able to easily write an uncompressed block which is inflatable with the gzip library with minimal effort and complexity if this is necessary, though the user's experience may possibly be impacted.
-Please see RFC 1952 for a description of the gzip container, and RFC 1951 for a description of its DEFLATE payload. For any connection, there is one gzip context for decompressing, and one gzip context for compressing.
-
+<p>HG: (Header Group) An 8 bit unsigned integer specifying the header group for this set of headers.
+</p>
+<p>Num-Ops: A 16 bit unsigned integer specifying the number of operations in this header block. 
+</p>
+<p>Ops: A number of operations, as defined by the Num-Ops field. Operations will be detailed below.
 </p>
 <p>
 All Name/Value Ops share a common flag byte defined like so:
@@ -1289,16 +1309,10 @@ The IsKey field indicates whether the following string value represents a key or
 Detail of an operation with an opcode of 0x0:
 
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-
-     0        1        2        3       4..k
-+--|------+--------+--------+--------+========+
-|00|XXXXXX| Key String Len(24)       | String | -&gt;
-+--|------+--------+--------+--------+========+
-
-   k+1       k+2     k+3     k+4..n
-+--------+--------+--------+========+
-| Value String Len(24)     | String |
-+--------+--------+--------+========+
+     0        1        2       4..k     k+1       k+2     k+3..n
++--|------+--------+--------+========+--------+--------+========+
+|00|XXXXXX| Key Len(16)     | String | Value Len(16)   | String |
++--|------+--------+--------+========+--------+--------+========+
 </pre></div>
 <p>
 Detail of an operation with an opcode of 0x1:
@@ -1311,15 +1325,10 @@ If the 'L' (Level) field is 0x0, the header table for the stream group is modifi
 If the 'L' (Level) field ix 0x1, the header table for the connection is modified.
 
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-      0         1        2        3        4        5
-+--|-|-|----+--------+--------+--------+--------+--------+
-|01|K|L|XXXX| Token Index (16)| String Len(24)           | -&gt;
-+--|-|-|----+--------+--------+--------+--------+--------+
-
-   6..n
-+========+
-| String |
-+========+
+      0         1        2        3       4..n
++--|-|-|----+--------+--------+--------+========+
+|01|K|L|XXXX|Index(8)| String Len(16)  | String |
++--|-|-|----+--------+--------+--------+========+
 </pre></div>
 <p>
 If the token-index refers to an index that is already in use, the string transmitted here replaces it.
@@ -1339,15 +1348,13 @@ An operation with an Op field of 0x2 indicates that the field encodes a truncate
 If a value is being set, and no key has been set, the recipient MUST issue a session error (Section 2.4.2) with the status code PROTOCOL_ERROR.
 
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-      0         1        2        3        4        5        6        7
-+--|-|-|----+--------+--------+--------+--------+--------+--------+--------+
-|10|K|L|XXXX| Truncate To(16) | Token Index(16) | String Len (24)          | -&gt;
-+--|-|-|----+--------+--------+--------+--------+--------+--------+--------+
+      0         1        2        3        4        5      6..n
++--|-|-|----+--------+--------+--------+--------+--------+========+
+|10|K|L|XXXX| Truncate To(16) |Index(8)| String Len (16) | String |
++--|-|-|----+--------+--------+--------+--------+--------+========+
 
-   8..N
-+========+
-| String |
-+========+
+
+
 </pre></div>
 <p>Number of Name/Value pairs: The number of repeating name/value pairs following this field.
 </p>
@@ -1371,7 +1378,7 @@ If a value is being set, and no key has been set, the recipient MUST issue a ses
 </p>
 <a name="Compression"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
-<a name="rfc.section.2.6.10.1"></a><h3>2.6.10.1.&nbsp;
+<a name="rfc.section.2.6.11.1"></a><h3>2.6.11.1.&nbsp;
 Compression</h3>
 
 <p>The Name/Value Header Block is a section of the SYN_STREAM, SYN_REPLY, and HEADERS frames used to carry header meta-data.  This block is always compressed using zlib compression.  Within this specification, any reference to 'zlib' is referring to the <a class='info' href='#RFC1950'>ZLIB Compressed Data Format Specification Version 3.3 as part of RFC1950.<span> (</span><span class='info'>Deutsch, L. and J-L. Gailly, &ldquo;ZLIB Compressed Data Format Specification version 3.3,&rdquo; May&nbsp;1996.</span><span>)</span></a> [RFC1950]
@@ -1565,7 +1572,7 @@ const unsigned char SPDY_dictionary_txt[] = {
 </p>
 <a name="HeaderBlockExample"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
-<a name="rfc.section.2.6.10.2"></a><h3>2.6.10.2.&nbsp;
+<a name="rfc.section.2.6.11.2"></a><h3>2.6.11.2.&nbsp;
 Header Block Example</h3>
 
 <p> This example only expresses what the client-side would send and how the other side would interpret it. Since the protocol is symmetric, this is true for any sender of a headers-block and any receiver of a headers block, and so is equivalent for both sides of the connection.
@@ -1839,22 +1846,22 @@ Stateful Authentication</h3>
 <a name="rfc.section.3.3"></a><h3>3.3.&nbsp;
 Server Push Transactions</h3>
 
-<p>SPDY enables a server to send multiple replies to a client for a single request.  The rationale for this feature is that sometimes a server knows that it will need to send multiple resources in response to a single request.  Without server push features, the client must first download the primary resource, then discover the secondary resource(s), and request them.  Pushing of resources avoids the round-trip delay, but also creates a potential race where a server can be pushing content which a user-agent is in the process of requesting.  The following mechanics attempt to prevent the race condition while enabling the performance benefit.
+<p>SPDY enables a server to send multiple replies to a client for a single request.  The rationale for this feature is that sometimes a server knows that it will need to send multiple resources in response to a single request and would otherwise be forced to inline the images into the document.  Without server push features, the server must inline, or the client must first download the primary resource, then discover the secondary resource(s), and request them.  Pushing of resources avoids the round-trip delay, but also creates a potential race where a server can be pushing content which a user-agent is in the process of requesting.  The following mechanics attempt to prevent the race condition while enabling the performance benefit. Server push is designed to be strictly better than inlining.
 </p>
-<p>Browsers receiving a pushed response MUST validate that the server is authorized to push the URL using the <a class='info' href='#RFC6454'>browser same-origin<span> (</span><span class='info'>Barth, A., &ldquo;The Web Origin Concept,&rdquo; December&nbsp;2011.</span><span>)</span></a> [RFC6454] policy.  For example, a SPDY connection to www.foo.com is generally not permitted to push a response for www.evil.com.
+<p>Browsers receiving a pushed response MUST validate that the server is authorized to push the URL using the <a class='info' href='#RFC6454'>browser same-origin<span> (</span><span class='info'>Barth, A., &ldquo;The Web Origin Concept,&rdquo; December&nbsp;2011.</span><span>)</span></a> [RFC6454] policy, or by verifying that the server has proven (via SSL handshake or CERTIFICATE frame) that it has the certificate for the domain of the pushed content.  For example, a SPDY connection to www.foo.com is generally not permitted to push a response for www.evil.com. A SPDY connection to www.foo.com would be allowed to push images.foo.com, however, assuming the cert provided at the SSL handshake was a wildcard cert encoding *.foo.com
 </p>
 <p>If the browser accepts a pushed response (e.g. it does not send a RST_STREAM), the browser MUST attempt to cache the pushed response in same way that it would cache any other response.  This means validating the response headers and inserting into the cache.
 </p>
 <p>Because pushed responses have no request, they have no request headers associated with them.  At the framing layer, SPDY pushed streams contain an "associated-stream-id" which indicates the requested stream for which the pushed stream is related.  The pushed stream inherits all of the headers from the associated-stream-id with the exception of ":host", ":scheme", and ":path", which are provided as part of the pushed response stream headers.  The browser MUST store these inherited and implied request headers with the cached resource.
 </p>
-<p>Implementation note:  With server push, it is theoretically possible for servers to push unreasonable amounts of content or resources to the user-agent.  Browsers MUST implement throttles to protect against unreasonable push attacks.
+<p>Implementation note:  Similarly with inlining, with server push it is theoretically possible for servers to push large amounts of content or resources to the user-agent.  Browsers MUST implement throttles to protect against unreasonable push attacks, just as they must react reasonably to abuse of inlining. The server-push mechanism should make this easier to deal with than inlining in basically every case.
 </p>
 <a name="anchor20"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
 <a name="rfc.section.3.3.1"></a><h3>3.3.1.&nbsp;
 Server implementation</h3>
 
-<p>When the server intends to push a resource to the user-agent, it opens a new stream by sending a unidirectional SYN_STREAM.  The SYN_STREAM MUST include an Associated-To-Stream-ID, and MUST include headers for ":scheme", ":host", ":path", which represent the URL for the resource being pushed. Subsequent headers may follow in HEADERS frames. The purpose of the association is so that the user-agent can differentiate which request induced the pushed stream; without it, if the user-agent had two tabs open to the same page, each pushing unique content under a fixed URL, the user-agent would not be able to differentiate the requests.
+<p>When the server intends to push a resource to the user-agent, it promises that it will opens a new stream in the future (but not now) by sending a PUSH_PROMISE frame.  The PUSH_PROMISE frame MUST include an Associated-To-Stream-ID, Prmoised-Stream-ID, and MUST ensure that headers for ":scheme", ":host", ":path" representing the URL for the resource being pushed are either already present in the implied headers context (i.e. the request headers), or it must override the headers which do not match the pushed resource. The ":path" MUST always be different from the originally request resource.  The stream-IDs represented in the Promised-Stream-ID field MUST NOT count towards the MAX_CONCURRENT_STREAMS limit. When the server is ready to send the resource, it will send a SYN_REPLY with the stream-ID indicated by the Promised-Stream-ID send in the PUSH_PROMISE frame earlier. As with any other SYN_REPLY, subsequent headers may follow in HEADERS frames. The purpose of the association is so that the user-agent can differentiate which request induced the pushed stream; without it, if the user-agent had two tabs open to the same page, each pushing unique content under a fixed URL, the user-agent would not be able to differentiate the requests.
 </p>
 <p>The Associated-To-Stream-ID must be the ID of an existing, open stream.  The reason for this restriction is to have a clear endpoint for pushed content.  If the user-agent requested a resource on stream 11, the server replies on stream 11.  It can push any number of additional streams to the client before sending a FLAG_FIN on stream 11.  However, once the originating stream is closed no further push streams may be associated with it.  The pushed streams do not need to be closed (FIN set) before the originating stream is closed, they only need to be created before the originating stream closes.
 </p>
@@ -2046,17 +2053,33 @@ Incompatibilities with SPDY draft #3</h3>
 Here is a list of the major changes between this draft #3 and this draft
 </p>
 <blockquote class="text">
-<p>DONE: Different header compression technique which uses less CPU for proxies and which should result in higher compression
+<p>DONE: Different, more precise, notation style used to describe all frames.
 </p>
-<p>DONE: Significant modifications to the header frame
+<p>DONE: Significant modifications to how headers are transported. This involved changes to all frames incorporating HEADER blocks, and changes to the HEADER blocks themselves.
 </p>
-<p>ONGOING: Modification of server push; addition of PUSH_PROMISE frame
+<p>DONE: Addition of end-of-message delimiter flag in data frames
+</p>
+<p>DONE: Downsizing various fields in all messages... this will definitely need debate
+</p>
+<p>DONE: Removal of Version field from all messages.
+</p>
+<p>DONE: Modification of server push; addition of PUSH_PROMISE frame add a push frame, remove the 'associated-stream-id' field from SYN frame
+</p>
+<p>ONGOING: Different header compression technique which uses less CPU for proxies and which should result in higher compression
+</p>
+<p>TODO: Addition of end-of-header-section delimiter flag in any frame which has a header block
 </p>
 <p>ONGOING: Definition of cert-data push
 </p>
 <p>ONGOING: Definition of name-resolution push
 </p>
-<p>ONGOING: Modification of flow-control; allow two-levels of flow control so as to allow greater stream concurrency safely
+<p>TODO: Modification of flow-control; allow two-levels of flow control so as to allow greater stream concurrency safely
+</p>
+<p>TODO: Modification of flow-control; headers-blocks (thus syn-stream) gets its own pool of memory, separate from data frames
+</p>
+<p>TODO: Everything after the first header-block-section possibly treated as flow-control
+</p>
+<p>TODO: Session-error status code added for UNRECOGNIZED_SCHEME for new streams. This triggers when the recipient doesn't know how to handle a stream of that type.
 </p>
 </blockquote><p>
       
