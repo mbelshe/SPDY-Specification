@@ -504,13 +504,8 @@ class CompressorDecompressor:
     self.stream_group_indices = {}
     self.stream_group_dicts = {0: {}}
 
-    self.connection_headers = [":method", ":version", "user-agent" ]
-    self.limits = {'TotalHeaderStorageSize': 16*1024,
-                   'MaxHeaderGroups': 1,
-                   'MaxEntriesInTable': 64}
-    self.total_storage = 0
-    self.SetDictKVsAndMakeInvisible(self.connection_dict,
-        { ":method": "get",
+
+    connection_dict = { ":method": "get",
           ":version": "1.1",
           "user-agent": "",
           "accept-language": "",
@@ -519,7 +514,14 @@ class CompressorDecompressor:
           "accept-charset": "",
           "accept-ranges": "",
           "allow": "",
-          })
+          }
+    self.connection_headers = [k for (k,v) in connection_dict.iteritems()]
+    self.limits = {'TotalHeaderStorageSize': 16*1024,
+                   'MaxHeaderGroups': 1,
+                   'MaxEntriesInTable': 64}
+    self.total_storage = 0
+    self.SetDictKVsAndMakeInvisible(self.connection_dict, connection_dict)
+    self.SeedStreamGroup(self.stream_group_dicts[0])
   def GetDictSize(self):
     return self.total_storage
 
@@ -737,10 +739,12 @@ class CompressorDecompressor:
 
   def SeedStreamGroup(self, dict):
     self.SetDictKVsAndMakeInvisible(dict,
-      { ":path": "",
-        ":scheme": "https",
+      {
         ":host": "",
-        "cookie": "",
+        ":path": "/",
+        ":scheme": "https",
+        ":status": "200",
+        ":status-text": "OK",
         "authorizations": "",
         "cache-control": "",
         "content-base": "",
@@ -750,6 +754,7 @@ class CompressorDecompressor:
         "content-md5": "",
         "content-range": "",
         "content-type": "",
+        "cookie": "",
         "date": "",
         "etag": "",
         "expect": "",
@@ -763,6 +768,7 @@ class CompressorDecompressor:
         "last-modified": "",
         "location": "",
         "max-forwards": "",
+        "origin": "",
         "pragma": "",
         "proxy-authenticate": "",
         "proxy-authorization": "",
@@ -770,8 +776,8 @@ class CompressorDecompressor:
         "referer": "",
         "retry-after": "",
         "server": "",
-        ":status": "",
-        ":status-text": "",
+        "set-cookie": "",
+        "status": "",
         "te": "",
         "trailer": "",
         "transfer-encoding": "",
@@ -781,17 +787,14 @@ class CompressorDecompressor:
         "via": "",
         "warning": "",
         "www-authenticate": "",
-        "status": "",
-        "set-cookie": "",
-        "origin": "",
-        'x-xss-protection': "",
-        'x-content-type-options': "",
-        'x-frame-options': "",
-        'content-disposition': "",
         'access-control-allow-origin': "",
+        'content-disposition': "",
         'get-dictionary': "",
         'p3p': "",
+        'x-content-type-options': "",
+        'x-frame-options': "",
         'x-powered-by': "",
+        'x-xss-protection': "",
         })
 
   # returns a list of operations
@@ -851,6 +854,21 @@ def Spdy3HeadersFormat(request):
     out_frame.append(val)
   return ''.join(out_frame)
 
+def MakeDefaultHeaders(list_o_dicts, items_to_ignore=[]):
+  retval = {}
+  for kvdict in list_o_dicts:
+    key = kvdict["name"].lower()
+    val = kvdict["value"]
+    if key == "host":
+      key = ":host"
+    if key in items_to_ignore:
+      continue
+    if key in retval:
+      retval[key] = retval[key] + '\0' + val
+    else:
+      retval[key] = val
+  return retval
+
 def ReadHarFile(filename):
   f = open(filename)
   null = None
@@ -862,46 +880,23 @@ def ReadHarFile(filename):
   response_headers = []
   for entry in o["log"]["entries"]:
     request = entry["request"]
-    header = {}
+    header = MakeDefaultHeaders(request["headers"], ["connection"])
     header[":method"] = request["method"].lower()
     header[":path"] = re.sub("^[^:]*://[^/]*/","/", request["url"])
     header[":version"] = re.sub("^[^/]*/","", request["httpVersion"])
-    header[":scheme"] = re.sub("^([^:]*):.*", '\\1', request["url"]).lower()
-    if not "host" in request:
-      header[":host"] = re.sub("^[^:]*://([^/]*)/","\\1", request["url"])
+    header[":scheme"] = re.sub("^([^:]*):.*$", '\\1', request["url"]).lower()
+    if not ":host" in request_headers:
+      header[":host"] = re.sub("^[^:]*://([^/]*)/.*$","\\1", request["url"])
     if not header[":scheme"] in ["http", "https"]:
       continue
-    for kvdict in request["headers"]:
-      key = kvdict["name"]
-      key = key.lower()
-      if key == "host":
-        key = ":host"
-      elif key == "connection":
-        continue
-      value = kvdict["value"]
-      if key in header:
-        header[key] = header[key] + '\0' + value
-      else:
-        header[key] = value
     request_headers.append(header)
 
     response = entry["response"]
-    header = {}
+    header = MakeDefaultHeaders(response["headers"],
+        ["connection", "status", "status-text", "version"])
     header[":status"] = re.sub("^([0-9]*).*","\\1", str(response["status"]))
     header[":status-text"] = response["statusText"]
     header[":version"] = re.sub("^[^/]*/","", response["httpVersion"])
-    for kvdict in response["headers"]:
-      key = kvdict["name"]
-      key = key.lower()
-      if key == "host":
-        key = ":host"
-      elif key in ["connection", "status", "status-text", "version"]:
-        continue
-      value = kvdict["value"]
-      if key in header:
-        header[key] = header[key] + '\0' + value
-      else:
-        header[key] = value
     response_headers.append(header)
   return (request_headers, response_headers)
 
@@ -921,8 +916,6 @@ def main():
                     default='request',
                     metavar="HEADER_TYPE")
   (options, args) = parser.parse_args()
-  print options
-  print args
   requests = default_requests
   responses = []
   if args >= 1:
@@ -954,7 +947,8 @@ def main():
   elif options.header_type == 'response':
     headers_to_compress = responses
   else:
-    raise StandardError("Unknown type argument. It must be one of 'request' or 'response'")
+    raise StandardError("Unknown type argument."
+                        "It must be one of 'request' or 'response'")
   for i in xrange(len(requests)):
     request = requests[i]
     obj_to_compress = headers_to_compress[i]
@@ -969,7 +963,7 @@ def main():
                              spdy3_compressor.flush(zlib.Z_SYNC_FLUSH)))
 
     spdy_4_stream_group = spdy4_compressor.FindStreamGroup(request)
-    #spdy_4_stream_group = 0
+    spdy_4_stream_group = 0
     in_ops = spdy4_compressor.Tokenify(obj_to_compress, spdy_4_stream_group)
     in_frame = spdy4_compressor.Compress(in_ops)
     spdy4_frame = PackSpdy4Ops(inline_packing_instructions, in_ops)
