@@ -5,6 +5,7 @@ import sys
 import array
 import struct
 import re
+from optparse import OptionParser
 
 default_requests = [
   {':method': "get",
@@ -532,8 +533,12 @@ class CompressorDecompressor:
   def GetHostnameForStreamGroup(self, stream_group):
     if stream_group == 0:
       return "<default>"
-    dict = KtoV(self.stream_group_indices)
-    return dict[stream_group]
+    try:
+      dict = KtoV(self.stream_group_indices)
+      retval = dict[stream_group]
+    except:
+      retval = "<unknown>"
+    return retval
 
   def GetStreamGroupDict(self, stream_group):
     if stream_group in self.stream_group_dicts:
@@ -862,6 +867,8 @@ def ReadHarFile(filename):
     header[":path"] = re.sub("^[^:]*://[^/]*/","/", request["url"])
     header[":version"] = re.sub("^[^/]*/","", request["httpVersion"])
     header[":scheme"] = re.sub("^([^:]*):.*", '\\1', request["url"]).lower()
+    if not "host" in request:
+      header[":host"] = re.sub("^[^:]*://([^/]*)/","\\1", request["url"])
     if not header[":scheme"] in ["http", "https"]:
       continue
     for kvdict in request["headers"]:
@@ -880,7 +887,7 @@ def ReadHarFile(filename):
 
     response = entry["response"]
     header = {}
-    header[":status"] = str(response["status"])
+    header[":status"] = re.sub("^([0-9]*).*","\\1", str(response["status"]))
     header[":status-text"] = response["statusText"]
     header[":version"] = re.sub("^[^/]*/","", response["httpVersion"])
     for kvdict in response["headers"]:
@@ -888,7 +895,7 @@ def ReadHarFile(filename):
       key = key.lower()
       if key == "host":
         key = ":host"
-      elif key == "connection":
+      elif key in ["connection", "status", "status-text", "version"]:
         continue
       value = kvdict["value"]
       if key in header:
@@ -899,12 +906,29 @@ def ReadHarFile(filename):
   return (request_headers, response_headers)
 
 def main():
+  parser = OptionParser()
+  parser.add_option("-v", "--verbose",
+                    dest="v",
+                    help="Sets verbosity. At v=1, the opcodes will be printed. "
+                    "At v=2, so will the headers [default: %default]",
+                    default=0,
+                    metavar="VERBOSITY")
+  parser.add_option("-t", "--type",
+                    dest="header_type",
+                    help="Selects if examining request or response headers. "
+                    "Valid values are 'request' or 'response'"
+                    " [default: %default]",
+                    default='request',
+                    metavar="HEADER_TYPE")
+  (options, args) = parser.parse_args()
+  print options
+  print args
   requests = default_requests
   responses = []
-  if len(sys.argv) > 1:
+  if args >= 1:
     requests = []
     responses = []
-    for filename in sys.argv[1:]:
+    for filename in args:
       (har_requests, har_responses) = ReadHarFile(filename)
       requests.extend(har_requests)
       responses.extend(har_responses)
@@ -925,8 +949,12 @@ def main():
   http1_compressor.compress(spdy_dictionary);
   http1_compressor.flush(zlib.Z_SYNC_FLUSH)
 
-  #headers_to_compress = responses
-  headers_to_compress = requests
+  if options.header_type == 'request':
+    headers_to_compress = requests
+  elif options.header_type == 'response':
+    headers_to_compress = responses
+  else:
+    raise StandardError("Unknown type argument. It must be one of 'request' or 'response'")
   for i in xrange(len(requests)):
     request = requests[i]
     obj_to_compress = headers_to_compress[i]
@@ -954,7 +982,7 @@ def main():
   print "        CR:   Compressed / Http compressed"
   out_headers = []
   def framelen(x):
-    return  len(x)
+    return  len(x) + 8
 
   h1us = 0
   h1cs = 0
@@ -967,17 +995,19 @@ def main():
     out_frame = spdy4_decompressor.DeTokenify(out_ops, spdy4_frame_list[i][2])
     out_header = spdy4_decompressor.GenerateAllHeaders(spdy4_frame_list[i][2])
     out_headers.append(out_header)
-    print '####################################################################'
-    print '####### request-path: "%s"' % requests[i][":path"][:80]
-    print "####### stream group: %2d, %s" % (spdy4_frame_list[i][2],
-        spdy4_compressor.GetHostnameForStreamGroup(spdy4_frame_list[i][2]))
-    print "####### dict size: %3d" % spdy4_decompressor.GetDictSize()
-    print
-    #print "header: ", out_header
-    print http1_frame_list[i][0]
-    for op in RealOpsToOps(out_ops):
-      print FormatOp(op)
-    #print
+    if options.v >= 2:
+      print '##################################################################'
+      print '####### request-path: "%s"' % requests[i][":path"][:80]
+      print "####### stream group: %2d, %s" % (spdy4_frame_list[i][2],
+          spdy4_compressor.GetHostnameForStreamGroup(spdy4_frame_list[i][2]))
+      print "####### dict size: %3d" % spdy4_decompressor.GetDictSize()
+      print
+      if options.v >= 3:
+        print "header: ", out_header
+      print http1_frame_list[i][0]
+      for op in RealOpsToOps(out_ops):
+        print FormatOp(op)
+      print
 
     (h1uncom, h1com) = map(len, http1_frame_list[i])
     h1us += h1uncom; h1cs += h1com
@@ -990,10 +1020,11 @@ def main():
     ("spdy3 ", s3uncom, s3com, 1.0*s3uncom/h1uncom, 1.0*s3com/h1com),
     ("spdy4 ", s4uncom, s4com, 1.0*s4uncom/h1uncom, 1.0*s4com/h1com),
     ]
-    print "                                 UC  |  CM  |  UR  |  CR"
-    for fmtarg in lines:
-      print "             %s frame size: %4d | %4d | %2.2f | %2.2f" % fmtarg
-    print
+    if options.v >= 1:
+      print "                                 UC  |  CM  |  UR  |  CR"
+      for fmtarg in lines:
+        print "             %s frame size: %4d | %4d | %2.2f | %2.2f" % fmtarg
+      print
   fmtarg = (h1us, s3us, s4us)
   print "######################################################################"
   print "######################################################################"
@@ -1012,12 +1043,13 @@ def main():
     print "Original headers == output"
   else:
     print "Something is wrong."
-    for i in xrange(len(headers_to_compress)):
-      if headers_to_compress[i] != out_headers[i]:
-        print headers_to_compress[i]
-        print "   !="
-        print out_headers[i]
-        print
+    if options.v >= 1:
+      for i in xrange(len(headers_to_compress)):
+        if headers_to_compress[i] != out_headers[i]:
+          print headers_to_compress[i]
+          print "   !="
+          print out_headers[i]
+          print
   print
   for (opcode, ignore) in opcodes.iteritems():
     print "opcode: % 7s size: % 3d" % ("'" + opcode + "'",
