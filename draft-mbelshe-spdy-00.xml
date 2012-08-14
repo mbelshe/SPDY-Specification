@@ -98,7 +98,7 @@
 <t> "-" denotes a bit </t>
 <t> "=" denotes an unknown number of bits, typically bounded by one of the fields in the frame definition</t>
 <t> "|" denotes field separation, which may or may not be on a byte boundary. This does not count as a bit</t>
-<t> "->" at the end of a line indicates that the structure is not yet fully described</t>
+<t> "-&gt;" at the end of a line indicates that the structure is not yet fully described</t>
 <t> "(N)" indicates that the field is N bits long</t>
 <t> "[Foo]" advises that the field is the Foo field for that frame</t>
 <t> "X" represents a reserved bit. It MUST be zeroed</t>
@@ -126,7 +126,7 @@ Another example.  In this case, a single byte is represented with the most signi
 <artwork>
       0
 +--|-|-|----+
-|01|K|L|XXXX|  ->
+|01|K|L|XXXX|  -&gt;
 +--|-|-|----+
 
    1..N
@@ -142,11 +142,15 @@ Another example.  In this case, a single byte is represented with the most signi
         <section anchor="ControlFrames" title="Control frames">
 <figure>
   <artwork>
-     0        1        2        3       4..N
-+-|-------+--------+--------+--------+========+
-|C|Type(7)|Flags(8)| Length(16)      |  Data  |->
-+-|-------+--------+--------+--------+========+
-  </artwork>
+     0        1        2        3         4        5        6        7     
++--------+--------+--------+-|-------+--------+--------+--------+--------+
+| Length(16)      |Flags(8)|1| Num-of-Entries-or-Stream-ID-or-ID|     0x8| -&gt;
++--------+--------+--------+-|-------+--------+--------+--------+--------+
+   8..N
++========+
+|  Data  |
++========+
+</artwork>
 </figure>
 <t>Control bit: The 'C' bit is a single bit indicating if this is a control message. For control frames this value is always 1.</t>
 
@@ -168,10 +172,10 @@ Another example.  In this case, a single byte is represented with the most signi
         <section anchor="DataFrames" title="Data frames">
 <figure>
   <artwork>
-     0        1        2        3        4        5        6       7..N
-+-|-------+--------+--------+--------+--------+--------+--------+========+
-|0| Stream ID (31)                   |Flags(8)| Length(16)      |  Data  |
-+-|-------+--------+--------+--------+--------+--------+--------+========+
+     0        1        2        3         4        5        6      7..N     
++--------+--------+--------+-|-------+--------+--------+--------+========+
+| Length(16)      |Flags(8)|0| Stream ID (31)                   |  Data  |
++--------+--------+--------+-|-------+--------+--------+--------+========+
   </artwork>
 </figure>
 <t>Control bit: For data frames this value is always 0.</t>
@@ -315,10 +319,10 @@ Another example.  In this case, a single byte is represented with the most signi
 <t>The SYN_STREAM control frame allows the sender to asynchronously create a stream between the endpoints.  See <xref target="StreamCreation">Stream Creation</xref></t>
           <figure>
             <artwork>
-     0        1        2        3         4         5        6        7
-+-|-------+--------+--------+--------+-|-------+--------+--------+--------+
-|1|    0x1|Flags(8)| Length(16)      |X| Stream Id(31)                    | ->
-+-|-------+--------+--------+--------+-|-------+--------+--------+--------+
+     0        1        2        3         4        5        6        7    
++--------+--------+--------+-|-------+--------+--------+--------+--------+
+| Length(16)      |Flags(8)|1| Stream Id(31)                    |    0x1 | -&gt;
++--------+--------+--------+-|-------+--------+--------+--------+--------+
 
      8        9,10,11..N
 +---|-----+=========================+
@@ -343,8 +347,6 @@ Another example.  In this case, a single byte is represented with the most signi
 
 <t>Unused: 5 bits of unused space, reserved for future use.</t>
 
-
-
 <t>Name/Value Header Block:  A set of name/value pairs carried as part of the SYN_STREAM.  <xref target="HeaderBlock">see Name/Value Header Block</xref>.</t>
 
 <t>If an endpoint receives a SYN_STREAM which is larger than the implementation supports, it MAY send a RST_STREAM with error code FRAME_TOO_LARGE.  All implementations MUST support the minimum size limits defined in <xref target="ControlFrames">the Control Frames section</xref>.</t>
@@ -355,15 +357,15 @@ Another example.  In this case, a single byte is represented with the most signi
 <t>SYN_REPLY indicates the acceptance of a stream creation by the recipient of a SYN_STREAM frame.</t>
           <figure>
             <artwork>
-     0        1        2        3         4         5        6        7
-+-|-------+--------+--------+--------+-|-------+--------+--------+--------+
-|1|    0x2|Flags(8)| Length(16)      |X| Stream Id(31)                    | ->
-+-|-------+--------+--------+--------+-|-------+--------+--------+--------+
+     0        1        2        3         4        5        6        7     
++--------+--------+--------+-|-------+--------+--------+--------+--------+
+| Length(16)      |Flags(8)|1| Stream Id(31)                    |    0x2 | -&gt;
++--------+--------+--------+-|-------+--------+--------+--------+--------+
 
-     8         9,10,11..N
-+--------+=========================+
-| HG(8)  | Name/Value Header Block |
-+--------+=========================+
+      8,9,10..N
++=========================+
+| Name/Value Header Block |
++=========================+
             </artwork>
           </figure>
 
@@ -388,10 +390,10 @@ Another example.  In this case, a single byte is represented with the most signi
 <t>The RST_STREAM frame allows for abnormal termination of a stream.  When sent by the creator of a stream, it indicates the creator wishes to cancel the stream.  When sent by the recipient of a stream, it indicates an error or that the recipient did not want to accept the stream, so the stream should be closed.</t>
           <figure>
             <artwork>
-     0        1        2        3         4         5        6        7
-+-|-------+--------+--------+--------+-|-------+--------+--------+--------+
-|1|    0x3|Flags(8)| [Length]     0x8|X| Stream-ID(31)                    | ->
-+-|-------+--------+--------+--------+-|-------+--------+--------+--------+
+     0        1        2        3         4        5        6        7     
++--------+--------+--------+-|-------+--------+--------+--------+--------+
+| Length(16)      |Flags(8)|1| Stream Id(31)                    |    0x3 | -&gt;
++--------+--------+--------+-|-------+--------+--------+--------+--------+
 
      8        9        10       11
 +--------+--------+--------+--------+
@@ -431,10 +433,10 @@ Another example.  In this case, a single byte is represented with the most signi
 <t>Persistence of SETTINGS ID/Value pairs is done on a per origin/IP pair (the "origin" is the set of scheme, host, and port from the URI.  See <xref target="RFC6454"></xref>).  That is, when a client connects to a server, and the server persists settings within the client, the client SHOULD return the persisted settings on future connections to the same origin AND IP address and TCP port. Clients MUST NOT request servers to use the persistence features of the SETTINGS frames, and servers MUST ignore persistence related flags sent by a client.</t>
           <figure>
             <artwork>
-     0        1        2        3        4        5        6        7
-+-|-------+--------+--------+--------+--------+--------+--------+--------+
-|1|    0x4|Flags(8)| Length(16)      | Number-of-Entries(32)             | ->
-+-|-------+--------+--------+--------+--------+--------+--------+--------+
+     0        1        2        3         4        5        6        7     
++--------+--------+--------+-|-------+--------+--------+--------+--------+
+| Length(16)      |Flags(8)|1| Number-of-Entries(31)            |    0x4 | -&gt;
++--------+--------+--------+-|-------+--------+--------+--------+--------+
 
      8..n
 +================+
@@ -494,10 +496,10 @@ Another example.  In this case, a single byte is represented with the most signi
 <t>The PING control frame is a mechanism for measuring a minimal round-trip time from the sender.  It can be sent from the client or the server.  Recipients of a PING frame should send an identical frame to the sender as soon as possible (if there is other pending data waiting to be sent, PING should take highest priority).  Each ping sent by a sender should use a unique ID.</t>
           <figure>
             <artwork>
-     0        1        2        3        4        5        6        7
-+-|-------+--------+--------+--------+--------+--------+--------+--------+
-|1|    0x6|XXXXXXXX| [Length]     0x4| ID(32)                            |
-+-|-------+--------+--------+--------+--------+--------+--------+--------+
+     0        1        2        3         4        5        6        7     
++--------+--------+--------+-|-------+--------+--------+--------+--------+
+| Length(16)      |XXXXXXXX|1| ID(31)                           |    0x6 | -&gt;
++--------+--------+--------+-|-------+--------+--------+--------+--------+
 
             </artwork>
           </figure>
@@ -525,10 +527,10 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 <t>After sending a GOAWAY message, the sender must ignore all SYN_STREAM frames for new streams.</t>
           <figure>
             <artwork>
-     0        1        2        3         4         5        6        7
-+-|-------+--------+--------+--------+-|-------+--------+--------+--------+
-|1|    0x7|XXXXXXXX|  [Length]    0x8|X| Last-Good-Stream-ID(31)          | ->
-+-|-------+--------+--------+--------+-|-------+--------+--------+--------+
+     0        1        2        3         4        5        6        7     
++--------+--------+--------+-|-------+--------+--------+--------+--------+
+| Length(16)      |Flags(8)|1|  Last-Good-Stream-ID(31)         |     0x7| -&gt;
++--------+--------+--------+-|-------+--------+--------+--------+--------+
 
      8        9        10       11
 +--------+--------+--------+--------+
@@ -559,10 +561,10 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 <t>Here is the format of a headers frame and headers block:</t>
           <figure>
             <artwork>
-     0        1        2        3        4        5        6        7
-+-|-------+--------+--------+--------+-|-------+--------+--------+--------+
-|1|    0x8|Flags(8)| Length(16)      |X| Stream-ID(31)                    | ->
-+-|-------+--------+--------+--------+-|-------+--------+--------+--------+
+     0        1        2        3         4        5        6        7     
++--------+--------+--------+-|-------+--------+--------+--------+--------+
+| Length(16)      |Flags(8)|1| Stream-ID(31)                    |     0x8| -&gt;
++--------+--------+--------+-|-------+--------+--------+--------+--------+
 
      8,9,10..N
 +=========================+
@@ -590,15 +592,16 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 <t>Flow control in SPDY is implemented by a data transfer window kept by the sender of each stream. The data transfer window is a simple uint32 that indicates how many bytes of data the sender can transmit. After a stream is created, but before any data frames have been transmitted, the sender begins with the initial window size. This window size is a measure of the buffering capability of the recipient. The sender must not send a data frame with data length greater than the transfer window size. After sending each data frame, the sender decrements its transfer window size by the amount of data transmitted. When the window size becomes less than or equal to 0, the sender must pause transmitting data frames. At the other end of the stream, the recipient sends a WINDOW_UPDATE control back to notify the sender that it has consumed some data and freed up buffer space to receive more data.</t>
           <figure>
             <artwork>
-+----------------------------------+
-|1|   version    |         9       |
-+----------------------------------+
-| 0 (flags) |     8 (length)       |
-+----------------------------------+
-|X|     Stream-ID (31-bits)        |
-+----------------------------------+
-|X|  Delta-Window-Size (31-bits)   |
-+----------------------------------+
+     0        1        2        3         4        5        6        7     
++--------+--------+--------+-|-------+--------+--------+--------+--------+
+| Length(16)      |Flags(8)|1| Stream-ID(31)                    |     0x9| -&gt;
++--------+--------+--------+-|-------+--------+--------+--------+--------+
+
+     8        9        10       11   
++--------+--------+--------+--------+
+|Delta-Window-Size                  |
++--------+--------+--------+--------+
+
             </artwork>
           </figure>
 <t>Control bit: The control bit is always 1 for this message.</t>
@@ -638,21 +641,21 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 
           <figure>
             <artwork>
-+----------------------------------+
-|1|000000000000001|0000000000001010|
-+----------------------------------+
-| flags (8)  |  Length (24 bits)   |
-+----------------------------------+
-|  Slot (16 bits) |                |
-+-----------------+                |
-|      Proof Length (32 bits)      |
-+----------------------------------+
-|               Proof              |
-+----------------------------------+ &lt;+
-|   Certificate Length (32 bits)   |  |
-+----------------------------------+  | Repeated until end of frame
-|            Certificate           |  |
-+----------------------------------+ &lt;+
+     0        1        2        3         4        5        6        7     
++--------+--------+--------+-|-------+--------+--------+--------+--------+
+| Length(16)      |Flags(8)|1| Num-of-Entries-or-Stream-ID-or-ID|     0xa| -&gt;
++--------+--------+--------+-|-------+--------+--------+--------+--------+
+
+     8        9        10       11        12
++--------+--------+--------+--------+========+
+| Slot(16)        |Proof Length(16) | Proof  | -&gt;
++--------+--------+--------+--------+========+
+
+/--Repeated to frame end--\
++--------+--------+========+
+| Cert Length(16) | Cert   |
++--------+--------+========+
+
             </artwork>
           </figure>
 
@@ -667,15 +670,15 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 <t>The PUSH_PROMISE control frame allows the sender to signal a promise to create a stream and serve the referenced resource. Minimal data allowing the receiver to understand which resource(s) are to be pushed are to be included.
           <figure>
             <artwork>
-     0        1        2        3        4        5        6        7
-+-|-------+--------+--------+--------+-|-------+--------+--------+--------+
-|1|    0x1|Flags(8)| Length(16)      |X| Associated-to-Stream-Id(31)      | ->
-+-|-------+--------+--------+--------+-|-------+--------+--------+--------+
+     0        1        2        3         4        5        6        7     
++--------+--------+--------+-|-------+--------+--------+--------+--------+
+| Length(16)      |Flags(8)|1| Associated-To-Stream-ID(31)      |     0xb| -&gt;
++--------+--------+--------+-|-------+--------+--------+--------+--------+
 
-     8        9        10       11       12       13,14,15..N
-+-|-------+--------+--------+--------+--------+=========================+
-|X| Promised-Stream-Id(31)           | HG(8)  | Name/Value Header Block |
-+-|-------+--------+--------+--------+--------+=========================+
+     8        9        10       11       12,13,14..N
++-|-------+--------+--------+--------+=========================+
+|X| Promised-Stream-Id(31)           | Name/Value Header Block |
++-|-------+--------+--------+--------+=========================+
             </artwork>
           </figure>
 </t>
