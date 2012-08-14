@@ -7,6 +7,7 @@ import struct
 import re
 from optparse import OptionParser
 from collections import deque
+import copy
 
 default_requests = [
   {':method': "get",
@@ -287,21 +288,25 @@ def XtrtB2LenPlusStr(x):
   return (2 + len, ''.join([chr(i) for i in x[2:len+2]]))
 
 inline_packing_instructions = {
-  'opcode'     : ((0,3),             None),
-  'k'          : ((3,1),             None),
-  'dict_level' : ((4,1),             None),
+  'opcode'     : ((0,4),             None),
+  'k'          : ((4,1),             None),
+  'dict_level' : ((5,1),             None),
   'truncate_to': ( None,          IntTo2B),
   'index'      : ( None,          IntTo2B),
+  'index_start': ( None,          IntTo2B),
+  'key_idx'    : ( None,          IntTo2B),
   'val'        : ( None, PackB2LenPlusStr),
   'key'        : ( None, PackB2LenPlusStr),
 }
 
 inline_unpacking_instructions = {
-  'opcode'     : ((0,3),             None),
-  'k'          : ((3,1),             None),
-  'dict_level' : ((4,1),             None),
+  'opcode'     : ((0,4),             None),
+  'k'          : ((4,1),             None),
+  'dict_level' : ((5,1),             None),
   'truncate_to': ( None,         LB2ToInt),
   'index'      : ( None,         LB2ToInt),
+  'index_start': ( None,         LB2ToInt),
+  'key_idx'    : ( None,         LB2ToInt),
   'val'        : ( None, XtrtB2LenPlusStr),
   'key'        : ( None, XtrtB2LenPlusStr),
 }
@@ -314,17 +319,21 @@ packing_order = ['opcode',
                  'len',
                  'npos',
                  'index',
+                 'index_start',
+                 'key_idx',
                  'key',
                  'val',
                  ]
 
 opcodes = {
-    'store': (0x0, 'k', 'dict_level', 'index',                'val'),
-    'taco' : (0x1, 'k', 'dict_level', 'index', 'truncate_to', 'val'),
+    'store': (0x0, 'k', 'dict_level', 'index',                           'val'),
+    'taco' : (0x1, 'k', 'dict_level', 'index', 'truncate_to',            'val'),
     'rem'  : (0x2,      'dict_level', 'index'),
     'toggl': (0x3,      'dict_level', 'index'),
-    'kvsto': (0x5,      'dict_level', 'index', 'key',         'val'),
-    'eref' : (0x6,                             'key',         'val'),
+    'kvsto': (0x4,      'dict_level', 'index', 'key',                    'val'),
+    'clone': (0x5,                    'index',                'key_idx', 'val'),
+    'eref' : (0x6,                             'key',                    'val'),
+    'trang': (0x7,      'dict_level', 'index', 'index_start'),
     }
 
 def OpcodeSize(unpacking_instructions, opcode):
@@ -397,15 +406,14 @@ def RealOpsToOps(realops):
   return UnpackSPDY4Ops(inline_unpacking_instructions, realop)
 
 def FormatOp(op):
-  order = ['opcode', 'k', 'dict_level', 'index', 'truncate_to',
-           'key_len', 'key', 'val_len', 'val']
+  order = packing_order
   outp = ['{']
   inp = []
   for key in order:
     if key in op and key is not 'opcode':
-      inp.append("'%s': %s" % (key, repr(op[key])))
+      inp.append("'%s': % 5s" % (key, repr(op[key])))
     if key in op and key is 'opcode':
-      inp.append("'%s': %s" % (key, repr(op[key]).ljust(7)))
+      inp.append("'%s': % 5s" % (key, repr(op[key]).ljust(7)))
   for (key, val) in op.iteritems():
     if key in order:
       continue
@@ -608,9 +616,9 @@ class Spdy4CoDe:
         'x-xss-protection': "",
         }
     self.connection_headers = [k for (k,v) in connection_dict.iteritems()]
-    self.limits = {'TotalHeaderStorageSize': 16*1024,
+    self.limits = {'TotalHeaderStorageSize': 32*1024,
                    'MaxHeaderGroups': 1,
-                   'MaxEntriesInTable': 64}
+                   'MaxEntriesInTable': 640}
     self.total_storage = 0
     self.SetDictKVsAndSetVisibility(self.connection_dict, connection_dict)
     self.SeedStreamGroup(self.stream_group_dicts[0])
@@ -790,6 +798,7 @@ class Spdy4CoDe:
     ops = RealOpsToOps(realops)
     self.ephemereal_headers = {}
     self.ExecuteOps(ops, stream_group, self.ephemereal_headers)
+    return ops
 
   def ExecuteOps(self, ops, stream_group, ephemereal_headers):
     for op in ops:
@@ -903,26 +912,30 @@ class Line:
     self.v = v
     self.RecomputeHash()
 
+  def __repr__(self):
+    return '[Line k: %s, v: %s]' % (repr(self.k), repr(self.v))
+  def __str__(self):
+    return self.__repr__()
+
   def RecomputeHash(self):
     self.kvhash = hash(self.k + self.v)
 
 class Spdy4CoDe2:
   def __init__(self):
     default_dict = {
-        ":method": "get",
-        ":version": "1.1",
-        "user-agent": "",
-        "accept-language": "",
-        "accept": "",
-        "accept-encoding": "",
-        "accept-charset": "",
-        "accept-ranges": "",
-        "allow": "",
         ":host": "",
+        ":method": "get",
         ":path": "/",
         ":scheme": "https",
         ":status": "200",
         ":status-text": "OK",
+        ":version": "1.1",
+        "accept": "",
+        "accept-charset": "",
+        "accept-encoding": "",
+        "accept-language": "",
+        "accept-ranges": "",
+        "allow": "",
         "authorizations": "",
         "cache-control": "",
         "content-base": "",
@@ -961,6 +974,7 @@ class Spdy4CoDe2:
         "transfer-encoding": "",
         "upgrade": "",
         "user-agent": "",
+        "user-agent": "",
         "vary": "",
         "via": "",
         "warning": "",
@@ -974,9 +988,13 @@ class Spdy4CoDe2:
         'x-powered-by': "",
         'x-xss-protection': "",
         }
-    self.limits = {'TotalHeaderStorageSize': 16*1024,
+    self.compressor = zlib.compressobj(9, zlib.DEFLATED, -11)
+    self.decompressor = zlib.decompressobj(-11)
+    self.decompressor.decompress(self.compressor.compress(spdy_dictionary) +
+                                 self.compressor.flush(zlib.Z_SYNC_FLUSH))
+    self.limits = {'TotalHeaderStorageSize': 20*1024,
                    'MaxHeaderGroups': 1,
-                   'MaxEntriesInTable': 64}
+                   'MaxEntriesInTable': 640}
     self.total_storage = 0
 
     # dict_index -> key, val
@@ -992,23 +1010,25 @@ class Spdy4CoDe2:
     self.lru_of_index = deque()
 
     # stream_group -> list-of-dict-indices
-    self.stream_groups = {0:set()}
+    self.stream_groups = {0:[]}
 
     self.largest_index = 0
     self.unused_indices = deque()
 
     for (k, v) in default_dict.iteritems():
-      self.ExecuteOp(-1, self.MakeKvsto(-1, k, v))
+      self.ExecuteOp(-1, self.MakeKvsto(self.GetAnUnusedIndex(), k, v))
 
   def FindIndex(self, key, val):
     kvhash = hash(key + val)
     possible_indices = []
+    #if kvhash in self.kvhash_to_index:
+    #  possible_indices = list(self.kvhash_to_index[kvhash])
     if key in self.key_to_indices:
-      possible_indices = self.key_to_indices[key]
+      possible_indices.extend(list(self.key_to_indices[key]))
     for index in possible_indices:
-      if (self.index_to_line.kvhash == kvhash and
-         self.index_to_line.key == key and
-         self.index_to_line.val == val):
+      if (self.index_to_line[index].kvhash == kvhash and
+         self.index_to_line[index].k == key and
+         self.index_to_line[index].v == val):
         return (index, [])
     return (-1, possible_indices)
 
@@ -1024,54 +1044,62 @@ class Spdy4CoDe2:
     return index
 
   def UpdateIndexes(self, index, key, val):
-    self.total_storage += len(key) + len(val)
     self.index_to_line[index] = line = self.NewLine(key, val)
-    self.key_to_indices.get(key, set()).add(index)
-    self.kvhash_to_index.get(line.kvhash, set()).add(index)
-    self.lru_of_index.find(index)
-    self.lru_of_index.append(index)
+    self.total_storage += (len(line.k) + len(line.v))
+    key_to_indices = self.key_to_indices.get(key, set())
+    key_to_indices.add(index)
+    self.key_to_indices[key] = key_to_indices
+    kvhash_to_line  = self.kvhash_to_index.get(line.kvhash, set())
+    kvhash_to_line.add(index)
+    self.kvhash_to_index[line.kvhash] = kvhash_to_line
 
   def RemoveIndex(self, index):
     # this assumes the LRU has already been taken care of.
     line = self.index_to_line[index]
-    self.total_storage -= len(line.k) + len(line.v)
+    self.total_storage -= (len(line.k) + len(line.v))
     del self.index_to_line[index]
     self.key_to_indices[line.k].remove(index)
     if not self.key_to_indices[line.k]:
       del self.key_to_indices[line.k]
-    key_to_index_entry = self.key_to_indices.get(key, None)
+    key_to_index_entry = self.key_to_indices.get(line.k, None)
     self.kvhash_to_index[line.kvhash].remove(index)
     if not self.kvhash_to_index[line.kvhash]:
       del self.kvhash_to_index[line.kvhash]
-
-    
+    for (id, v) in self.stream_groups.iteritems():
+      self.stream_groups[id][:] = [x for x in self.stream_groups[id] if x != index]
 
   def MoveToFrontOfLRU(self, index):
-    try:
-      for i in xrange(len(self.lru_of_index)):
-        if self.lru_of_index[i] == index:
-          del self.lru_of_index[index]
-    except:
-      pass
+    new_lru = [x for x in list(self.lru_of_index) if x != index]
+    self.lru_of_index = deque(new_lru)
     self.lru_of_index.append(index)
 
   def Touch(self, index):
     self.MoveToFrontOfLRU(index)
 
-  def MakeRemovalsIfNecessary(index):
-    ops = []
-    while (limits['TotalHeaderStorageSize'] < self.total_storage or
-           limits['MaxEntriesInTable'] < len(self.lru_of_index)):
+  def MakeRemovalsIfNecessary(self):
+    num_removed = 0
+    while (self.limits['TotalHeaderStorageSize'] < self.total_storage or
+           self.limits['MaxEntriesInTable'] < len(self.lru_of_index)):
       oldest_index = self.lru_of_index.popleft()
       self.RemoveIndex(oldest_index)
+      num_removed += 1
+    if num_removed > 0:
+      return [self.MakeRem(num_removed)]
     return []
 
   def Compress(self, ops):
     realops = PackSpdy4Ops(inline_packing_instructions, ops)
-    return ''.join(realops)
+    ba = ''.join(realops)
+    if not self.use_zlib:
+      return ba
+    retval = self.compressor.compress(ba)
+    retval += self.compressor.flush(zlib.Z_SYNC_FLUSH)
+    return retval
 
-  def Decompress(self, x):
-    return x
+  def Decompress(self, op_blob):
+    if not self.use_zlib:
+      return op_blob
+    return self.decompressor.decompress(op_blob)
 
   def MakeToggl(self, index):
     return {'opcode': 'toggl', 'index': index}
@@ -1082,71 +1110,104 @@ class Spdy4CoDe2:
   def MakeClone(self, index, key_idx, val):
     return {'opcode': 'clone', 'index': index, 'val': val, 'key_idx': key_idx}
 
+  def MakeRem(self, index):
+    return {'opcode': 'rem', 'index': index}
+
   def Tokenify(self, headers, stream_group):
     ops = []
     headers = headers.copy()
     if not stream_group in self.stream_groups:
-      self.stream_groups[stream_group] = set()
-    for index in self.stream_groups[stream_group].copy():
+      self.stream_groups[stream_group] = []
+    for index in copy.copy(self.stream_groups[stream_group]):
       key = self.index_to_line[index].k
       val = self.index_to_line[index].v
       if key in headers and headers[key] == val:
         # Awesome, this line is already present!
         del headers[key]
-        self.Touch(index)
       else:
         # the headers don't have this line in 'em.
         op = self.MakeToggl(index)
         self.ExecuteOp(stream_group, op)
-        ops.extend(self.MakeRemovalsIfNecessary())
         ops.append(op)
-    for (key, val) in headers.iteritems():
-      (index, possible_indices) = self.FindIndex(key, val)
-      if index >= 0:
-        # we have a key+value that exists in the dictinary already,
-        # but isn't yet in the stream group. Toggle it ON.
-        op = self.MakeToggl(index)
-        self.ExecuteOp(stream_group, op)
-        ops.extend(self.MakeRemovalsIfNecessary())
+    out_ops = ops
+    out_ops.sort()
+    ops = []
+    for op in out_ops:  # these will ALL be Toggl (off) ops..
+      if ops and op['index'] - ops[-1]['index'] == 1:
+        if ops[-1]['opcode'] == 'trang':
+          ops[-1]['index'] = op['index']
+        else:
+          ops[-1]['opcode'] = 'trang'
+          ops[-1]['index_start'] = ops[-1]['index']
+          ops[-1]['index'] = op['index']
+      else:
         ops.append(op)
-      elif index == -1 and not possible_indices:
-        op = self.MakeKvsto(self.GetAnUnusedIndex(), key, val)
-        self.ExecuteOp(stream_group, op)
-        ops.extend(self.MakeRemovalsIfNecessary())
-        ops.append(op)
-      elif index == -1 and possible_indices:
-        op = self.MakeClone(possible_indices[0], val)
-        self.ExecuteOp(stream_group, op)
-        ops.extend(self.MakeRemovalsIfNecessary())
-        ops.append(op)
-    return ops
 
-  def DeTokenify(self, ops, stream_group):
-    self.ExecuteOps(RealOpsToOps(ops), stream_group, {})
+    for (key, vals) in headers.iteritems():
+      splitvals = [vals]
+      if key == 'cookie': # treat cookie specially...
+        splitvals = vals.split(';')
+      for val in splitvals:
+        (index, possible_indices) = self.FindIndex(key, val)
+        if index >= 0 and index not in self.stream_groups[stream_group]:
+          # we have a key+value that exists in the dictinary already,
+          # but isn't yet in the stream group. Toggle it ON.
+          op = self.MakeToggl(index)
+          self.ExecuteOp(stream_group, op)
+          ops.append(op)
+        elif index >= 0 and index in self.stream_groups[stream_group]:
+          # This should never happen.
+          #@raise StandardError()
+          pass
+        elif index == -1 and possible_indices:
+          # The key exists, but the value is different.
+          # Clone the key with a new val.
+          op = self.MakeClone(self.GetAnUnusedIndex(), possible_indices[0], val)
+          self.ExecuteOp(stream_group, op)
+          ops.append(op)
+        elif index == -1 and not possible_indices:
+          # The key doesn't exist. Install an entirely new line.
+          op = self.MakeKvsto(self.GetAnUnusedIndex(), key, val)
+          self.ExecuteOp(stream_group, op)
+          ops.append(op)
+    removal_ops = self.MakeRemovalsIfNecessary()
+    for index in self.stream_groups[stream_group]:
+      self.Touch(index)
+    return removal_ops + ops
+
+  def DeTokenify(self, realops, stream_group):
+    ops = RealOpsToOps(realops)
+    self.ExecuteOps(ops, stream_group, {})
+    return ops
 
   def ExecuteOp(self, stream_group, op):
     opcode = op["opcode"]
     index = op["index"]
-    if opcode == 'kvsto':
+    if opcode == 'trang':
+      for i in xrange(op['index_start'], op['index']+1):
+        self.ExecuteOp(stream_group, self.MakeToggl(i))
+    elif opcode == 'rem':
+      for i in xrange(op['index']):
+        self.RemoveIndex(self.lru_of_index.popleft())
+    elif opcode == 'kvsto':
       # kvsto - store key,value
       # [modifies both stream-group and header_dict]
       self.UpdateIndexes(index, op["key"], op["val"])
-      if index >= 0:
-        self.stream_groups[stream_group].add(index)
+      if stream_group >= 0:
+        self.stream_groups[stream_group].append(index)
     elif opcode == 'clone':
-      key_idx = ord(op["key_idx"])
+      key_idx = op["key_idx"]
       # Clone - copies key and stores new value
       # [modifies both stream-group and header_dict]
-      self.UpdateIndexes(index, self.index_to_line[key_idx].key, op["val"])
-      self.stream_groups[stream_group].add(index)
+      self.UpdateIndexes(index, self.index_to_line[key_idx].k, op["val"])
+      self.stream_groups[stream_group].append(index)
     elif opcode == 'toggl':
       # Toggl - toggle visibility
       # [applies to stream-group entry only]
       if index in self.stream_groups[stream_group]:
         self.stream_groups[stream_group].remove(index)
       else:
-        self.stream_groups[stream_group].add(index)
-        self.Touch(index)
+        self.stream_groups[stream_group].append(index)
 
   def GetDictSize(self):
     return self.total_storage
@@ -1164,11 +1225,14 @@ class Spdy4CoDe2:
   def GenerateAllHeaders(self, stream_group):
     headers = {}
     for index in self.stream_groups[stream_group]:
+      self.Touch(index)
       line = self.index_to_line[index]
       if line.k in headers:
         headers[line.k] = headers[line.k] + '\0' + line.v
       else:
         headers[line.k] = line.v
+    if 'cookie' in headers:
+      headers['cookie'] = headers['cookie'].replace('\0', ';')
     return headers
 
   def ExecuteOps(self, ops, stream_group, ephemereal_headers):
@@ -1211,6 +1275,9 @@ def main():
   (options, args) = parser.parse_args()
 
   print options
+  for (opcode, _) in opcodes.iteritems():
+    print "opcode: % 7s size: % 3d" % ("'" + opcode + "'",
+        OpcodeSize(inline_unpacking_instructions, opcode))
   requests = default_requests
   responses = []
   if args >= 1:
@@ -1335,14 +1402,12 @@ def main():
     if options.v >= 1:
       for i in xrange(len(headers_to_compress)):
         if headers_to_compress[i] != out_headers[i]:
-          print headers_to_compress[i]
+          print sorted([(k,v) for k,v in headers_to_compress[i].iteritems()])
           print "   !="
-          print out_headers[i]
+          print sorted([(k,v) for k,v in out_headers[i].iteritems()])
           print
   print
-  for (opcode, ignore) in opcodes.iteritems():
-    print "opcode: % 7s size: % 3d" % ("'" + opcode + "'",
-        OpcodeSize(inline_unpacking_instructions, opcode))
+
 
 main()
 
