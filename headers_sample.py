@@ -54,6 +54,23 @@ default_requests = [
 def ListToStr(val):
   return ''.join(["%c" % c for c in val])
 
+class WordFreak:
+  def __init__(self):
+    self.character_freaks = {}
+
+  def LookAt(self, ops):
+    for op in ops:
+      for key in ['key', 'val']:
+        if key in op:
+          for c in op[key]:
+            self.character_freaks[c] = self.character_freaks.get(c, 0) + 1
+
+  def __repr__(self):
+    return repr(sorted([(v, k) for (k,v) in self.character_freaks.iteritems()],
+      reverse=True))
+  def __str__(self):
+    return self.__repr__()
+
 spdy_dictionary = ListToStr([
         0x00, 0x00, 0x00, 0x07, 0x6f, 0x70, 0x74, 0x69,   # - - - - o p t i
         0x6f, 0x6e, 0x73, 0x00, 0x00, 0x00, 0x04, 0x68,   # o n s - - - - h
@@ -456,40 +473,6 @@ def KeyIndexInDict(d, key):
       return index
   return -1
 
-def HTTPHeadersFormat(request):
-  out_frame = []
-  fl = ""
-  avoid_list = []
-  if ":method" in request:
-    fl = "%s %s HTTP/%s\r\n" % (
-        request[":method"],request[":path"],request[":version"])
-    avoid_list = [":method", ":path", ":version"]
-  else:
-    fl = "HTTP/%s %s %s\r\n" % (
-        request[":version"],request[":status"],request[":status-text"])
-    avoid_list = [":version", ":status", ":status-text"]
-  out_frame.append(fl)
-  for (key, val) in request.iteritems():
-    if key in avoid_list:
-      continue
-    if key == ":host":
-      key = "host"
-    for individual_val in val.split('\x00'):
-      out_frame.append(key)
-      out_frame.append(": ")
-      out_frame.append(individual_val)
-      out_frame.append("\r\n")
-  return ''.join(out_frame)
-
-def Spdy3HeadersFormat(request):
-  out_frame = []
-  for (key, val) in request.iteritems():
-    out_frame.append(struct.pack("!L", len(key)))
-    out_frame.append(key)
-    out_frame.append(struct.pack("!L", len(val)))
-    out_frame.append(val)
-  return ''.join(out_frame)
-
 def MakeDefaultHeaders(list_o_dicts, items_to_ignore=[]):
   retval = {}
   for kvdict in list_o_dicts:
@@ -536,9 +519,15 @@ def ReadHarFile(filename):
     response_headers.append(header)
   return (request_headers, response_headers)
 
+def GetHostname(request):
+  if ":host" in request:
+    return request[":host"]
+  elif "host" in request:
+    return request["host"]
+  return "<unknown>"
+
 class Spdy4CoDe:
   def __init__(self):
-    self.use_zlib = 1
     self.ephemereal_headers = {}
     self.compressor = zlib.compressobj(9, zlib.DEFLATED, -11)
     self.decompressor = zlib.decompressobj(-11)
@@ -790,11 +779,9 @@ class Spdy4CoDe:
     d[index][3] = visible
 
   def Decompress(self, op_blob):
-    if not self.use_zlib:
-      return op_blob
     return self.decompressor.decompress(op_blob)
 
-  def DeTokenify(self, realops, stream_group):
+  def RealOpsToOpAndExecute(self, realops, stream_group):
     ops = RealOpsToOps(realops)
     self.ephemereal_headers = {}
     self.ExecuteOps(ops, stream_group, self.ephemereal_headers)
@@ -864,11 +851,11 @@ class Spdy4CoDe:
       self.ExecuteOp(op, stream_group, {})
     return remove_ops
 
-  def Compress(self, ops):
-    realops = PackSpdy4Ops(inline_packing_instructions, ops)
+  def OpsToRealOps(self, ops):
+    return PackSpdy4Ops(inline_packing_instructions, ops)
+
+  def Compress(self, realops):
     ba = ''.join(realops)
-    if not self.use_zlib:
-      return ba
     retval = self.compressor.compress(ba)
     retval += self.compressor.flush(zlib.Z_SYNC_FLUSH)
     return retval
@@ -895,7 +882,7 @@ class Spdy4CoDe:
       self.SeedStreamGroup(self.stream_group_dicts[stream_group])
     return stream_group
 
-  def Tokenify(self, headers, stream_group):
+  def MakeOperations(self, headers, stream_group):
     self.generation += 1
     ops = []
     for (key, value) in headers.iteritems():
@@ -1055,18 +1042,25 @@ class Spdy4CoDe2:
 
   def RemoveIndex(self, index):
     # this assumes the LRU has already been taken care of.
+
+    # cleanup index_to_line
     line = self.index_to_line[index]
     self.total_storage -= (len(line.k) + len(line.v))
     del self.index_to_line[index]
+    # cleanup key_to_indices
     self.key_to_indices[line.k].remove(index)
     if not self.key_to_indices[line.k]:
       del self.key_to_indices[line.k]
     key_to_index_entry = self.key_to_indices.get(line.k, None)
+    # cleanup kvhash_to_index
     self.kvhash_to_index[line.kvhash].remove(index)
     if not self.kvhash_to_index[line.kvhash]:
       del self.kvhash_to_index[line.kvhash]
+    # cleanup stream_groups
     for (id, v) in self.stream_groups.iteritems():
       self.stream_groups[id][:] = [x for x in self.stream_groups[id] if x != index]
+      if not self.stream_groups[id]:
+        del self.stream_groups[id]
 
   def MoveToFrontOfLRU(self, index):
     new_lru = [x for x in list(self.lru_of_index) if x != index]
@@ -1076,29 +1070,34 @@ class Spdy4CoDe2:
   def Touch(self, index):
     self.MoveToFrontOfLRU(index)
 
-  def MakeRemovalsIfNecessary(self):
+  def MakeRemovalsIfNecessary(self, stream_group, in_ops):
+    return []
     num_removed = 0
+    ops = []
+    indices_removed = []
     while (self.limits['TotalHeaderStorageSize'] < self.total_storage or
            self.limits['MaxEntriesInTable'] < len(self.lru_of_index)):
       oldest_index = self.lru_of_index.popleft()
+      line = self.index_to_line[oldest_index]
+      if oldest_index in self.stream_groups[stream_group]:
+        ops.append(self.MakeERef(line.k, line.v))
       self.RemoveIndex(oldest_index)
+      indices_removed.append(oldest_index)
       num_removed += 1
     if num_removed > 0:
-      return [self.MakeRem(num_removed)]
-    return []
+      ops.append(self.MakeRem(num_removed))
+    return ops
 
-  def Compress(self, ops):
-    realops = PackSpdy4Ops(inline_packing_instructions, ops)
+  def OpsToRealOps(self, ops):
+    return PackSpdy4Ops(inline_packing_instructions, ops)
+
+  def Compress(self, realops):
     ba = ''.join(realops)
-    if not self.use_zlib:
-      return ba
     retval = self.compressor.compress(ba)
     retval += self.compressor.flush(zlib.Z_SYNC_FLUSH)
     return retval
 
   def Decompress(self, op_blob):
-    if not self.use_zlib:
-      return op_blob
     return self.decompressor.decompress(op_blob)
 
   def MakeToggl(self, index):
@@ -1113,9 +1112,16 @@ class Spdy4CoDe2:
   def MakeRem(self, index):
     return {'opcode': 'rem', 'index': index}
 
-  def Tokenify(self, headers, stream_group):
+  def MakeERef(self, key, value):
+    op = {'opcode': 'eref',
+          'key': key,
+          'val': value}
+    return op
+
+  def MakeOperations(self, headers, stream_group):
     ops = []
     headers = headers.copy()
+    self.active_stream_group = stream_group
     if not stream_group in self.stream_groups:
       self.stream_groups[stream_group] = []
     for index in copy.copy(self.stream_groups[stream_group]):
@@ -1142,7 +1148,6 @@ class Spdy4CoDe2:
           ops[-1]['index'] = op['index']
       else:
         ops.append(op)
-
     for (key, vals) in headers.iteritems():
       splitvals = [vals]
       if key == 'cookie': # treat cookie specially...
@@ -1156,13 +1161,13 @@ class Spdy4CoDe2:
           self.ExecuteOp(stream_group, op)
           ops.append(op)
         elif index >= 0 and index in self.stream_groups[stream_group]:
-          # This should never happen.
-          #@raise StandardError()
+          # this means that something was repeated verbatim.
+          # Nah. We don't do that.
           pass
         elif index == -1 and possible_indices:
           # The key exists, but the value is different.
           # Clone the key with a new val.
-          op = self.MakeClone(self.GetAnUnusedIndex(), possible_indices[0], val)
+          op = self.MakeClone(self.GetAnUnusedIndex(), max(possible_indices), val)
           self.ExecuteOp(stream_group, op)
           ops.append(op)
         elif index == -1 and not possible_indices:
@@ -1170,31 +1175,28 @@ class Spdy4CoDe2:
           op = self.MakeKvsto(self.GetAnUnusedIndex(), key, val)
           self.ExecuteOp(stream_group, op)
           ops.append(op)
-    removal_ops = self.MakeRemovalsIfNecessary()
+    removal_ops = self.MakeRemovalsIfNecessary(stream_group, ops)
     for index in self.stream_groups[stream_group]:
       self.Touch(index)
     return removal_ops + ops
 
-  def DeTokenify(self, realops, stream_group):
+  def RealOpsToOpAndExecute(self, realops, stream_group):
     ops = RealOpsToOps(realops)
     self.ExecuteOps(ops, stream_group, {})
     return ops
 
-  def ExecuteOp(self, stream_group, op):
+  def ExecuteOps(self, ops, stream_group, ephemereal_headers={}):
+    if not stream_group in self.stream_groups:
+      self.stream_groups[stream_group] = []
+    for op in ops:
+      self.ExecuteOp(stream_group, op, ephemereal_headers)
+
+  def ExecuteOp(self, stream_group, op, ephemereal_headers={}):
     opcode = op["opcode"]
     index = op["index"]
     if opcode == 'trang':
       for i in xrange(op['index_start'], op['index']+1):
         self.ExecuteOp(stream_group, self.MakeToggl(i))
-    elif opcode == 'rem':
-      for i in xrange(op['index']):
-        self.RemoveIndex(self.lru_of_index.popleft())
-    elif opcode == 'kvsto':
-      # kvsto - store key,value
-      # [modifies both stream-group and header_dict]
-      self.UpdateIndexes(index, op["key"], op["val"])
-      if stream_group >= 0:
-        self.stream_groups[stream_group].append(index)
     elif opcode == 'clone':
       key_idx = op["key_idx"]
       # Clone - copies key and stores new value
@@ -1207,6 +1209,17 @@ class Spdy4CoDe2:
       if index in self.stream_groups[stream_group]:
         self.stream_groups[stream_group].remove(index)
       else:
+        self.stream_groups[stream_group].append(index)
+    elif opcode == 'rem':
+      for i in xrange(op['index']):
+        self.RemoveIndex(self.lru_of_index.popleft())
+    elif opcode == 'eref':
+      ephemereal_headers[opcode['key']] = opcode['val']
+    elif opcode == 'kvsto':
+      # kvsto - store key,value
+      # [modifies both stream-group and header_dict]
+      self.UpdateIndexes(index, op["key"], op["val"])
+      if stream_group >= 0:
         self.stream_groups[stream_group].append(index)
 
   def GetDictSize(self):
@@ -1235,21 +1248,99 @@ class Spdy4CoDe2:
       headers['cookie'] = headers['cookie'].replace('\0', ';')
     return headers
 
-  def ExecuteOps(self, ops, stream_group, ephemereal_headers):
-    for op in ops:
-      self.ExecuteOp(stream_group, op)
+class SPDY4:
+  def __init__(self, options):
+    self.compressor   = Spdy4CoDe2()
+    self.decompressor = Spdy4CoDe2()
+    self.options = options
+    self.wf = WordFreak()
+    self.hosts = {}
 
-  def FindStreamGroup(self, headers):
-    return 0
-    stream_group = 0
-    if headers[":host"] in self.stream_group_indices:
-      stream_group = self.stream_group_indices[headers[":host"]]
+  def ProcessFrame(self, inp_headers, request_headers):
+    normalized_host = re.sub("[0-1a-zA-Z-\.]*\.([^.]*\.[^.]*)", "\\1",
+                             request_headers[":host"])
+    if normalized_host in self.hosts:
+      stream_group = self.hosts[normalized_host]
     else:
-      stream_group = NextIndex(KtoV(self.stream_group_indices))
-      self.stream_group_indices[headers[":host"]] = stream_group
-      self.stream_group_dicts[stream_group] = {}
-      self.SeedStreamGroup(self.stream_group_dicts[stream_group])
-    return stream_group
+      stream_group = NextIndex(KtoV(self.hosts))
+      self.hosts[normalized_host] = stream_group
+    if self.options.f:
+      stream_group = 0
+    inp_ops = self.compressor.MakeOperations(inp_headers, stream_group)
+    self.wf.LookAt(inp_ops)
+    inp_real_ops = self.compressor.OpsToRealOps(inp_ops)
+    compressed_blob = self.compressor.Compress(inp_real_ops)
+    out_real_ops = self.decompressor.Decompress(compressed_blob)
+    out_ops = self.decompressor.RealOpsToOpAndExecute(out_real_ops, stream_group)
+    out_headers = self.decompressor.GenerateAllHeaders(stream_group)
+    return (compressed_blob,
+            inp_real_ops, out_real_ops,
+            inp_headers,  out_headers,
+            inp_ops,      out_ops,
+            stream_group)
+
+class SPDY3:
+  def __init__(self, options):
+    self.options = options
+    self.compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
+                                       zlib.DEFLATED, 11)
+    self.compressor.compress(spdy_dictionary);
+    self.compressor.flush(zlib.Z_SYNC_FLUSH)
+
+  def ProcessFrame(self, inp_headers, request_headers):
+    spdy3_frame = self.Spdy3HeadersFormat(inp_headers)
+    return ((self.compressor.compress(spdy3_frame) +
+             self.compressor.flush(zlib.Z_SYNC_FLUSH)),
+             spdy3_frame)
+
+  def Spdy3HeadersFormat(self, request):
+    out_frame = []
+    for (key, val) in request.iteritems():
+      out_frame.append(struct.pack("!L", len(key)))
+      out_frame.append(key)
+      out_frame.append(struct.pack("!L", len(val)))
+      out_frame.append(val)
+    return ''.join(out_frame)
+
+
+class HTTP1:
+  def __init__(self, options):
+    self.options = options
+    self.compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
+                                       zlib.DEFLATED, 11)
+    self.compressor.compress(spdy_dictionary);
+    self.compressor.flush(zlib.Z_SYNC_FLUSH)
+
+  def ProcessFrame(self, inp_headers, request_headers):
+    http1_frame = self.HTTP1HeadersFormat(inp_headers)
+    return ((self.compressor.compress(http1_frame) +
+             self.compressor.flush(zlib.Z_SYNC_FLUSH)),
+             http1_frame)
+
+  def HTTP1HeadersFormat(self, frame):
+    out_frame = []
+    fl = ""
+    avoid_list = []
+    if ":method" in frame:
+      fl = "%s %s HTTP/%s\r\n" % (
+          frame[":method"],frame[":path"],frame[":version"])
+      avoid_list = [":method", ":path", ":version"]
+    else:
+      fl = "HTTP/%s %s %s\r\n" % (
+          frame[":version"],frame[":status"],frame[":status-text"])
+      avoid_list = [":version", ":status", ":status-text"]
+    out_frame.append(fl)
+    for (key, val) in frame.iteritems():
+      if key in avoid_list:
+        continue
+      if key == ":host":
+        key = "host"
+      for individual_val in val.split('\x00'):
+        out_frame.append(key)
+        out_frame.append(": ")
+        out_frame.append(individual_val)
+        out_frame.append("\r\n")
+    return ''.join(out_frame)
 
 def main():
   parser = OptionParser()
@@ -1260,13 +1351,6 @@ def main():
                     "At v=2, so will the headers [default: %default]",
                     default=0,
                     metavar="VERBOSITY")
-  parser.add_option("-t", "--type",
-                    dest="header_type",
-                    help="Selects if examining request or response headers. "
-                    "Valid values are 'request' or 'response'"
-                    " [default: %default]",
-                    default='request',
-                    metavar="HEADER_TYPE")
   parser.add_option("-f", "--force_streamgroup",
                     dest="f",
                     help="If set, everything will use stream-group 0. "
@@ -1287,129 +1371,134 @@ def main():
       (har_requests, har_responses) = ReadHarFile(filename)
       requests.extend(har_requests)
       responses.extend(har_responses)
-  spdy4_frame_list = []
-  spdy3_frame_list = []
-  http1_frame_list = []
-  spdy4_compressor = Spdy4CoDe2()
-  spdy4_decompressor = Spdy4CoDe2()
-  use_zlib = 1
-  spdy4_compressor.use_zlib = use_zlib
-  spdy4_decompressor.use_zlib = use_zlib
-  spdy3_compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
-      zlib.DEFLATED, 11)
-  spdy3_compressor.compress(spdy_dictionary);
-  spdy3_compressor.flush(zlib.Z_SYNC_FLUSH)
-  http1_compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
-      zlib.DEFLATED, 11)
-  http1_compressor.compress(spdy_dictionary);
-  http1_compressor.flush(zlib.Z_SYNC_FLUSH)
 
-  if options.header_type == 'request':
-    headers_to_compress = requests
-  elif options.header_type == 'response':
-    headers_to_compress = responses
-  else:
-    raise StandardError("Unknown type argument."
-                        "It must be one of 'request' or 'response'")
-  for i in xrange(len(requests)):
-    request = requests[i]
-    obj_to_compress = headers_to_compress[i]
-    http1_frame = HTTPHeadersFormat(obj_to_compress)
-    http1_frame_list.append((http1_frame,
-                             http1_compressor.compress(http1_frame) +
-                             http1_compressor.flush(zlib.Z_SYNC_FLUSH)))
-    spdy3_frame = Spdy3HeadersFormat(obj_to_compress)
-    spdy3_frame_list.append((spdy3_frame,
-                             spdy3_compressor.compress(spdy3_frame) +
-                             spdy3_compressor.flush(zlib.Z_SYNC_FLUSH)))
-
-    spdy_4_stream_group = spdy4_compressor.FindStreamGroup(request)
-    if options.f:
-      spdy_4_stream_group = 0
-    in_ops = spdy4_compressor.Tokenify(obj_to_compress, spdy_4_stream_group)
-    in_frame = spdy4_compressor.Compress(in_ops)
-    spdy4_frame = PackSpdy4Ops(inline_packing_instructions, in_ops)
-
-    spdy4_frame_list.append((spdy4_frame,in_frame, spdy_4_stream_group))
+  spdy4_rq = SPDY4(options)
+  spdy3_rq = SPDY3(options)
+  http1_rq = HTTP1(options)
+  spdy4_rs = SPDY4(options)
+  spdy3_rs = SPDY3(options)
+  http1_rs = HTTP1(options)
 
   print "        UC: UnCompressed frame size"
   print "        CM: CoMpressed frame size"
   print "        UR: Uncompressed / Http uncompressed"
   print "        CR:   Compressed / Http compressed"
-  out_headers = []
   def framelen(x):
     return  len(x) + 8
-
-  h1us = 0
-  h1cs = 0
-  s3us = 0
-  s3cs = 0
-  s4us = 0
-  s4cs = 0
-  for i in xrange(len(http1_frame_list)):
-    out_ops = spdy4_decompressor.Decompress(spdy4_frame_list[i][1])
-    out_frame = spdy4_decompressor.DeTokenify(out_ops, spdy4_frame_list[i][2])
-    out_header = spdy4_decompressor.GenerateAllHeaders(spdy4_frame_list[i][2])
-    out_headers.append(out_header)
+  h1usrq = 0
+  h1csrq = 0
+  s3usrq = 0
+  s3csrq = 0
+  s4usrq = 0
+  s4csrq = 0
+  h1usrs = 0
+  h1csrs = 0
+  s3usrs = 0
+  s3csrs = 0
+  s4usrs = 0
+  s4csrs = 0
+  for i in xrange(len(requests)):
+    request = requests[i]
+    response = responses[i]
+    rq4 = spdy4_rq.ProcessFrame(request, request)
+    rs4 = spdy4_rs.ProcessFrame(response, request)
+    rq3 = spdy3_rq.ProcessFrame(request, request)
+    rs3 = spdy3_rs.ProcessFrame(response, request)
+    rqh = http1_rq.ProcessFrame(request, request)
+    rsh = http1_rs.ProcessFrame(response, request)
     if options.v >= 2:
       print '##################################################################'
       print '####### request-path: "%s"' % requests[i][":path"][:80]
-      print "####### stream group: %2d, %s" % (spdy4_frame_list[i][2],
-          spdy4_compressor.GetHostnameForStreamGroup(spdy4_frame_list[i][2]))
-      print "####### dict size: %3d" % spdy4_decompressor.GetDictSize()
+      print "####### stream group: %2d, %s" % (rq4[7], GetHostname(request))
+      print "####### dict size: %3d" % spdy4_rs.decompressor.GetDictSize()
       print
+
+      print "## request ##\n", rqh[1]
       if options.v >= 4:
-        print "header: ", out_header
-      print http1_frame_list[i][0]
-      for op in RealOpsToOps(out_ops):
+        print "request  header: ", request
+      for op in rq4[6]:
+        print FormatOp(op)
+
+      print "\n## response ##\n", rqh[1]
+      if options.v >= 4:
+        print "response header: ", response
+      for op in rs4[6]:
         print FormatOp(op)
       print
+      if not request == rq4[4]:
+        print "Something is wrong with the request."
+        if options.v >= 1:
+          for i in xrange(len(request)):
+            if request[i] != rq4[4][i]:
+              print sorted([(k,v) for k,v in request[i].iteritems()])
+              print "   !="
+              print sorted([(k,v) for k,v in rq4[2][i].iteritems()])
+              print
+      if not response == rs4[4]:
+        print "Something is wrong with the response."
+        if options.v >= 1:
+          for i in xrange(len(response)):
+            if response[i] != rs4[4][i]:
+              print sorted([(k,v) for k,v in response[i].iteritems()])
+              print "   !="
+              print sorted([(k,v) for k,v in rs4[2][i].iteritems()])
+              print
 
-    (h1uncom, h1com) = map(len, http1_frame_list[i])
-    h1us += h1uncom; h1cs += h1com
-    (s3uncom, s3com) = map(framelen, spdy3_frame_list[i])
-    s3us += s3uncom; s3cs += s3com
-    (s4uncom, s4com) = map(framelen, spdy4_frame_list[i][:2])
-    s4us += s4uncom; s4cs += s4com
+    (h1comrq, h1uncomrq) = map(len, rqh)
+    h1usrq += h1uncomrq; h1csrq += h1comrq
+    (s3comrq, s3uncomrq) = map(framelen, rq3)
+    s3usrq += s3uncomrq; s3csrq += s3comrq
+    (s4comrq, s4uncomrq) = map(framelen, rq4[:2])
+    s4usrq += s4uncomrq; s4csrq += s4comrq
+
+    (h1comrs, h1uncomrs) = map(len, rsh)
+    h1usrs += h1uncomrs; h1csrs += h1comrs
+    (s3comrs, s3uncomrs) = map(framelen, rs3)
+    s3usrs += s3uncomrs; s3csrs += s3comrs
+    (s4comrs, s4uncomrs) = map(framelen, rs4[:2])
+    s4usrs += s4uncomrs; s4csrs += s4comrs
+
     lines= [
-    ("http1 ", h1uncom, h1com, 1.0*h1uncom/h1uncom, 1.0*h1com/h1com),
-    ("spdy3 ", s3uncom, s3com, 1.0*s3uncom/h1uncom, 1.0*s3com/h1com),
-    ("spdy4 ", s4uncom, s4com, 1.0*s4uncom/h1uncom, 1.0*s4com/h1com),
+    ("http1 req", h1uncomrq, h1comrq, 1.0*h1uncomrq/h1uncomrq, 1.0*h1comrq/h1comrq),
+    ("spdy3 req", s3uncomrq, s3comrq, 1.0*s3uncomrq/h1uncomrq, 1.0*s3comrq/h1comrq),
+    ("spdy4 req", s4uncomrq, s4comrq, 1.0*s4uncomrq/h1uncomrq, 1.0*s4comrq/h1comrq),
+    ("http1 res", h1uncomrs, h1comrs, 1.0*h1uncomrs/h1uncomrs, 1.0*h1comrs/h1comrs),
+    ("spdy3 res", s3uncomrs, s3comrs, 1.0*s3uncomrs/h1uncomrs, 1.0*s3comrs/h1comrs),
+    ("spdy4 res", s4uncomrs, s4comrs, 1.0*s4uncomrs/h1uncomrs, 1.0*s4comrs/h1comrs),
     ]
     if options.v >= 1:
-      print "                                 UC  |  CM  |  UR  |  CR"
+      print "                            UC  |  CM  |  UR  |  CR"
       for fmtarg in lines:
-        print "             %s frame size: %4d | %4d | %2.2f | %2.2f" % fmtarg
+        print "     %s frame size: %4d | %4d | %2.2f | %2.2f" % fmtarg
       print
-  fmtarg = (h1us, s3us, s4us)
+  print "Thats all folks. If you see this, everything worked OK"
+
   print "######################################################################"
   print "######################################################################"
   print
-  print "                                   http1   |   spdy3   |   spdy4 "
-  print "             Uncompressed Sums:  % 8d  | % 8d  | % 8d  " % fmtarg
-  fmtarg = (h1cs,  s3cs, s4cs)
-  print "               Compressed Sums:  % 8d  | % 8d  | % 8d  " % fmtarg
-  fmtarg = (h1us*1./h1us,  s3us*1./h1us, s4us*1./h1us)
-  print "Uncompressed/uncompressed HTTP:  % 2.5f  | % 2.5f  | % 2.5f  " % fmtarg
-  fmtarg = (h1cs*1./h1us,  s3cs*1./h1us, s4cs*1./h1us)
-  print "  Compressed/uncompressed HTTP:  % 2.5f  | % 2.5f  | % 2.5f  " % fmtarg
+  print "                                       http1   |   spdy3   |   spdy4 "
+  fmtarg = (h1usrq, s3usrq, s4usrq)
+  print "Req              Uncompressed Sums:  % 8d  | % 8d  | % 8d  " % fmtarg
+  fmtarg = (h1csrq,  s3csrq, s4csrq)
+  print "Req                Compressed Sums:  % 8d  | % 8d  | % 8d  " % fmtarg
+  fmtarg = (h1usrq*1./h1usrq,  s3usrq*1./h1usrq, s4usrq*1./h1usrq)
+  print "Req Uncompressed/uncompressed HTTP:  % 2.5f  | % 2.5f  | % 2.5f  " % fmtarg
+  fmtarg = (h1csrq*1./h1usrq,  s3csrq*1./h1usrq, s4csrq*1./h1usrq)
+  print "Req   Compressed/uncompressed HTTP:  % 2.5f  | % 2.5f  | % 2.5f  " % fmtarg
   print
-
-  if headers_to_compress == out_headers:
-    print "Original headers == output"
-  else:
-    print "Something is wrong."
-    if options.v >= 1:
-      for i in xrange(len(headers_to_compress)):
-        if headers_to_compress[i] != out_headers[i]:
-          print sorted([(k,v) for k,v in headers_to_compress[i].iteritems()])
-          print "   !="
-          print sorted([(k,v) for k,v in out_headers[i].iteritems()])
-          print
+  fmtarg = (h1usrs, s3usrs, s4usrs)
+  print "Res              Uncompressed Sums:  % 8d  | % 8d  | % 8d  " % fmtarg
+  fmtarg = (h1csrs,  s3csrs, s4csrs)
+  print "Res                Compressed Sums:  % 8d  | % 8d  | % 8d  " % fmtarg
+  fmtarg = (h1usrs*1./h1usrs,  s3usrs*1./h1usrs, s4usrs*1./h1usrs)
+  print "Res Uncompressed/uncompressed HTTP:  % 2.5f  | % 2.5f  | % 2.5f  " % fmtarg
+  fmtarg = (h1csrs*1./h1usrs,  s3csrs*1./h1usrs, s4csrs*1./h1usrs)
+  print "Res   Compressed/uncompressed HTTP:  % 2.5f  | % 2.5f  | % 2.5f  " % fmtarg
   print
+  print spdy4_rq.wf
+  print spdy4_rs.wf
 
+
+  #print
 
 main()
-
-
-
