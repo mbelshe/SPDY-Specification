@@ -1450,12 +1450,13 @@ Here is a list of the major changes between this draft #3 and this draft
 <list>
 
 <t>DONE: Different, more precise, notation style used to describe all frames.</t>
-<t>DONE: Significant modifications to how headers are transported. This involved changes to all frames incorporating HEADER blocks, and changes to the HEADER blocks themselves.</t>
-<t>DONE: Addition of end-of-message delimiter flag in data frames</t>
 <t>DONE: Downsizing various fields in all messages... this will definitely need debate</t>
 <t>DONE: Removal of Version field from all messages.</t>
-<t>DONE: Modification of server push; addition of PUSH_PROMISE frame add a push frame, remove the 'associated-stream-id' field from SYN frame</t>
+<t>DONE: Reordered fields in all messages. All messages now share a common header of: length, flags, control-bit, 31-bit-payload. All control frames include an 8th byte, which is the opcode.</t>
+<t>DONE: Addition of end-of-message delimiter flag in data frames</t>
+<t>DONE: Modification of server push; addition of PUSH_PROMISE frame add a push frame, removed the 'associated-stream-id' field from SYN frame</t>
 
+<t>ONGOING: Significant modifications to how headers are transported. This involved changes to all frames incorporating HEADER blocks, and changes to the HEADER blocks themselves.</t>
 <t>ONGOING: Different header compression technique which uses less CPU for proxies and which should result in higher compression</t>
 <t>TODO: Addition of end-of-header-section delimiter flag in any frame which has a header block</t>
 
@@ -1463,6 +1464,7 @@ Here is a list of the major changes between this draft #3 and this draft
 <t>ONGOING: Definition of name-resolution push</t>
 
 <t>TODO: Modification of flow-control; allow two-levels of flow control so as to allow greater stream concurrency safely</t>
+<t>TODO: Add the 'blocked-on-flow-control' notification. Experience has shown that limits are too easy to get wrong, and this helps to self-correct this problem</t>
 <t>TODO: Modification of flow-control; headers-blocks (thus syn-stream) gets its own pool of memory, separate from data frames</t>
 <t>TODO: Everything after the first header-block-section possibly treated as flow-control</t>
 <t>TODO: Session-error status code added for UNRECOGNIZED_SCHEME for new streams. This triggers when the recipient doesn't know how to handle a stream of that type.</t>

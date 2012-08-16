@@ -3,9 +3,9 @@
 
 Network Working Group                                          M. Belshe
 Internet-Draft                                                     Twist
-Expires: February 10, 2013                                       R. Peon
+Expires: February 17, 2013                                       R. Peon
                                                              Google, Inc
-                                                          August 9, 2012
+                                                         August 16, 2012
 
 
                              SPDY Protocol
@@ -43,7 +43,7 @@ Status of this Memo
    The list of Internet-Draft Shadow Directories can be accessed at
    http://www.ietf.org/shadow.html.
 
-   This Internet-Draft will expire on February 10, 2013.
+   This Internet-Draft will expire on February 17, 2013.
 
 Copyright Notice
 
@@ -52,7 +52,7 @@ Copyright Notice
 
 
 
-Belshe & Peon           Expires February 10, 2013               [Page 1]
+Belshe & Peon           Expires February 17, 2013               [Page 1]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -78,7 +78,7 @@ Table of Contents
      2.2.  Framing  . . . . . . . . . . . . . . . . . . . . . . . . .  6
        2.2.1.  Notational Conventions for Framing . . . . . . . . . .  6
        2.2.2.  Control frames . . . . . . . . . . . . . . . . . . . .  8
-       2.2.3.  Data frames  . . . . . . . . . . . . . . . . . . . . .  8
+       2.2.3.  Data frames  . . . . . . . . . . . . . . . . . . . . .  9
      2.3.  Streams  . . . . . . . . . . . . . . . . . . . . . . . . .  9
        2.3.1.  Stream frames  . . . . . . . . . . . . . . . . . . . . 10
        2.3.2.  Stream creation  . . . . . . . . . . . . . . . . . . . 10
@@ -108,7 +108,7 @@ Table of Contents
 
 
 
-Belshe & Peon           Expires February 10, 2013               [Page 2]
+Belshe & Peon           Expires February 17, 2013               [Page 2]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -139,11 +139,11 @@ Internet-Draft                    SPDY                       August 2012
      6.1.  Long Lived Connections . . . . . . . . . . . . . . . . . . 52
      6.2.  SETTINGS frame . . . . . . . . . . . . . . . . . . . . . . 52
    7.  Incompatibilities with SPDY draft #3 . . . . . . . . . . . . . 53
-   8.  Requirements Notation  . . . . . . . . . . . . . . . . . . . . 54
-   9.  Acknowledgements . . . . . . . . . . . . . . . . . . . . . . . 55
-   10. Normative References . . . . . . . . . . . . . . . . . . . . . 56
-   Appendix A.  Changes . . . . . . . . . . . . . . . . . . . . . . . 58
-   Authors' Addresses . . . . . . . . . . . . . . . . . . . . . . . . 59
+   8.  Requirements Notation  . . . . . . . . . . . . . . . . . . . . 55
+   9.  Acknowledgements . . . . . . . . . . . . . . . . . . . . . . . 56
+   10. Normative References . . . . . . . . . . . . . . . . . . . . . 57
+   Appendix A.  Changes . . . . . . . . . . . . . . . . . . . . . . . 59
+   Authors' Addresses . . . . . . . . . . . . . . . . . . . . . . . . 60
 
 
 
@@ -164,7 +164,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013               [Page 3]
+Belshe & Peon           Expires February 17, 2013               [Page 3]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -220,7 +220,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013               [Page 4]
+Belshe & Peon           Expires February 17, 2013               [Page 4]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -276,7 +276,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013               [Page 5]
+Belshe & Peon           Expires February 17, 2013               [Page 5]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -332,7 +332,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013               [Page 6]
+Belshe & Peon           Expires February 17, 2013               [Page 6]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -388,7 +388,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013               [Page 7]
+Belshe & Peon           Expires February 17, 2013               [Page 7]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -405,10 +405,14 @@ Internet-Draft                    SPDY                       August 2012
 
 2.2.2.  Control frames
 
-        0        1        2        3       4..N
-   +-|-------+--------+--------+--------+========+
-   |C|Type(7)|Flags(8)| Length(16)      |  Data  |->
-   +-|-------+--------+--------+--------+========+
+     0        1        2        3         4        5        6        7
++--------+--------+--------+-|-------+--------+--------+--------+--------+
+| Length(16)      |Flags(8)|1| Num-of-Entries-or-Stream-ID-or-ID|     0x8| ->
++--------+--------+--------+-|-------+--------+--------+--------+--------+
+   8..N
++========+
+|  Data  |
++========+
 
    Control bit: The 'C' bit is a single bit indicating if this is a
    control message.  For control frames this value is always 1.
@@ -433,21 +437,26 @@ Internet-Draft                    SPDY                       August 2012
       supported.  However, all implementations MUST be able to receive
       control frames of at least 8192 octets in length.
 
-2.2.3.  Data frames
-
-     0        1        2        3        4        5        6       7..N
-+-|-------+--------+--------+--------+--------+--------+--------+========+
-|0| Stream ID (31)                   |Flags(8)| Length(16)      |  Data  |
-+-|-------+--------+--------+--------+--------+--------+--------+========+
-
-   Control bit: For data frames this value is always 0.
 
 
 
-Belshe & Peon           Expires February 10, 2013               [Page 8]
+
+
+
+
+Belshe & Peon           Expires February 17, 2013               [Page 8]
 
 Internet-Draft                    SPDY                       August 2012
 
+
+2.2.3.  Data frames
+
+     0        1        2        3         4        5        6      7..N
++--------+--------+--------+-|-------+--------+--------+--------+========+
+| Length(16)      |Flags(8)|0| Stream ID (31)                   |  Data  |
++--------+--------+--------+-|-------+--------+--------+--------+========+
+
+   Control bit: For data frames this value is always 0.
 
    Stream-ID: A 31-bit value identifying the stream.
 
@@ -488,6 +497,14 @@ Internet-Draft                    SPDY                       August 2012
    Streams are independent sequences of bi-directional data divided into
    frames with several properties:
 
+
+
+
+Belshe & Peon           Expires February 17, 2013               [Page 9]
+
+Internet-Draft                    SPDY                       August 2012
+
+
       Streams may be created by either the client or server.
 
       Streams optionally carry a set of name/value header pairs.
@@ -495,15 +512,6 @@ Internet-Draft                    SPDY                       August 2012
       Streams can concurrently send data interleaved with other streams.
 
       Streams may be cancelled.
-
-
-
-
-
-Belshe & Peon           Expires February 10, 2013               [Page 9]
-
-Internet-Draft                    SPDY                       August 2012
-
 
 2.3.1.  Stream frames
 
@@ -545,6 +553,14 @@ Internet-Draft                    SPDY                       August 2012
 
    Once the stream is created, the creator may immediately send HEADERS
    or DATA frames for that stream, without needing to wait for the
+
+
+
+Belshe & Peon           Expires February 17, 2013              [Page 10]
+
+Internet-Draft                    SPDY                       August 2012
+
+
    recipient to acknowledge.
 
 2.3.2.1.  Unidirectional streams
@@ -553,14 +569,6 @@ Internet-Draft                    SPDY                       August 2012
    Stream-ID, it creates a unidirectional stream which the creating
    endpoint can use to send frames, but the receiving endpoint cannot.
    The receiving endpoint is implicitly already in the half-closed
-
-
-
-Belshe & Peon           Expires February 10, 2013              [Page 10]
-
-Internet-Draft                    SPDY                       August 2012
-
-
    (Section 2.3.6) state.
 
 2.3.2.2.  Bidirectional streams
@@ -601,6 +609,14 @@ Internet-Draft                    SPDY                       August 2012
 
    When one side of the stream sends a frame with the FLAG_FIN flag set,
    the stream is half-closed from that endpoint.  The sender of the
+
+
+
+Belshe & Peon           Expires February 17, 2013              [Page 11]
+
+Internet-Draft                    SPDY                       August 2012
+
+
    FLAG_FIN MUST NOT send further frames on that stream.  When both
    sides have half-closed, the stream is closed.
 
@@ -608,14 +624,6 @@ Internet-Draft                    SPDY                       August 2012
    from the sender (e.g. the endpoint has already received a prior frame
    for the stream with the FIN flag set), it MUST send a RST_STREAM to
    the sender with the status STREAM_ALREADY_CLOSED.
-
-
-
-
-Belshe & Peon           Expires February 10, 2013              [Page 11]
-
-Internet-Draft                    SPDY                       August 2012
-
 
 2.3.7.  Stream close
 
@@ -657,6 +665,14 @@ Internet-Draft                    SPDY                       August 2012
    a session error occurs, the endpoint encountering the error MAY send
    a SETTINGS (Section 2.6.4) frame.  Whether or not a SETTINGS
    (Section 2.6.4) frame is sent, the endpoint encountering the error
+
+
+
+Belshe & Peon           Expires February 17, 2013              [Page 12]
+
+Internet-Draft                    SPDY                       August 2012
+
+
    MUST send a GOAWAY (Section 2.6.6) frame with the stream id of most
    recently received stream from the remote endpoint, and the error code
    for why the session is terminating.  After sending the GOAWAY frame,
@@ -665,14 +681,6 @@ Internet-Draft                    SPDY                       August 2012
    Note that the session compression state is dependent upon both
    endpoints always processing all compressed data.  If an endpoint
    partially processes a frame containing compressed data without
-
-
-
-Belshe & Peon           Expires February 10, 2013              [Page 12]
-
-Internet-Draft                    SPDY                       August 2012
-
-
    updating compression state properly, future control frames which use
    compression will be always be errored.  Implementations SHOULD always
    try to process compressed data so that errors which could be handled
@@ -716,15 +724,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-
-
-
-
-
-
-
-
-Belshe & Peon           Expires February 10, 2013              [Page 13]
+Belshe & Peon           Expires February 17, 2013              [Page 13]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -764,10 +764,10 @@ Internet-Draft                    SPDY                       August 2012
    create a stream between the endpoints.  See Stream Creation
    (Section 2.3.2)
 
-     0        1        2        3         4         5        6        7
-+-|-------+--------+--------+--------+-|-------+--------+--------+--------+
-|1|    0x1|Flags(8)| Length(16)      |X| Stream Id(31)                    | ->
-+-|-------+--------+--------+--------+-|-------+--------+--------+--------+
+     0        1        2        3         4        5        6        7
++--------+--------+--------+-|-------+--------+--------+--------+--------+
+| Length(16)      |Flags(8)|1| Stream Id(31)                    |    0x1 | ->
++--------+--------+--------+-|-------+--------+--------+--------+--------+
 
      8        9,10,11..N
 +---|-----+=========================+
@@ -780,7 +780,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 14]
+Belshe & Peon           Expires February 17, 2013              [Page 14]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -817,15 +817,15 @@ Internet-Draft                    SPDY                       August 2012
    SYN_REPLY indicates the acceptance of a stream creation by the
    recipient of a SYN_STREAM frame.
 
-     0        1        2        3         4         5        6        7
-+-|-------+--------+--------+--------+-|-------+--------+--------+--------+
-|1|    0x2|Flags(8)| Length(16)      |X| Stream Id(31)                    | ->
-+-|-------+--------+--------+--------+-|-------+--------+--------+--------+
+     0        1        2        3         4        5        6        7
++--------+--------+--------+-|-------+--------+--------+--------+--------+
+| Length(16)      |Flags(8)|1| Stream Id(31)                    |    0x2 | ->
++--------+--------+--------+-|-------+--------+--------+--------+--------+
 
-     8         9,10,11..N
-+--------+=========================+
-| HG(8)  | Name/Value Header Block |
-+--------+=========================+
+      8,9,10..N
++=========================+
+| Name/Value Header Block |
++=========================+
 
    Flags: Flags related to this frame.  Valid flags are:
 
@@ -836,7 +836,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 15]
+Belshe & Peon           Expires February 17, 2013              [Page 15]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -867,10 +867,10 @@ Internet-Draft                    SPDY                       August 2012
    indicates an error or that the recipient did not want to accept the
    stream, so the stream should be closed.
 
-     0        1        2        3         4         5        6        7
-+-|-------+--------+--------+--------+-|-------+--------+--------+--------+
-|1|    0x3|Flags(8)| [Length]     0x8|X| Stream-ID(31)                    | ->
-+-|-------+--------+--------+--------+-|-------+--------+--------+--------+
+     0        1        2        3         4        5        6        7
++--------+--------+--------+-|-------+--------+--------+--------+--------+
+| Length(16)      |Flags(8)|1| Stream Id(31)                    |    0x3 | ->
++--------+--------+--------+-|-------+--------+--------+--------+--------+
 
      8        9        10       11
 +--------+--------+--------+--------+
@@ -892,7 +892,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 16]
+Belshe & Peon           Expires February 17, 2013              [Page 16]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -948,7 +948,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 17]
+Belshe & Peon           Expires February 17, 2013              [Page 17]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -972,10 +972,10 @@ Internet-Draft                    SPDY                       August 2012
    persistence features of the SETTINGS frames, and servers MUST ignore
    persistence related flags sent by a client.
 
-     0        1        2        3        4        5        6        7
-+-|-------+--------+--------+--------+--------+--------+--------+--------+
-|1|    0x4|Flags(8)| Length(16)      | Number-of-Entries(32)             | ->
-+-|-------+--------+--------+--------+--------+--------+--------+--------+
+     0        1        2        3         4        5        6        7
++--------+--------+--------+-|-------+--------+--------+--------+--------+
+| Length(16)      |Flags(8)|1| Number-of-Entries(31)            |    0x4 | ->
++--------+--------+--------+-|-------+--------+--------+--------+--------+
 
      8..n
 +================+
@@ -1004,7 +1004,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 18]
+Belshe & Peon           Expires February 17, 2013              [Page 18]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1060,7 +1060,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 19]
+Belshe & Peon           Expires February 17, 2013              [Page 19]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1106,17 +1106,17 @@ Internet-Draft                    SPDY                       August 2012
    waiting to be sent, PING should take highest priority).  Each ping
    sent by a sender should use a unique ID.
 
-     0        1        2        3        4        5        6        7
-+-|-------+--------+--------+--------+--------+--------+--------+--------+
-|1|    0x6|XXXXXXXX| [Length]     0x4| ID(32)                            |
-+-|-------+--------+--------+--------+--------+--------+--------+--------+
+     0        1        2        3         4        5        6        7
++--------+--------+--------+-|-------+--------+--------+--------+--------+
+| Length(16)      |XXXXXXXX|1| ID(31)                           |    0x6 | ->
++--------+--------+--------+-|-------+--------+--------+--------+--------+
 
 
    Control bit: The control bit is always 1 for this message.
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 20]
+Belshe & Peon           Expires February 17, 2013              [Page 20]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1172,7 +1172,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 21]
+Belshe & Peon           Expires February 17, 2013              [Page 21]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1180,10 +1180,10 @@ Internet-Draft                    SPDY                       August 2012
    After sending a GOAWAY message, the sender must ignore all SYN_STREAM
    frames for new streams.
 
-     0        1        2        3         4         5        6        7
-+-|-------+--------+--------+--------+-|-------+--------+--------+--------+
-|1|    0x7|XXXXXXXX|  [Length]    0x8|X| Last-Good-Stream-ID(31)          | ->
-+-|-------+--------+--------+--------+-|-------+--------+--------+--------+
+     0        1        2        3         4        5        6        7
++--------+--------+--------+-|-------+--------+--------+--------+--------+
+| Length(16)      |Flags(8)|1|  Last-Good-Stream-ID(31)         |     0x7| ->
++--------+--------+--------+-|-------+--------+--------+--------+--------+
 
      8        9        10       11
 +--------+--------+--------+--------+
@@ -1228,15 +1228,15 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 22]
+Belshe & Peon           Expires February 17, 2013              [Page 22]
 
 Internet-Draft                    SPDY                       August 2012
 
 
-     0        1        2        3        4        5        6        7
-+-|-------+--------+--------+--------+-|-------+--------+--------+--------+
-|1|    0x8|Flags(8)| Length(16)      |X| Stream-ID(31)                    | ->
-+-|-------+--------+--------+--------+-|-------+--------+--------+--------+
+     0        1        2        3         4        5        6        7
++--------+--------+--------+-|-------+--------+--------+--------+--------+
+| Length(16)      |Flags(8)|1| Stream-ID(31)                    |     0x8| ->
++--------+--------+--------+-|-------+--------+--------+--------+--------+
 
      8,9,10..N
 +=========================+
@@ -1284,7 +1284,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 23]
+Belshe & Peon           Expires February 17, 2013              [Page 23]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1296,15 +1296,16 @@ Internet-Draft                    SPDY                       August 2012
    to notify the sender that it has consumed some data and freed up
    buffer space to receive more data.
 
-   +----------------------------------+
-   |1|   version    |         9       |
-   +----------------------------------+
-   | 0 (flags) |     8 (length)       |
-   +----------------------------------+
-   |X|     Stream-ID (31-bits)        |
-   +----------------------------------+
-   |X|  Delta-Window-Size (31-bits)   |
-   +----------------------------------+
+     0        1        2        3         4        5        6        7
++--------+--------+--------+-|-------+--------+--------+--------+--------+
+| Length(16)      |Flags(8)|1| Stream-ID(31)                    |     0x9| ->
++--------+--------+--------+-|-------+--------+--------+--------+--------+
+
+     8        9        10       11
++--------+--------+--------+--------+
+|Delta-Window-Size                  |
++--------+--------+--------+--------+
+
 
    Control bit: The control bit is always 1 for this message.
 
@@ -1336,15 +1337,15 @@ Internet-Draft                    SPDY                       August 2012
    SETTINGS.  Because SETTINGS is asynchronous, there may be a race
    condition if the recipient wants to decrease the initial window size,
    but its peer immediately sends 64KB on the creation of a new
-   connection, before waiting for the SETTINGS to arrive.  This is one
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 24]
+Belshe & Peon           Expires February 17, 2013              [Page 24]
 
 Internet-Draft                    SPDY                       August 2012
 
 
+   connection, before waiting for the SETTINGS to arrive.  This is one
    case where the window size kept by the sender will become negative.
    Once the sender detects this condition, it must stop sending data
    frames and wait for the recipient to catch up.  The recipient has two
@@ -1392,15 +1393,15 @@ Internet-Draft                    SPDY                       August 2012
 
    The server is required to maintain a vector of client certificates
    associated with a SPDY session.  When the client needs to send a
-   client certificate to the server, it will send a CREDENTIAL frame
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 25]
+Belshe & Peon           Expires February 17, 2013              [Page 25]
 
 Internet-Draft                    SPDY                       August 2012
 
 
+   client certificate to the server, it will send a CREDENTIAL frame
    that specifies the index of the slot in which to store the
    certificate as well as proof that the client posesses the
    corresponding private key.  The initial size of this vector must be
@@ -1423,21 +1424,21 @@ Internet-Draft                    SPDY                       August 2012
    which resource triggered the client certificate request, in order to
    prompt the user accordingly.
 
-   +----------------------------------+
-   |1|000000000000001|0000000000001010|
-   +----------------------------------+
-   | flags (8)  |  Length (24 bits)   |
-   +----------------------------------+
-   |  Slot (16 bits) |                |
-   +-----------------+                |
-   |      Proof Length (32 bits)      |
-   +----------------------------------+
-   |               Proof              |
-   +----------------------------------+ <+
-   |   Certificate Length (32 bits)   |  |
-   +----------------------------------+  | Repeated until end of frame
-   |            Certificate           |  |
-   +----------------------------------+ <+
+     0        1        2        3         4        5        6        7
++--------+--------+--------+-|-------+--------+--------+--------+--------+
+| Length(16)      |Flags(8)|1| Num-of-Entries-or-Stream-ID-or-ID|     0xa| ->
++--------+--------+--------+-|-------+--------+--------+--------+--------+
+
+     8        9        10       11        12
++--------+--------+--------+--------+========+
+| Slot(16)        |Proof Length(16) | Proof  | ->
++--------+--------+--------+--------+========+
+
+/--Repeated to frame end--\
++--------+--------+========+
+| Cert Length(16) | Cert   |
++--------+--------+========+
+
 
    Slot: The index in the server's client certificate vector where this
    certificate should be stored.  If there is already a certificate
@@ -1448,15 +1449,15 @@ Internet-Draft                    SPDY                       August 2012
    private key associated with the certificate.  The format is a TLS
    digitally-signed element
    (http://tools.ietf.org/html/rfc5246#section-4.7).  The signature
-   algorithm must be the same as that used in the CertificateVerify
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 26]
+Belshe & Peon           Expires February 17, 2013              [Page 26]
 
 Internet-Draft                    SPDY                       August 2012
 
 
+   algorithm must be the same as that used in the CertificateVerify
    message.  However, since the MD5+SHA1 signature type used in TLS 1.0
    connections can not be correctly encoded in a digitally-signed
    element, SHA1 must be used when MD5+SHA1 was used in the SSL
@@ -1493,22 +1494,21 @@ Internet-Draft                    SPDY                       August 2012
    allowing the receiver to understand which resource(s) are to be
    pushed are to be included.
 
-     0        1        2        3        4        5        6        7
-+-|-------+--------+--------+--------+-|-------+--------+--------+--------+
-|1|    0x1|Flags(8)| Length(16)      |X| Associated-to-Stream-Id(31)      | ->
-+-|-------+--------+--------+--------+-|-------+--------+--------+--------+
+     0        1        2        3         4        5        6        7
++--------+--------+--------+-|-------+--------+--------+--------+--------+
+| Length(16)      |Flags(8)|1| Associated-To-Stream-ID(31)      |     0xb| ->
++--------+--------+--------+-|-------+--------+--------+--------+--------+
 
-     8        9        10       11       12       13,14,15..N
-+-|-------+--------+--------+--------+--------+=========================+
-|X| Promised-Stream-Id(31)           | HG(8)  | Name/Value Header Block |
-+-|-------+--------+--------+--------+--------+=========================+
+     8        9        10       11       12,13,14..N
++-|-------+--------+--------+--------+=========================+
+|X| Promised-Stream-Id(31)           | Name/Value Header Block |
++-|-------+--------+--------+--------+=========================+
 
    Flags: Flags related to this frame.  Valid flags are:
 
 
 
-
-Belshe & Peon           Expires February 10, 2013              [Page 27]
+Belshe & Peon           Expires February 17, 2013              [Page 27]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1564,7 +1564,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 28]
+Belshe & Peon           Expires February 17, 2013              [Page 28]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1620,7 +1620,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 29]
+Belshe & Peon           Expires February 17, 2013              [Page 29]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1676,7 +1676,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 30]
+Belshe & Peon           Expires February 17, 2013              [Page 30]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1732,7 +1732,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 31]
+Belshe & Peon           Expires February 17, 2013              [Page 31]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1788,7 +1788,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 32]
+Belshe & Peon           Expires February 17, 2013              [Page 32]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1844,7 +1844,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 33]
+Belshe & Peon           Expires February 17, 2013              [Page 33]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1900,7 +1900,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 34]
+Belshe & Peon           Expires February 17, 2013              [Page 34]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1956,7 +1956,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 35]
+Belshe & Peon           Expires February 17, 2013              [Page 35]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2012,7 +2012,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 36]
+Belshe & Peon           Expires February 17, 2013              [Page 36]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2068,7 +2068,7 @@ At this point the connection headers table looks like this:
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 37]
+Belshe & Peon           Expires February 17, 2013              [Page 37]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2124,7 +2124,7 @@ Request 3 (for index.css):
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 38]
+Belshe & Peon           Expires February 17, 2013              [Page 38]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2180,7 +2180,7 @@ Request 3 (on stream 5) would look like the following if forwarded on HTTP/1.1:
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 39]
+Belshe & Peon           Expires February 17, 2013              [Page 39]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2236,7 +2236,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 40]
+Belshe & Peon           Expires February 17, 2013              [Page 40]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2292,7 +2292,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 41]
+Belshe & Peon           Expires February 17, 2013              [Page 41]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2348,7 +2348,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 42]
+Belshe & Peon           Expires February 17, 2013              [Page 42]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2404,7 +2404,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 43]
+Belshe & Peon           Expires February 17, 2013              [Page 43]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2460,7 +2460,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 44]
+Belshe & Peon           Expires February 17, 2013              [Page 44]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2516,7 +2516,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 45]
+Belshe & Peon           Expires February 17, 2013              [Page 45]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2572,7 +2572,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 46]
+Belshe & Peon           Expires February 17, 2013              [Page 46]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2628,7 +2628,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 47]
+Belshe & Peon           Expires February 17, 2013              [Page 47]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2684,7 +2684,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 48]
+Belshe & Peon           Expires February 17, 2013              [Page 48]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2740,7 +2740,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 49]
+Belshe & Peon           Expires February 17, 2013              [Page 49]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2796,7 +2796,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 50]
+Belshe & Peon           Expires February 17, 2013              [Page 50]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2852,7 +2852,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 51]
+Belshe & Peon           Expires February 17, 2013              [Page 51]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2908,7 +2908,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 52]
+Belshe & Peon           Expires February 17, 2013              [Page 52]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2921,20 +2921,24 @@ Internet-Draft                    SPDY                       August 2012
       DONE: Different, more precise, notation style used to describe all
       frames.
 
-      DONE: Significant modifications to how headers are transported.
-      This involved changes to all frames incorporating HEADER blocks,
-      and changes to the HEADER blocks themselves.
-
-      DONE: Addition of end-of-message delimiter flag in data frames
-
       DONE: Downsizing various fields in all messages... this will
       definitely need debate
 
       DONE: Removal of Version field from all messages.
 
+      DONE: Reordered fields in all messages.  All messages now share a
+      common header of: length, flags, control-bit, 31-bit-payload.  All
+      control frames include an 8th byte, which is the opcode.
+
+      DONE: Addition of end-of-message delimiter flag in data frames
+
       DONE: Modification of server push; addition of PUSH_PROMISE frame
-      add a push frame, remove the 'associated-stream-id' field from SYN
-      frame
+      add a push frame, removed the 'associated-stream-id' field from
+      SYN frame
+
+      ONGOING: Significant modifications to how headers are transported.
+      This involved changes to all frames incorporating HEADER blocks,
+      and changes to the HEADER blocks themselves.
 
       ONGOING: Different header compression technique which uses less
       CPU for proxies and which should result in higher compression
@@ -2949,8 +2953,21 @@ Internet-Draft                    SPDY                       August 2012
       TODO: Modification of flow-control; allow two-levels of flow
       control so as to allow greater stream concurrency safely
 
+      TODO: Add the 'blocked-on-flow-control' notification.  Experience
+      has shown that limits are too easy to get wrong, and this helps to
+      self-correct this problem
+
       TODO: Modification of flow-control; headers-blocks (thus syn-
       stream) gets its own pool of memory, separate from data frames
+
+
+
+
+
+Belshe & Peon           Expires February 17, 2013              [Page 53]
+
+Internet-Draft                    SPDY                       August 2012
+
 
       TODO: Everything after the first header-block-section possibly
       treated as flow-control
@@ -2964,7 +2981,46 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 53]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Belshe & Peon           Expires February 17, 2013              [Page 54]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3020,7 +3076,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 54]
+Belshe & Peon           Expires February 17, 2013              [Page 55]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3076,7 +3132,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 55]
+Belshe & Peon           Expires February 17, 2013              [Page 56]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3132,7 +3188,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 56]
+Belshe & Peon           Expires February 17, 2013              [Page 57]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3188,7 +3244,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 57]
+Belshe & Peon           Expires February 17, 2013              [Page 58]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3244,7 +3300,7 @@ Appendix A.  Changes
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 58]
+Belshe & Peon           Expires February 17, 2013              [Page 59]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3300,5 +3356,5 @@ Authors' Addresses
 
 
 
-Belshe & Peon           Expires February 10, 2013              [Page 59]
+Belshe & Peon           Expires February 17, 2013              [Page 60]
 
