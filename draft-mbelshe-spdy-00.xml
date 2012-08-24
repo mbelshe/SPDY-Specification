@@ -88,7 +88,7 @@
       <section title="Framing">
 <t>Once the connection is established, clients and servers exchange framed messages. There are two types of frames: <xref target="ControlFrames">control frames</xref> and <xref target="DataFrames">data frames</xref>. </t>
 
-<t>The first bit of any frame indicates whether a frame is a control frame or data frame. Control frames carry a frame type, flags, and a length. Data frames contain the stream ID, flags, and the length for the payload carried after the common header. The simple header is designed to make reading and writing of frames easy.</t>
+<t>Both types of frames carry a common set of headers: length, flags, and frame type. Flag definitions vary between control and data frames. The simple header is designed to make reading and writing of frames easy.</t>
 
 <t>All integer values, including length, and type, are in network byte order.  SPDY does not enforce alignment of types in dynamically sized frames.</t>
         <section anchor="NotationalConventions" title="Notational Conventions for Framing">
