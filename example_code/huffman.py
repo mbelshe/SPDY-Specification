@@ -1,5 +1,7 @@
 import heapq
 from collections import deque
+from bit_bucket import BitBucket
+from bit_bucket import PrintAsBits
 
 class Huffman:
   def __init__(self, freq_table):
@@ -7,22 +9,33 @@ class Huffman:
     self.code_table = []
     self.BuildCodeTree(freq_table)
     self.BuildCodeTable(self.code_tree)
+    #print self.FormatCodeTable()
 
   def BuildCodeTree(self, freq_table):
-    # freq, name, children
-    heap = [[freq_table[i], i, []] for i in xrange(len(freq_table))]
-    heapq.heapify(heap)
-    while heap:
-      smallest = heapq.heappop(heap)
-      try:
-        next_smallest = heapq.heappop(heap)
-        # freq, name, [left, right]
-        combined = [(smallest[0] + next_smallest[0]), None,
-                    [smallest, next_smallest]]
-        heapq.heappush(heap, combined)
-      except IndexError:
-        self.code_tree = smallest
-        break
+    if len(freq_table) < 2:
+      # that'd be stupid...
+      raise StandardError()
+    # freq_table is (symbol, count)
+    # code_tree is [freq, symbol, children]
+    leaves = deque(sorted([ [frq, sym, []] for (sym, frq) in freq_table]))
+    internals = deque()
+    while len(leaves) + len(internals) > 1:
+      children = []
+      while len(children) < 2:
+        if leaves and internals:
+          if leaves[0][0] <= internals[0][0]:
+            children.append(leaves.popleft())
+          else:
+            children.append(internals.popleft())
+        elif leaves:
+          children.append(leaves.popleft())
+        else:
+          children.append(internals.popleft())
+      internals.append([(children[0][0] + children[1][0]), None, children])
+    if len(leaves):
+      print "WTF?"
+      raise StandardError()
+    self.code_tree = internals.pop()
 
   def BinaryStringToBREP(self, binary_string):
     output = []
@@ -40,30 +53,36 @@ class Huffman:
       output.append(int(final, 2))
     return (output, bitlen)
 
-  def BuildCodeTable(self, code_tree, path_so_far=''):
+  def BuildCodeTable(self, code_tree):
     queue = deque([(code_tree, '')])
     pre_table = []
     while queue:
       (tree, path_so_far) = queue.popleft()
       (freq, name, children) = tree
-      if name is not None:
-        pre_table.append( (name, path_so_far) )
+      if name != None:
+        #print ord(name), str(path_so_far), name
+        pre_table.append( (ord(name), str(path_so_far)) )
       if children:
-        queue.append( (children[0], path_so_far + '0') )
-        queue.append( (children[1], path_so_far + '1') )
+        queue.appendleft( (children[0], str(path_so_far + '0')) )
+        queue.appendleft( (children[1], str(path_so_far + '1')) )
     pre_table = sorted(pre_table, key=lambda x: x[0])
     for i in xrange(len(pre_table)):
       (name, binary_string) = pre_table[i]
       if i != name:
-        print "i (", i, ") != pre_table[i] (", name, ")"
+        print "i (", i, ") != pre_table[i] (", name, ")", chr(name)
         raise StandardError()
       self.code_table.append(self.BinaryStringToBREP(binary_string))
+
 
   def Encode(self, text, include_eof):
     bb = BitBucket()
     for c in text:
       bb.StoreBits(self.code_table[c])
+      #print "for: ", chr(c)
+      #print "storing: ", PrintAsBits(self.code_table[c])
     if include_eof:
+      #print 'eof'
+      #print "storing: ", PrintAsBits(self.code_table[128])
       bb.StoreBits(self.code_table[128])
     return bb.GetAllBits()
 
@@ -72,25 +91,35 @@ class Huffman:
     if not text:
       return output
     # this is the very very slow way to decode.
-    root = self.code_tree
-    c = ord(text[0])
+    c = text[0]
     bit_index = 0
-    chr_index = 1
+    chr_index = 0
+    if bits_to_decode < 0:
+      bits_to_decode = len(text) * 8
+    #print 'ieof: ', includes_eof
+    #print "Text to decode: ", PrintAsBits((text, bits_to_decode))
     total_bits = 0
-    while bits_to_decode == -1 or total_bits < bits_to_decode:
-      while not root[3]:
-        bit = c & (0x1 << bit_index)
-        ++bit_index
-        ++total_bits
+    while total_bits < bits_to_decode:
+      root = self.code_tree
+      while not root[1]:
+        c = text[chr_index]
+        bit = (c >> (7 - bit_index)) & 0x1
+        #print root[0]," tb: ", total_bits, " bits_to_decode: ", bits_to_decode, " ci: ", chr_index, " b: ", bit
+        bit_index += 1
+        total_bits += 1
         if bit_index >= 8:
+          #print "Reset"
           bit_index = 0
           chr_index += 1
-          c = ord(text[chr_index])
         root = root[2][bit]
-      if includes_eof and root[3] == 128:
+      #print "exited while with:", root[1], 0x80
+      if includes_eof and ord(root[1]) == 128:
+        #print 'eof'
         break
-      elif root[3]:
-        output.append(root[3])
+      elif root[1]:
+        #print "foundit: ", root[1]
+        output.append(root[1])
+    #print "done"
     return output
 
   def FormatCodeTable(self):

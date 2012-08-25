@@ -1,3 +1,20 @@
+
+def PrintAsBits(output_and_bits):
+  (output, bits) = output_and_bits
+  retval = []
+  last_byte = output[-1]
+  for c in output[:-1]:
+    retval.append('|')
+    retval.append("{0:08b}".format(c))
+  if (bits % 8) != 0:
+    retval.append('|')
+    retval.append("{0:08b}".format(last_byte)[0:(bits % 8)])
+  else:
+    retval.append('|')
+    retval.append("{0:08b}".format(last_byte))
+  retval.extend([' [%d]' % bits])
+  return ''.join(retval)
+
 class BitBucket:
   def __init__(self):
     self.Clear()
@@ -11,7 +28,7 @@ class BitBucket:
 
   def StoreBits(self, input):
     (inp_bytes, inp_bits) = input
-    leftover_bits = inp_bits % 8
+    leftover_bits = inp_bits - (8*(len(inp_bytes)-1))
     out_byte = self.output.pop()
     if self.out_boff == 0:
       self.output.extend(inp_bytes)
@@ -37,7 +54,7 @@ class BitBucket:
     self.output.append(out_byte)
 
   def GetAllBits(self):
-    return (self.output, self.NumBits)
+    return (self.output, self.NumBits())
 
   def NumBits(self):
     return 8 * (len(self.output) - 1) + self.out_boff

@@ -63,6 +63,31 @@ response_freq_table = [
   ('~', 0), ('\x7f', 0)
 ]
 
+request_freq_table = [
+  ('\x00', 0), ('\x01', 0), ('\x02', 0), ('\x03', 0), ('\x04', 0), ('\x05', 0),
+  ('\x06', 0), ('\x07', 0), ('\x08', 0), ('\t', 0), ('\n', 0), ('\x0b', 0),
+  ('\x0c', 0), ('\r', 0), ('\x0e', 0), ('\x0f', 0), ('\x10', 0), ('\x11', 0),
+  ('\x12', 0), ('\x13', 0), ('\x14', 0), ('\x15', 0), ('\x16', 0), ('\x17', 0),
+  ('\x18', 0), ('\x19', 0), ('\x1a', 0), ('\x1b', 0), ('\x1c', 0), ('\x1d', 0),
+  ('\x1e', 0), ('\x1f', 0), (' ', 28), ('!', 27), ('"', 0), ('#', 0),
+  ('$', 2), ('%', 1273), ('&', 1293), ("'", 2), ('(', 23), (')', 23),
+  ('*', 18), ('+', 15), (',', 875), ('-', 1222), ('.', 2212), ('/', 3366), 
+  ('0', 2419), ('1', 2743), ('2', 3072), ('3', 2358), ('4', 1845), ('5', 1528),
+  ('6', 1796), ('7', 1448), ('8', 1585), ('9', 1453), (':', 147), (';', 122),
+  ('<', 0), ('=', 1692), ('>', 0), ('?', 222), ('@', 0), ('A', 771),
+  ('B', 354), ('C', 399), ('D', 651), ('E', 314), ('F', 709), ('G', 462),
+  ('H', 246), ('I', 489), ('J', 212), ('K', 207), ('L', 329), ('M', 269),
+  ('N', 306), ('O', 210), ('P', 313), ('Q', 244), ('R', 315), ('S', 396),
+  ('T', 339), ('U', 351), ('V', 355), ('W', 243), ('X', 250), ('Y', 251),
+  ('Z', 257), ('[', 2), ('\\', 0), (']', 2), ('^', 0), ('_', 1442),
+  ('`', 0), ('a', 3281), ('b', 1184), ('c', 2353), ('d', 1564), ('e', 3447),
+  ('f', 802), ('g', 1917), ('h', 988), ('i', 2488), ('j', 792), ('k', 529),
+  ('l', 1571), ('m', 1980), ('n', 2526), ('o', 2349), ('p', 2016), ('q', 312),
+  ('r', 2003), ('s', 3133), ('t', 2752), ('u', 974), ('v', 763), ('w', 764),
+  ('x', 564), ('y', 586), ('z', 358), ('{', 11), ('|', 0), ('}', 11),
+  ('~', 4), ('\x7f', 0), ('\x80', 1029)]
+
+
 def ListToStr(val):
   return ''.join(["%c" % c for c in val])
 
@@ -92,7 +117,11 @@ class WordFreak:
     return self.character_freaks
 
   def __repr__(self):
-    return repr(self.SortedByFreq())
+    retval = []
+    for i in xrange(len(self.character_freaks)):
+      retval.append( (chr(i), self.character_freaks[i]))
+
+    return repr(retval)
 
   def __str__(self):
     return self.__repr__()
@@ -297,19 +326,6 @@ def GetHostname(request):
     return request["host"]
   return "<unknown>"
 
-def PrintAsBits(output_and_bits):
-  (output, bits) = output_and_bits
-  bits %= 8
-  retval = []
-  last_byte = output[-1]
-  for c in output[:-1]:
-    retval.append('|')
-    retval.append("{0:08b}".format(c))
-  if bits:
-    retval.append('|')
-    retval.append("{0:08b}".format(last_byte)[0:bits])
-  retval.extend([' [%d]' % bits])
-  return ''.join(retval)
 
 class Line:
   def __init__(self, k="", v=""):
@@ -319,6 +335,7 @@ class Line:
 
   def __repr__(self):
     return '[Line k: %s, v: %s]' % (repr(self.k), repr(self.v))
+
   def __str__(self):
     return self.__repr__()
 
@@ -952,10 +969,8 @@ def main():
   #rs_huff = Huffman(spdy4_rs.wf.GetFrequencies())
   #print rs_huff.FormatCodeTable()
 
-  hrt = Huffman(request_freq_table)
-  test_data = []
-
-
+  #hrt = Huffman(request_freq_table)
   #print
+  print spdy4_rq.wf
 
 main()
