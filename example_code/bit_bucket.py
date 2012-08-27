@@ -2,16 +2,21 @@
 def PrintAsBits(output_and_bits):
   (output, bits) = output_and_bits
   retval = []
-  last_byte = output[-1]
-  for c in output[:-1]:
+  if bits % 8:
+    total_bits = (len(output) - 1) * 8 + (bits % 8)
+  else:
+    total_bits = len(output) * 8
+  idx = 0
+  while total_bits >= 8:
+    c = output[idx]
+    idx += 1
     retval.append('|')
     retval.append("{0:08b}".format(c))
+    total_bits -= 8
+
   if (bits % 8) != 0:
     retval.append('|')
-    retval.append("{0:08b}".format(last_byte)[0:(bits % 8)])
-  else:
-    retval.append('|')
-    retval.append("{0:08b}".format(last_byte))
+    retval.append("{0:08b}".format(output[idx])[0:(bits % 8)])
   retval.extend([' [%d]' % bits])
   return ''.join(retval)
 
@@ -20,7 +25,7 @@ class BitBucket:
     self.Clear()
 
   def Clear(self):
-    self.output = [0]
+    self.output = []
     self.out_byte = 0
     self.out_boff = 0
     self.idx_byte = 0
@@ -28,30 +33,31 @@ class BitBucket:
 
   def StoreBits(self, input):
     (inp_bytes, inp_bits) = input
-    leftover_bits = inp_bits - (8*(len(inp_bytes)-1))
-    out_byte = self.output.pop()
+    if inp_bits % 8:
+      leftover_bits = inp_bits % 8
+    else:
+      leftover_bits = 8
     if self.out_boff == 0:
       self.output.extend(inp_bytes)
       if leftover_bits:
-        self.out_boff = leftover_bits
-        out_byte = self.output.pop() & ~(255 >> self.out_boff)
+        self.output[-1] &= ~(255 >> leftover_bits)
+        self.out_boff = leftover_bits % 8
     else:
       # We know there is a non-zero bit offset if we're below here.
+      # This also implies there MUST be a byte in output already.
       bits_left_in_byte = 8 - self.out_boff
-      for c in inp_bytes[:-1]:
-        out_byte |= c >> self.out_boff
-        self.output.append(out_byte)
-        out_byte = (c << bits_left_in_byte) & 255
-      c = inp_bytes[-1] & ~(255 >> leftover_bits)
-      if leftover_bits < bits_left_in_byte:
-        out_byte |= c >> self.out_boff
-        self.out_boff = self.out_boff + leftover_bits
-      else:
-        out_byte |= c >> self.out_boff
-        self.output.append(out_byte)
-        out_byte = (c << bits_left_in_byte) & 255
-        self.out_boff = (self.out_boff + leftover_bits) % 8
-    self.output.append(out_byte)
+      for c in inp_bytes:
+        self.output[-1] |= c >> self.out_boff
+        self.output.append(0)
+        self.output[-1] = (c << bits_left_in_byte) & 255
+      c = inp_bytes[-1]
+      if self.out_boff + leftover_bits <= 8:
+        self.output.pop()
+        c = inp_bytes[-1]
+        self.output[-1] |= c >> self.out_boff
+      self.out_boff = (self.out_boff + leftover_bits) % 8
+      if self.out_boff != 0:
+        self.output[-1] &= ~(255 >> self.out_boff)
 
   def GetAllBits(self):
     return (self.output, self.NumBits())
@@ -62,7 +68,6 @@ class BitBucket:
   def GetBits(self, num_bits):
     if num_bits > self.NumBits() - (8*self.idx_byte + self.idx_boff):
       raise StandardError()
-
     retval = []
     bits_left = num_bits
     if self.idx_boff == 0:

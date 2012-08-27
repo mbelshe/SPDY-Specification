@@ -551,7 +551,7 @@ class Spdy4CoDe:
         for k in ['key', 'val']:
           if k in new_op:
             val = new_op[k]
-            new_op[k] = self.huffman_table.Decode(val, True, -1)
+            new_op[k] = ListToStr(self.huffman_table.Decode(StrToList(val), True, -1))
         ops.append(new_op)
     return ops
 
@@ -832,11 +832,13 @@ def main():
       responses.extend(har_responses)
 
   spdy4_rq = SPDY4(options)
-  #spdy4_rq.compressor.huffman_table = Huffman(request_freq_table)
+  spdy4_rq.compressor.huffman_table = Huffman(request_freq_table)
+  spdy4_rq.decompressor.huffman_table = spdy4_rq.compressor.huffman_table
   spdy3_rq = SPDY3(options)
   http1_rq = HTTP1(options)
   spdy4_rs = SPDY4(options)
-  #spdy4_rs.compressor.huffman_table = Huffman(response_freq_table)
+  spdy4_rs.compressor.huffman_table = Huffman(response_freq_table)
+  spdy4_rs.decompressor.huffman_table = spdy4_rs.compressor.huffman_table
   spdy3_rs = SPDY3(options)
   http1_rs = HTTP1(options)
 
@@ -889,21 +891,17 @@ def main():
     if not request == rq4[4]:
       print "Something is wrong with the request."
       if options.v >= 1:
-        for i in xrange(len(request)):
-          if request[i] != rq4[4][i]:
-            print sorted([(k,v) for k,v in request[i].iteritems()])
-            print "   !="
-            print sorted([(k,v) for k,v in rq4[2][i].iteritems()])
-            print
+        print sorted([(k,v) for k,v in request.iteritems()])
+        print "   !="
+        print sorted([(k,v) for k,v in rq4[4].iteritems()])
+        print
     if not response == rs4[4]:
       print "Something is wrong with the response."
       if options.v >= 1:
-        for i in xrange(len(response)):
-          if response[i] != rs4[4][i]:
-            print sorted([(k,v) for k,v in response[i].iteritems()])
-            print "   !="
-            print sorted([(k,v) for k,v in rs4[2][i].iteritems()])
-            print
+        print sorted([(k,v) for k,v in response.iteritems()])
+        print "   !="
+        print sorted([(k,v) for k,v in rs4[4].iteritems()])
+        print
 
     (h1comrq, h1uncomrq) = map(len, rqh)
     h1usrq += h1uncomrq; h1csrq += h1comrq
