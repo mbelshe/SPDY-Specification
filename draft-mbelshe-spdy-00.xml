@@ -12,6 +12,7 @@
   <!ENTITY RFC4366 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.4366.xml'>
   <!ENTITY RFC5246 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.5246.xml'>
   <!ENTITY RFC6454 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.6454.xml'>
+  <!ENTITY RFC6455 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.6455.xml'>
 ]>
 
 <?xml-stylesheet type="text/xsl" href="rfc2629.xml"?>
@@ -482,6 +483,13 @@ Another example.  In this case, a single byte is represented with the most signi
 <t>6 - SETTINGS_DOWNLOAD_RETRANS_RATE allows the sender to inform the remote endpoint the retransmission rate (bytes retransmitted / total bytes transmitted).</t>
 <t>7 - SETTINGS_INITIAL_WINDOW_SIZE allows the sender to inform the remote endpoint the initial window size (in bytes) for new streams.</t>
 <t>8 - SETTINGS_CLIENT_CERTIFICATE_VECTOR_SIZE allows the server to inform the client if the new size of the client certificate vector.</t>
+<t>9 - SETTINGS_SUPPORTING_SCHEMES allows the sender to inform the remote endpoint supporting overlayering protocol schemes. The corresponding value must be a 32-bit value, and which contains flags as follows:</t>
+    <list>
+<t>bit 0: http</t>
+<t>bit 1: https</t>
+<t>bit 2: ws</t>
+<t>bit 3: wss</t>
+    </list>
   </list>
 </t>
 
@@ -1364,6 +1372,91 @@ Request 3 (on stream 5) would look like the following if forwarded on HTTP/1.1:
 
     </section>
 
+    <section anchor="WebSocketLayer" title="WebSocket Layering over SPDY">
+<t>With this layering, a client and sever can share one connection for both of HTTP requests and WebSockets.</t>
+      <section title="Connection Management">
+        <section title="Opening Handshake">
+          <section title="Handshake Request">
+<t>The client initiates an opening handshake by sending a SYN_STREAM frame. The SYN_STREAM frame MUST NOT set the FLAG_FIN because WebSocket intends to establish a bi-directional communication port and to send arbitrary data after success in opening handshake.</t>
+
+<t>The SYN_STREAM Name/Value section will contain all of the following headers which are associated with <xref target="RFC6455">The WebSocket protocol</xref> opening handshake. Upgrade, Connection, Sec-WebSocket-Key, and Sec-WebSocket-Version headers MUST NOT be included because we do not have to take care of protocol upgrading or verification over HTTP.</t>
+
+<t>The following name/value pairs MUST be present in every request:</t>
+<list>
+<t>“:path” - /resource name/ as used in the “Client Requirements” section of the WebSocket protocol specification. (See <xref target="RFC6455">RFC6455</xref>)</t>
+<t>“:host” - /host:port/ (e.g. “www.google.com:1234”) as used in the “Client Requirements” section of the WebSocket protocol specification. (See <xref target="RFC6455">RFC6455</xref>)</t>
+<t>“:version” - the WebSocket protocol version of this request. (MUST be “WebSocket/8”, “WebSocket/13”, or so. The number MUST be matched with the Sec-WebSocket-Version header. See <xref target="RFC6455">RFC6455</xref>)</t>
+<t>“:scheme” - the scheme portion of the URI. (MUST be “ws” or “wss”. See also /secure/ flag in <xref target="RFC6455">RFC6455</xref>)</t>
+<t>“:origin” - /origin/ as used in the “Client Requirements” section of the WebSocket protocol specification. (See <xref target="RFC6455">RFC6455</xref>)</t>
+</list>
+
+<t>In addition, the following OPTIONAL name/value pairs MAY be present:</t>
+<list>
+<t>“:sec-websocket-protocol” - the Sec-WebSocket-Protocol header (See <xref target="RFC6455">RFC6455</xref>)</t>
+<t>“:sec-websocket-extensions” - the Sec-WebSocket-Extensions header (See <xref target="RFC6455">RFC6455</xref>)</t>
+</list>
+
+<t>Also, other HTTP compatible header name/value pairs MAY be present. All header keys MUST be lowercase.</t>
+          </section>
+          <section title="Handshake Response">
+<t>The server responds to a client request with a SYN_REPLY frame. If the server intends to allow the client connection, SYN_REPLY frame MUST NOT set the FLAG_FIN and MUST have “:status” containing “101”. But, an unsuccessful response MUST set the FLAG_FIN and MUST have “:status” containing non-”101” code. The server MAY fail the opening handshake because of an unexpected header value or a missing mandatory header name.</t>
+
+<t>The client MAY send some data to the server before receiving the successful response. The server MUST ignore this data when opening handshake fails. After sending successful response, the server can send arbitrary data frames at any time.</t>
+
+<t>The response status line is unfolded into name/value pairs like other WebSocket headers and MUST be present:</t>
+<list>
+<t>“:status” - The WebSocket or fallback HTTP response status code (e.g. “101” or “101 Switching Protocols”. See <xref target="RFC6455">RFC6455</xref>)</t>
+</list>
+
+<t>In addition, the following OPTIONAL name/value pairs MAY be present:</t>
+<list>
+<t>“:sec-websocket-protocol” - the Sec-WebSocket-Protocol header (See <xref target="RFC6455">RFC6455</xref>)</t>
+<t>“:sec-websocket-extensions” - the Sec-WebSocket-Extensions header (See <xref target="RFC6455">RFC6455</xref>)</t>
+</list>
+
+<t>Also, other HTTP compatible header name/value pairs MAY be present. All header names MUST be lowercase. The successful server response MUST have “:status” containing “101”.</t>
+
+<t>If the handshake fails, the client MUST send a SPDY data frame with empty data field to avoid abnormal SPDY session termination. The SPDY data frame MUST set the FLAG_FIN to indicate the client intends to send no further data on this stream.</t>
+          </section>
+        </section>
+        <section title="Closing Handshake">
+          <section title="Normal Termination">
+<t>In normal termination, WebSocket connection close frame <xref target="RFC6455">RFC6455</xref> will be sent as a SPDY data frame with FLAG_FIN set. The closing handshake is based on WebSocket protocol specification. Both of a server and a client will initiate it then the other end MUST respond it by connection close frame with FLAG_FIN set.</t>
+          </section>
+
+          <section title="Abnormal Termination and CloseEvent Handling">
+
+<t>In abnormal termination, RST_STREAM SHOULD be handled as connection close frame. It means that JavaScript API provides CloseEvent (See, <xref target="WEBSOCKETAPI">The WebSocket API</xref>) when a client receives RST_STREAM. Its code field SHOULD be 1006 (Abnormal Closure). The GOAWAY control frame with non-zero status code SHOULD be also handled in the same way. The status code of RST_STREAM and GOAWAY frames SHOULD be encoded to UTF-8 string with its frame type for its reason field. (e.g. “SPDY/3 RST_STREAM (5)” or “SPDY/3 GOAWAY (1)”)</t>
+<t>If a server works as protocol bridge to the WebSocket protocol, it MAY send a close frame which contains the above status code and the above reason to a backend WebSocket server.</t>
+          </section>
+        </section>
+      </section>
+      <section title="Bi-directional Communication">
+
+<t>After the opening handshake, the client and the server can send arbitrary WebSocket control and data frames. Continuation frame, text frame, binary frame, connection close frame, ping frame, and pong frame are valid WebSocket frames. These WebSocket frames are mapped into each SPDY HEADERS frame and DATA frames as follow.</t>
+        <section title="Frame mapping">
+
+<t>One WebSocket frame is mapped into one proceeding SPDY HEADERS frame and following plural SPDY data frames. The SPDY HEADERS frame must contain WebSocket frame fields and following SPDY data frames contain payload data. These data frames are free to be reframed.</t>
+<t>This plan doesn’t care about overheads. But HEADERS frame are compressed by shared dictionary with other SYN_STREAM, SYN_REPLY, and other HEADERS in the same SPDY connection. Optimistically, it reduces framing overheads.</t>
+
+<t>The following name/value pairs MUST be present in SPDY HEADERS frames:</t>
+<list>
+<t>“:opcode” - The WebSocket frame opcode (See <xref target="RFC6455">RFC6455</xref>)</t>
+<t>“:length” - The WebSocket frame payload length in decimal (See <xref target="RFC6455">RFC6455</xref>)</t>
+<t>“:fin” - The WebSocket frame fin (See <xref target="RFC6455">RFC6455</xref>)</t>
+</list>
+
+<t>In addition, the following OPTIONAL name/value pairs MAY be present:</t>
+<list>
+<t>“:rsv1” - The WebSocket frame rsv1</t>
+<t>“:rsv2” - The WebSocket frame rsv2</t>
+<t>“:rsv3” - The WebSocket frame rsv3 (See <xref target="RFC6455">RFC6455</xref>). These values must contain “0” or “1”. When a key doesn’t exist, the value is considered to be “0”. Thus, ony enabled bits may appear here.</t>
+<t>“:masking-key” - The WebSocket frame masking-key (See <xref target="RFC6455">RFC6455</xref>) in hexadecimal (e.g. “deadbeaf”). When this key/value exist, the WebSocket frame mask (See <xref target="RFC6455">RFC6455</xref>) is considered to be 1 and following payload data MUST be masked(See <xref target="RFC6455">RFC6455</xref>), otherwise the WebSocket frame mask is considered to be 0.</t>
+</list>
+        </section>
+      </section>
+    </section>
+
     <section title="Design Rationale and Notes">
 <t>Authors' notes:  The notes in this section have no bearing on the SPDY protocol as specified within this document, and none of these notes should be considered authoritative about how the protocol works.  However, these notes may prove useful in future debates about how to resolve protocol ambiguities or how to evolve the protocol going forward.  They may be removed before the final draft.</t>
 
@@ -1444,6 +1537,14 @@ Request 3 (on stream 5) would look like the following if forwarded on HTTP/1.1:
       </section>
     </section>
 
+    <section title="Sub-protocol negotiation">
+      <section title="Supporting scheme negotiation using SETTINGS frame">
+
+<t>By default, a client can send SYN_STREAM frames on http and https schemes, but if it want to send them on other schemes, it MUST wait for a server sending SETTINGS frame which specify declaring schemes. Thus, a server SHOULD send a SETTINGS frame as soon as possible whether it supports other schemes or not.</t>
+
+      </section>
+    </section>
+
     <section title="Incompatibilities with SPDY draft #3">
       <t>
 Here is a list of the major changes between this draft #3 and this draft
@@ -1506,6 +1607,7 @@ Here is a list of the major changes between this draft #3 and this draft
       &RFC4366;
       &RFC5246;
       &RFC6454;
+      &RFC6455;
       <reference anchor="TLSNPN" target="http://tools.ietf.org/html/draft-agl-tls-nextprotoneg-01">
         <front>
           <title>TLS Next Protocol Negotiation</title>
@@ -1523,6 +1625,12 @@ Here is a list of the major changes between this draft #3 and this draft
           <author initials="F." surname="Yang"></author>
           <author initials="P." surname="Amer"></author>
           <author initials="J." surname="Leighton"></author>
+        </front>
+      </reference>
+      <reference anchor="WEBSOCKETAPI" target="http://www.w3.org/TR/websockets/">
+        <front>
+          <title>The WebSocket API</title>
+          <author initials="I." surname="Hickson"> <organization/> </author>
         </front>
       </reference>
     </references>
