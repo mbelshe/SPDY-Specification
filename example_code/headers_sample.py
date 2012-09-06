@@ -1,200 +1,227 @@
 #!/usr/bin/python
-import zlib
-import string
-import sys
+
 import array
-import struct
 import re
-from optparse import OptionParser
-from collections import deque
+import string
+import struct
+import sys
+import zlib
+
 from bit_bucket import BitBucket
-from huffman import Huffman
-from spdy_dictionary import spdy_dict
+from collections import defaultdict
+from collections import deque
+from common_utils import *
+from common_utils import FormatAsBits
 from default_headers import default_requests
 from default_headers import default_responses
 from harfile import ReadHarFile
-
-request_freq_table = [
-  ('e', 3447), ('/', 3366), ('a', 3281), ('s', 3133), ('2', 3072), ('t', 2752),
-  ('1', 2743), ('n', 2526), ('i', 2488), ('0', 2419), ('3', 2358), ('c', 2353),
-  ('o', 2349), ('.', 2212), ('p', 2016), ('r', 2003), ('m', 1980), ('g', 1917),
-  ('4', 1845), ('6', 1796), ('=', 1692), ('8', 1585), ('l', 1571), ('d', 1564),
-  ('5', 1528), ('9', 1453), ('7', 1448), ('_', 1442), ('&', 1293), ('%', 1273),
-  ('-', 1222), ('b', 1184), ('\x80', 1029), ('h', 988), ('u', 974), (',', 875),
-  ('f', 802), ('j', 792), ('A', 771), ('w', 764), ('v', 763), ('F', 709),
-  ('D', 651), ('y', 586), ('x', 564), ('k', 529), ('I', 489), ('G', 462),
-  ('C', 399), ('S', 396), ('z', 358), ('V', 355), ('B', 354), ('U', 351),
-  ('T', 339), ('L', 329), ('R', 315), ('E', 314), ('P', 313), ('q', 312),
-  ('N', 306), ('M', 269), ('Z', 257), ('Y', 251), ('X', 250), ('H', 246),
-  ('Q', 244), ('W', 243), ('?', 222), ('J', 212), ('O', 210), ('K', 207),
-  (':', 147), (';', 122), (' ', 28), ('!', 27), ('(', 23), (')', 23), ('*', 18),
-  ('+', 15), ('{', 11), ('}', 11), ('~', 4), ('$', 2), ("'", 2), ('[', 2),
-  (']', 2), ('\x00', 0), ('\x01', 0), ('\x02', 0), ('\x03', 0), ('\x04', 0),
-  ('\x05', 0), ('\x06', 0), ('\x07', 0), ('\x08', 0), ('\t', 0), ('\n', 0),
-  ('\x0b', 0), ('\x0c', 0), ('\r', 0), ('\x0e', 0), ('\x0f', 0), ('\x10', 0),
-  ('\x11', 0), ('\x12', 0), ('\x13', 0), ('\x14', 0), ('\x15', 0), ('\x16', 0), 
-  ('\x17', 0), ('\x18', 0), ('\x19', 0), ('\x1a', 0), ('\x1b', 0), ('\x1c', 0),
-  ('\x1d', 0), ('\x1e', 0), ('\x1f', 0), ('"', 0), ('#', 0), ('<', 0), ('>', 0),
-  ('@', 0), ('\\', 0), ('^', 0), ('`', 0), ('|', 0), ('\x7f', 0)
-]
-
-response_freq_table = [
-  (' ', 6174), ('2', 5697), ('1', 5419), ('0', 5023), ('\x80', 3416),
-  ('3', 3138), ('4', 2973), ('e', 2931), ('5', 2624), ('a', 2619), ('8', 2577),
-  ('6', 2440), ('9', 2371), ('7', 2361), (':', 2303), ('c', 2209), ('u', 2005),
-  ('d', 2001), ('T', 1991), ('M', 1849), ('n', 1770), ('o', 1751), ('b', 1608),
-  ('t', 1564), ('G', 1515), ('i', 1458), (',', 1437), ('r', 1405), ('A', 1387),
-  ('g', 1352), ('f', 1343), ('l', 1189), ('=', 1147), ('F', 1136), ('p', 1109),
-  ('s', 1087), ('m', 1050), ('C', 998), ('/', 975), ('-', 928), ('D', 919),
-  ('E', 835), ('h', 834), ('x', 825), ('S', 815), ('J', 781), ('B', 738),
-  ('w', 669), ('.', 648), ('v', 641), ('O', 633), ('W', 622), ('y', 617),
-  ('"', 580), ('P', 561), ('N', 557), ('U', 554), ('k', 549), ('I', 543),
-  ('j', 526), ('R', 508), ('L', 492), ('Z', 488), ('V', 482), ('K', 478),
-  ('z', 478), ('Q', 476), ('Y', 476), ('q', 463), ('X', 454), ('H', 446), 
-  (';', 278), ('+', 276), ('_', 270), ('(', 156), (')', 156), ('&', 136),
-  ('%', 123), ('\x00', 53), ('?', 16), ('|', 11), ('#', 9), ('{', 4), ('}', 4),
-  ('*', 2), ('[', 2), (']', 2), ('!', 1), ('\x01', 0), ('\x02', 0),
-  ('\x03', 0), ('\x04', 0), ('\x05', 0), ('\x06', 0), ('\x07', 0), ('\x08', 0),
-  ('\t', 0), ('\n', 0), ('\x0b', 0), ('\x0c', 0), ('\r', 0), ('\x0e', 0),
-  ('\x0f', 0), ('\x10', 0), ('\x11', 0), ('\x12', 0), ('\x13', 0), ('\x14', 0),
-  ('\x15', 0), ('\x16', 0), ('\x17', 0), ('\x18', 0), ('\x19', 0), ('\x1a', 0),
-  ('\x1b', 0), ('\x1c', 0), ('\x1d', 0), ('\x1e', 0), ('\x1f', 0), ('$', 0),
-  ("'", 0), ('<', 0), ('>', 0), ('@', 0), ('\\', 0), ('^', 0), ('`', 0),
-  ('~', 0), ('\x7f', 0)
-]
-
-request_freq_table = [
-  ('\x00', 0), ('\x01', 0), ('\x02', 0), ('\x03', 0), ('\x04', 0), ('\x05', 0),
-  ('\x06', 0), ('\x07', 0), ('\x08', 0), ('\t', 0), ('\n', 0), ('\x0b', 0),
-  ('\x0c', 0), ('\r', 0), ('\x0e', 0), ('\x0f', 0), ('\x10', 0), ('\x11', 0),
-  ('\x12', 0), ('\x13', 0), ('\x14', 0), ('\x15', 0), ('\x16', 0), ('\x17', 0),
-  ('\x18', 0), ('\x19', 0), ('\x1a', 0), ('\x1b', 0), ('\x1c', 0), ('\x1d', 0),
-  ('\x1e', 0), ('\x1f', 0), (' ', 28), ('!', 27), ('"', 0), ('#', 0),
-  ('$', 2), ('%', 1273), ('&', 1293), ("'", 2), ('(', 23), (')', 23),
-  ('*', 18), ('+', 15), (',', 875), ('-', 1222), ('.', 2212), ('/', 3366), 
-  ('0', 2419), ('1', 2743), ('2', 3072), ('3', 2358), ('4', 1845), ('5', 1528),
-  ('6', 1796), ('7', 1448), ('8', 1585), ('9', 1453), (':', 147), (';', 122),
-  ('<', 0), ('=', 1692), ('>', 0), ('?', 222), ('@', 0), ('A', 771),
-  ('B', 354), ('C', 399), ('D', 651), ('E', 314), ('F', 709), ('G', 462),
-  ('H', 246), ('I', 489), ('J', 212), ('K', 207), ('L', 329), ('M', 269),
-  ('N', 306), ('O', 210), ('P', 313), ('Q', 244), ('R', 315), ('S', 396),
-  ('T', 339), ('U', 351), ('V', 355), ('W', 243), ('X', 250), ('Y', 251),
-  ('Z', 257), ('[', 2), ('\\', 0), (']', 2), ('^', 0), ('_', 1442),
-  ('`', 0), ('a', 3281), ('b', 1184), ('c', 2353), ('d', 1564), ('e', 3447),
-  ('f', 802), ('g', 1917), ('h', 988), ('i', 2488), ('j', 792), ('k', 529),
-  ('l', 1571), ('m', 1980), ('n', 2526), ('o', 2349), ('p', 2016), ('q', 312),
-  ('r', 2003), ('s', 3133), ('t', 2752), ('u', 974), ('v', 763), ('w', 764),
-  ('x', 564), ('y', 586), ('z', 358), ('{', 11), ('|', 0), ('}', 11),
-  ('~', 4), ('\x7f', 0), ('\x80', 1029)]
+from header_freq_tables import request_freq_table
+from header_freq_tables import response_freq_table
+from huffman import Huffman
+from optparse import OptionParser
+from spdy_dictionary import spdy_dict
+from word_freak import WordFreak
 
 
-def ListToStr(val):
-  return ''.join(["%c" % c for c in val])
+# TODO(eliminate the 'index' parameter in clone and kvsto by
+#      adding an index-start to the frame)
+# TODO(try var-int encoding for indices)
+# TODO(make removals from the LRU implicit-- send no messages about them)
+# TODO(use a separate huffman encoding for cookies, and possible path)
+# TODO(interpret cookies as binary instead of base-64, does it reduce entropy?)
+# TODO(modification to 'toggl' to allow for a list of indices instead
+#      of requiring a new operation for each index not in a consecutive range)
+# TODO(index renumbering so things which are often used together
+#      have near indices. Possibly renumber whever something is referenced)
 
-def StrToList(val):
-  return [ord(c) for c in val]
 
-class WordFreak:
-  def __init__(self):
-    self.code = []
-    self.character_freaks = []
-    for i in xrange(128 + 1):
-      self.character_freaks.append(0)
+def UnpackInt(data, params, huff):
+  (idx, bitlen) = params
+  #print 'AAAAAAAAAAAAAAAAAAAAAAAAA INT(', bitlen, ")"
+  #data[idx].DebugFormat()
+  raw_data = data[idx].GetBits(bitlen)[0]
+  rshift = 0
+  if bitlen <=8:
+    arg = "%c%c%c%c" % (0,0, 0,raw_data[0])
+    rshift = 8 - bitlen
+  elif bitlen <=16:
+    arg = "%c%c%c%c" % (0,0, raw_data[0], raw_data[1])
+    rshift = 16 - bitlen
+  elif bitlen <=24:
+    arg = "%c%c%c%c" % (0,raw_data[0], raw_data[1], raw_data[2])
+    rshift = 24 - bitlen
+  else:
+    arg = "%c%c%c%c" % (raw_data[0], raw_data[1], raw_data[2], raw_data[3])
+    rshift = 32 - bitlen
+  retval = (struct.unpack(">L", arg)[0] >> rshift)
+  #print FormatAsBits((raw_data, bitlen)), "(", retval, ")"
+  #data[idx].DebugFormat(
+  #print 'XXXXXXXXXXXXXXXXXXXXXXXXX'
+  return retval
 
-  def LookAt(self, ops):
-    for op in ops:
-      for key in ['key', 'val']:
-        if key in op:
-          self.character_freaks[128] += 1
-          for c in op[key]:
-            self.character_freaks[ord(c)] += 1
-
-  def SortedByFreq(self):
-    x = [ (chr(i), self.character_freaks[i]) for i in xrange(len(self.character_freaks))]
-    return sorted(x, key=lambda x: x[1], reverse=True)
-
-  def GetFrequencies(self):
-    return self.character_freaks
-
-  def __repr__(self):
-    retval = []
-    for i in xrange(len(self.character_freaks)):
-      retval.append( (chr(i), self.character_freaks[i]))
-
-    return repr(retval)
-
-  def __str__(self):
-    return self.__repr__()
-
-def MakeReadableString(val):
-  printable = string.digits + string.letters + string.punctuation + ' ' + "\t"
-  out = []
-  for c in val:
-    if c in printable:
-      out.append("   %c " % c)
-    else:
-      out.append("0x%02x " % ord(c))
-  return ''.join(out)
-
-def IntTo2B(val):
-  if val > 65535:
+def UnpackStr(data, params, huff):
+  (bitlen_idx, bitlen_size, data_idx, use_eof, len_as_bits) = params
+  if not use_eof and not bitlen_size:
+    # without either a bitlen size or an EOF, we can't know when the string ends
+    # having both is certainly fine, however.
     raise StandardError()
-  return struct.pack("!L", val)[2:]
+  bitlen = -1
+  #print 'AAAAAAAAAAAAAAAAAAAAAAAAA STR'
+  if bitlen_size:
+    bitlen = UnpackInt(data, (bitlen_idx, bitlen_size), huff)
+    if not len_as_bits:
+      bitlen *= 8
+    #print "unpack strlen_field: ", bitlen
+  #data[data_idx].DebugFormat()
+  if huff:
+    retval = huff.DecodeFromBB(data[data_idx], use_eof, bitlen)
+  else:
+    retval = data[data_idx].GetBits(bitlen)[0]
+  #data[data_idx].DebugFormat()
+  retval = ListToStr(retval)
+  #print "str_decoded: ", retval
+  #print 'XXXXXXXXXXXXXXXXXXXXXXXXX'
+  return retval
 
-def IntTo1B(val):
-  if val > 255:
+# this assumes the bits are near the LSB, but must be packed to be close to MSB
+def PackInt(data, params, val, huff):
+  (idx, bitlen) = params
+  if bitlen <= 0 or bitlen > 32 or val  != val & ~(0x1 << bitlen):
+    print "bitlen: ", bitlen, " val: ", val
     raise StandardError()
-  return struct.pack("!L", val)[3:]
+  if bitlen <= 8:
+    tmp_val = struct.pack(">B", val << (8 - bitlen))
+  elif bitlen <= 16:
+    tmp_val = struct.pack(">H", val << (16 - bitlen))
+  elif bitlen <= 24:
+    tmp_val = struct.pack(">L", val << (24 - bitlen))[1:]
+  else:
+    tmp_val = struct.pack(">L", val << (32 - bitlen))
 
-def B2ToInt(val):
-  arg = "%c%c%c%c" % (0,0, val[0],val[1])
-  return struct.unpack("!L", arg)[0]
+  #print FormatAsBits((StrToList(tmp_val), bitlen)), " (", val, ")"
+  data[idx].StoreBits( (StrToList(tmp_val), bitlen) )
 
-def LB2ToInt(val):
-  return (2, B2ToInt(val))
+def PackStr(data, params, val, huff):
+  (bitlen_idx, bitlen_size, data_idx, use_eof, len_as_bits) = params
+  # if len_as_bits, then don't need eof.
+  # if eof, then don't technically need bitlen at all...
 
-def B1ToInt(val):
-  arg = "%c%c%c%c" % (0,0,0,val[0])
-  return struct.unpack("!L", arg)[0]
+  if not use_eof and not bitlen_size:
+    # without either a bitlen size or an EOF, we can't know when the string ends
+    # having both is certainly fine, however.
+    raise StandardError()
+  if huff:
+    formatted_val = huff.Encode(StrToList(val), use_eof)
+    if not len_as_bits:
+      formatted_val = (formatted_val[0], len(formatted_val[0])*8)
+  else:
+    formatted_val = ([val], len(val)*8)
+  if bitlen_size and len_as_bits:
+    #print "strlen_field: ", formatted_val[1], " bits"
+    PackInt(data, (bitlen_idx, bitlen_size), formatted_val[1], huff)
+  elif bitlen_size:
+    #print "strlen_field: ", formatted_val[1]/8, " bytes ", "(", formatted_val[1], " bits)"
+    PackInt(data, (bitlen_idx, bitlen_size), formatted_val[1]/8, huff)
 
-def LB1ToInt(val):
-  return (1, B1ToInt(val))
+  #print FormatAsBits(formatted_val), " (", repr(val), ")", "(", repr(ListToStr(formatted_val[0])), ")"
+  data[data_idx].StoreBits(formatted_val)
 
-def LenIntTo2B(val):
-  return IntTo2B(len(val))
 
-def SetBitsInByte(lsb_bw, x):
-  (lsb, bw) = lsb_bw
-  return (x & ( ~(255 << bw))) << (7 - lsb - (bw - 1))
 
-def GetBitsInByte(lsb_bw, x):
-  (lsb, bw) = lsb_bw
-  return (x >> (7 - lsb - (bw - 1))) & (~(255 << bw))
-
-def PackB2LenPlusStr(x):
-  return ''.join([IntTo2B(len(x)), x])
-
-def XtrtB2LenPlusStr(x):
-  len = B2ToInt(x)
-  return (2 + len, ''.join([chr(i) for i in x[2:len+2]]))
-
-inline_packing_instructions = {
-  'opcode'     : ((0,3),             None),
-  'index'      : ( None,          IntTo2B),
-  'index_start': ( None,          IntTo2B),
-  'key_idx'    : ( None,          IntTo2B),
-  'val'        : ( None, PackB2LenPlusStr),
-  'key'        : ( None, PackB2LenPlusStr),
+alt_packing_instructions = {
+  'opcode'      : ((0,  8), PackInt, UnpackInt),
+  'index'       : ((0, 16), PackInt, UnpackInt),
+  'index_start' : ((0, 16), PackInt, UnpackInt),
+  'key_idx'     : ((0, 16), PackInt, UnpackInt),
+  'val'         : ((0, 16, 0, True, False), PackStr, UnpackStr),
+  'key'         : ((0, 16, 0, True, False), PackStr, UnpackStr),
 }
 
-inline_unpacking_instructions = {
-  'opcode'     : ((0,3),             None),
-  'index'      : ( None,         LB2ToInt),
-  'index_start': ( None,         LB2ToInt),
-  'key_idx'    : ( None,         LB2ToInt),
-  'val'        : ( None, XtrtB2LenPlusStr),
-  'key'        : ( None, XtrtB2LenPlusStr),
+alt_packing_instructions = {
+  'opcode'      : ((0,  8), PackInt, UnpackInt),
+  'index'       : ((0, 16), PackInt, UnpackInt),
+  'index_start' : ((0, 16), PackInt, UnpackInt),
+  'key_idx'     : ((0, 16), PackInt, UnpackInt),
+  'val'         : ((0, 15, 0, False, True), PackStr, UnpackStr),
+  'key'         : ((0, 15, 0, False, True), PackStr, UnpackStr),
 }
+
+#alt_packing_instructions = {
+#  'opcode'      : ((0,  3), PackInt, UnpackInt),
+#  'index'       : ((0, 12), PackInt, UnpackInt),
+#  'index_start' : ((0, 12), PackInt, UnpackInt),
+#  'key_idx'     : ((0, 12), PackInt, UnpackInt),
+#  'val'         : ((0, 15, 0, False, True), PackStr, UnpackStr),
+#  'key'         : ((0, 15, 0, False, True), PackStr, UnpackStr),
+#}
+#alt_packing_instructions = {
+#  'opcode'      : ((0,  3), PackInt, UnpackInt),
+#  'index'       : ((0, 12), PackInt, UnpackInt),
+#  'index_start' : ((0, 12), PackInt, UnpackInt),
+#  'key_idx'     : ((0, 12), PackInt, UnpackInt),
+#  'val'         : ((0, 0, 0, True, True), PackStr, UnpackStr),
+#  'key'         : ((0, 0, 0, True, True), PackStr, UnpackStr),
+#}
+
+def PackOps(data, packing_instructions, ops, huff):
+  #print "==============  PACKOPS"
+  for op in ops:
+    #print
+    #print FormatOp(op)
+    fb = 0
+    tb = []
+    for field_name in packing_order:
+      if not field_name in op:
+        continue
+      (params, pack_fn, _) = packing_instructions[field_name]
+      val = op[field_name]
+
+      if field_name == 'opcode':
+        val = OpcodeToVal(op[field_name])
+        pack_fn(data, params, val, huff)
+        #pack_fn(data, (0,5) , 0, huff)
+      else:
+        pack_fn(data, params, val, huff)
+  (params, pack_fn, _) = packing_instructions['opcode']
+  pack_fn(data, params, 0, huff)
+  #print "operations data: "
+  #print  data
+  #print
+
+def UnpackOps(data, packing_instructions, huff):
+  ops = []
+  #print "==============UNPACKOPS"
+  while not (data[0].AllConsumed() and data[1].AllConsumed() and data[2].AllConsumed()):
+    (params, _, unpack_fn) = packing_instructions['opcode']
+    opcode = unpack_fn(data, params, huff)
+    if opcode == 0:
+      break;
+    #_ = unpack_fn(data, (0,5), huff)
+    op = {}
+    #print "'opcode'",
+    try:
+      op['opcode'] = opcode_to_op[opcode][0]
+    except:
+      data[0].DebugFormat()
+      raise
+    #print op['opcode']
+
+    for field_name in opcode_to_op[opcode][1:]:
+      if field_name == 'opcode':
+        continue
+      #print field_name,
+      if not field_name in packing_instructions:
+        #print field_name, " is not in instructions"
+        raise StandardError();
+      (params, _, unpack_fn) = packing_instructions[field_name]
+      val = unpack_fn(data, params, huff)
+      #print val
+      op[field_name] = val
+    ops.append(op)
+    #print FormatOp(op)
+    #print
+  return ops
+
 
 packing_order = ['opcode',
                  'index',
@@ -205,82 +232,19 @@ packing_order = ['opcode',
                  ]
 
 opcodes = {
-    'toggl': (0x0, 'index'),
-    'clone': (0x1, 'index',                'key_idx', 'val'),
-    'kvsto': (0x2, 'index', 'key',                    'val'),
-    'trang': (0x3, 'index', 'index_start'),
-    'rem'  : (0x4, 'index'),
-    'eref' : (0x5,          'key',                    'val'),
-
+    'toggl': (0x1, 'index'),
+    'clone': (0x2, 'index',                'key_idx', 'val'),
+    'kvsto': (0x3, 'index', 'key',                    'val'),
+    'trang': (0x4, 'index', 'index_start'),
+    'rem'  : (0x5, 'index'),
+    'eref' : (0x6,          'key',                    'val'),
     }
-
-def OpcodeSize(unpacking_instructions, opcode):
-  retval = 1
-  instructions = opcodes[opcode][1:]
-  fake_data = [0,0,0,0,0,0,0,0,0,0,0,0]  # should be larger than any field.
-  for field_name in instructions:
-    (_, tp_func) = unpacking_instructions[field_name]
-    if tp_func:
-      (advance, _) = tp_func(fake_data)
-      retval += advance
-  return retval
+opcode_to_op = {}  # ugly, I know :)
+for (key, val) in opcodes.iteritems():
+  opcode_to_op[val[0]] = [key] + list(val[1:])
 
 def OpcodeToVal(x):
   return opcodes[x][0]
-
-def UnpackSPDY4Ops(unpacking_instructions, real_ops):
-  opcode_to_op = {}
-  for (key, val) in opcodes.iteritems():
-    opcode_to_op[val[0]] = [key] + list(val[1:])
-
-  ops = []
-  while len(real_ops):
-    opcode = GetBitsInByte(unpacking_instructions['opcode'][0], real_ops[0])
-    op = {}
-    op['opcode'] = opcode_to_op[opcode][0]
-    fb = real_ops[0]
-    real_ops = real_ops[1:]
-    for field_name in opcode_to_op[opcode][1:]:
-      if field_name == 'opcode':
-        continue
-      if not field_name in unpacking_instructions:
-        print field_name, " is not in instructions"
-        raise StandardError();
-      (fb_func_params, tp_func) = unpacking_instructions[field_name]
-      if fb_func_params is not None:
-        op[field_name] = GetBitsInByte(fb_func_params, fb)
-      if tp_func is not None:
-        (advance, result) = tp_func(real_ops)
-        op[field_name] = result
-        real_ops = real_ops[advance:]
-    ops.append(op)
-  return ops
-
-def PackSpdy4Ops(packing_instructions, ops):
-  top_block = []
-  str_block = []
-  for op in ops:
-    fb = 0
-    tb = []
-    for field_name in packing_order:
-      if not field_name in op:
-        continue
-      (fb_func_params, tp_func) = packing_instructions[field_name]
-      val = op[field_name]
-      if field_name == 'opcode':
-        val = OpcodeToVal(op[field_name])
-      if fb_func_params is not None:
-        fb = fb | SetBitsInByte(fb_func_params, val)
-      if tp_func is not None:
-        tb.append(tp_func(val))
-    top_block.append(chr(fb))
-    top_block.extend(tb)
-  top_block_str = ''.join(top_block)
-  return top_block_str
-
-
-def RealOpsToOps(realops):
-  return UnpackSPDY4Ops(inline_unpacking_instructions, ListToStr(realop))
 
 def FormatOp(op):
   order = packing_order
@@ -434,7 +398,7 @@ class Spdy4CoDe:
     self.lru_of_index = deque()
 
     # stream_group -> list-of-dict-indices
-    self.stream_groups = {0:[]}
+    self.stream_groups = defaultdict(list)
 
     self.largest_index = 0
     self.unused_indices = deque()
@@ -477,29 +441,34 @@ class Spdy4CoDe:
     kvhash_to_line.add(index)
     self.kvhash_to_index[line.kvhash] = kvhash_to_line
 
-  def RemoveIndex(self, index):
-    # this assumes the LRU has already been taken care of.
-
-    # cleanup index_to_line
-    line = self.index_to_line[index]
+  def RemoveIndex(self, idx):
+    ########
+    # this procedure assumes the LRU has already been taken care of.
+    ########
+    #print "Removing(", idx, ")"
+    line = self.index_to_line[idx]
     self.total_storage -= (len(line.k) + len(line.v))
-    del self.index_to_line[index]
-    # cleanup key_to_indices
-    self.key_to_indices[line.k].remove(index)
-    if not self.key_to_indices[line.k]:
-      del self.key_to_indices[line.k]
-    key_to_index_entry = self.key_to_indices.get(line.k, None)
-    # cleanup kvhash_to_index
-    self.kvhash_to_index[line.kvhash].remove(index)
+    del self.index_to_line[idx]
+    # cleanup hvhash_to_index
+    self.kvhash_to_index[line.kvhash].remove(idx)
     if not self.kvhash_to_index[line.kvhash]:
       del self.kvhash_to_index[line.kvhash]
+    # cleanup key_to_indices
+    self.key_to_indices[line.k].remove(idx)
+    if not self.key_to_indices[line.k]:
+      del self.key_to_indices[line.k]
+    key_to_idx_entry = self.key_to_indices.get(line.k, None)
     # cleanup stream_groups
+    groups_to_remove = []
     for (id, v) in self.stream_groups.iteritems():
-      self.stream_groups[id][:] = [x for x in self.stream_groups[id] if x != index]
+      self.stream_groups[id][:] = [x for x in self.stream_groups[id] if x !=idx]
       if not self.stream_groups[id]:
-        del self.stream_groups[id]
+        groups_to_remove.append(id)
+    for id in groups_to_remove:
+      del self.stream_groups[id]
 
   def MoveToFrontOfLRU(self, index):
+    #print "MOveToFront(", index, ")"
     new_lru = [x for x in list(self.lru_of_index) if x != index]
     self.lru_of_index = deque(new_lru)
     self.lru_of_index.append(index)
@@ -508,7 +477,7 @@ class Spdy4CoDe:
     self.MoveToFrontOfLRU(index)
 
   def MakeRemovalsIfNecessary(self, stream_group, in_ops):
-    return []
+    #return []
     num_removed = 0
     ops = []
     indices_removed = []
@@ -523,38 +492,23 @@ class Spdy4CoDe:
       num_removed += 1
     if num_removed > 0:
       ops.append(self.MakeRem(num_removed))
+    #if indices_removed:
+      #print "Removed: ", indices_removed
     return ops
 
   def OpsToRealOps(self, in_ops):
-    ops = []
-    if self.huffman_table is None:
-      ops = in_ops
-    else:
-      for op in in_ops:
-        new_op = dict(op)
-        for k in ['key', 'val']:
-          if k in new_op:
-            val = new_op[k]
-            (e_bytes, e_bits) = self.huffman_table.Encode(StrToList(val), True)
-            new_op[k] = ''.join(ListToStr(e_bytes))
-        ops.append(new_op)
-    return PackSpdy4Ops(inline_packing_instructions, ops)
+    data = [BitBucket(), BitBucket(), BitBucket()]
+    PackOps(data, alt_packing_instructions, in_ops, self.huffman_table)
+    overall  = BitBucket()
+    overall.StoreBits(data[0].GetAllBits())
+    overall.StoreBits(data[1].GetAllBits())
+    overall.StoreBits(data[2].GetAllBits())
+    return ListToStr(overall.GetAllBits()[0])
 
   def RealOpsToOps(self, realops):
-    ops = []
-    in_ops = UnpackSPDY4Ops(inline_unpacking_instructions, StrToList(realops))
-    if self.huffman_table is None:
-      ops = in_ops
-    else:
-      for op in in_ops:
-        new_op = dict(op)
-        for k in ['key', 'val']:
-          if k in new_op:
-            val = new_op[k]
-            new_op[k] = ListToStr(self.huffman_table.Decode(StrToList(val), True, -1))
-        ops.append(new_op)
-    return ops
-
+    bb = BitBucket()
+    bb.StoreBits((StrToList(realops), len(realops)*8))
+    return UnpackOps([bb, BitBucket(), BitBucket()], alt_packing_instructions, self.huffman_table)
 
   def Compress(self, realops):
     ba = ''.join(realops)
@@ -585,6 +539,7 @@ class Spdy4CoDe:
 
   def MakeOperations(self, headers, stream_group):
     ops = []
+    toggles = []
     headers = dict(headers)
     self.active_stream_group = stream_group
     if not stream_group in self.stream_groups:
@@ -596,35 +551,22 @@ class Spdy4CoDe:
         # Awesome, this line is already present!
         del headers[key]
       else:
-        # the headers don't have this line in 'em.
-        op = self.MakeToggl(index)
-        self.ExecuteOp(stream_group, op)
-        ops.append(op)
-    out_ops = ops
-    out_ops.sort()
-    ops = []
-    for op in out_ops:  # these will ALL be Toggl (off) ops..
-      if ops and op['index'] - ops[-1]['index'] == 1:
-        if ops[-1]['opcode'] == 'trang':
-          ops[-1]['index'] = op['index']
-        else:
-          ops[-1]['opcode'] = 'trang'
-          ops[-1]['index_start'] = ops[-1]['index']
-          ops[-1]['index'] = op['index']
-      else:
-        ops.append(op)
+        # the headers don't have this line in 'em, so toggle it off.
+        self.ExecuteOp(stream_group, self.MakeToggl(index))
+        toggles.append(index)
+
     for (key, vals) in headers.iteritems():
       splitvals = [vals]
       if key == 'cookie': # treat cookie specially...
-        splitvals = vals.split(';')
+        splitvals = [x.lstrip(' ') for x in vals.split(';')]
+        splitvals.sort()
       for val in splitvals:
         (index, possible_indices) = self.FindIndex(key, val)
         if index >= 0 and index not in self.stream_groups[stream_group]:
           # we have a key+value that exists in the dictinary already,
           # but isn't yet in the stream group. Toggle it ON.
-          op = self.MakeToggl(index)
-          self.ExecuteOp(stream_group, op)
-          ops.append(op)
+          self.ExecuteOp(stream_group, self.MakeToggl(index))
+          toggles.append(index)
         elif index >= 0 and index in self.stream_groups[stream_group]:
           # this means that something was repeated verbatim.
           # Nah. We don't do that.
@@ -632,7 +574,8 @@ class Spdy4CoDe:
         elif index == -1 and possible_indices:
           # The key exists, but the value is different.
           # Clone the key with a new val.
-          op = self.MakeClone(self.GetAnUnusedIndex(), max(possible_indices), val)
+          op = self.MakeClone(self.GetAnUnusedIndex(),
+                              max(possible_indices), val)
           self.ExecuteOp(stream_group, op)
           ops.append(op)
           if not key == "cookie":
@@ -644,10 +587,25 @@ class Spdy4CoDe:
           ops.append(op)
           if not key == "cookie":
             self.wf.LookAt([op])
-    removal_ops = self.MakeRemovalsIfNecessary(stream_group, ops)
+    toggles.sort()
+    #print "toggles: ", toggles
+    toggle_ops = []
+    prev_index = -2
+    for index in toggles:  # these will ALL be Toggl (off) ops..
+      if index - prev_index == 1:
+        if toggle_ops[-1]['opcode'] == 'trang':
+          toggle_ops[-1]['index'] = index
+        else:
+          toggle_ops[-1]['opcode'] = 'trang'
+          toggle_ops[-1]['index_start'] = toggle_ops[-1]['index']
+          toggle_ops[-1]['index'] = index
+      else:
+        toggle_ops.append(self.MakeToggl(index))
+      prev_index = index
     for index in self.stream_groups[stream_group]:
       self.Touch(index)
-    return removal_ops + ops
+    removal_ops = self.MakeRemovalsIfNecessary(stream_group, ops)
+    return toggle_ops + ops + removal_ops
 
   def RealOpsToOpAndExecute(self, realops, stream_group):
     ops = self.RealOpsToOps(realops)
@@ -655,36 +613,48 @@ class Spdy4CoDe:
     return ops
 
   def ExecuteOps(self, ops, stream_group, ephemereal_headers={}):
+    #print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
     if not stream_group in self.stream_groups:
       self.stream_groups[stream_group] = []
     for op in ops:
       self.ExecuteOp(stream_group, op, ephemereal_headers)
+    #print "DONE"
 
   def ExecuteOp(self, stream_group, op, ephemereal_headers={}):
     opcode = op["opcode"]
-    index = op["index"]
+    #print "Executing: ", FormatOp(op)
     if opcode == 'trang':
+      index = op["index"]
       for i in xrange(op['index_start'], op['index']+1):
-        self.ExecuteOp(stream_group, self.MakeToggl(i))
+        if i in self.stream_groups[stream_group]:
+          self.stream_groups[stream_group].remove(i)
+        else:
+          self.stream_groups[stream_group].append(i)
+          self.Touch(i)
     elif opcode == 'clone':
+      index = op["index"]
       key_idx = op["key_idx"]
       # Clone - copies key and stores new value
       # [modifies both stream-group and header_dict]
       self.UpdateIndexes(index, self.index_to_line[key_idx].k, op["val"])
       self.stream_groups[stream_group].append(index)
     elif opcode == 'toggl':
+      index = op["index"]
       # Toggl - toggle visibility
       # [applies to stream-group entry only]
       if index in self.stream_groups[stream_group]:
         self.stream_groups[stream_group].remove(index)
       else:
         self.stream_groups[stream_group].append(index)
+        self.Touch(index)
     elif opcode == 'rem':
+      index = op["index"]
       for i in xrange(op['index']):
         self.RemoveIndex(self.lru_of_index.popleft())
     elif opcode == 'eref':
-      ephemereal_headers[opcode['key']] = opcode['val']
+      ephemereal_headers[op['key']] = op['val']
     elif opcode == 'kvsto':
+      index = op["index"]
       # kvsto - store key,value
       # [modifies both stream-group and header_dict]
       self.UpdateIndexes(index, op["key"], op["val"])
@@ -697,14 +667,20 @@ class Spdy4CoDe:
   def GenerateAllHeaders(self, stream_group):
     headers = {}
     for index in self.stream_groups[stream_group]:
-      self.Touch(index)
-      line = self.index_to_line[index]
+      try:
+        self.Touch(index)
+        line = self.index_to_line[index]
+      except:
+        print index
+        print self.index_to_line
+        print self.stream_groups[stream_group]
+        raise
       if line.k in headers:
         headers[line.k] = headers[line.k] + '\0' + line.v
       else:
         headers[line.k] = line.v
     if 'cookie' in headers:
-      headers['cookie'] = headers['cookie'].replace('\0', ';')
+      headers['cookie'] = headers['cookie'].replace('\0', '; ')
     return headers
 
 class SPDY4:
@@ -742,7 +718,7 @@ class SPDY3:
   def __init__(self, options):
     self.options = options
     self.compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
-                                       zlib.DEFLATED, 11)
+                                       zlib.DEFLATED, 15)
     self.compressor.compress(spdy_dict);
     self.compressor.flush(zlib.Z_SYNC_FLUSH)
 
@@ -766,7 +742,7 @@ class HTTP1:
   def __init__(self, options):
     self.options = options
     self.compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
-                                       zlib.DEFLATED, 11)
+                                       zlib.DEFLATED, 15)
     self.compressor.compress(spdy_dict);
     self.compressor.flush(zlib.Z_SYNC_FLUSH)
 
@@ -777,29 +753,31 @@ class HTTP1:
              http1_frame)
 
   def HTTP1HeadersFormat(self, frame):
-    out_frame = []
-    fl = ""
-    avoid_list = []
-    if ":method" in frame:
-      fl = "%s %s HTTP/%s\r\n" % (
-          frame[":method"],frame[":path"],frame[":version"])
-      avoid_list = [":method", ":path", ":version"]
-    else:
-      fl = "HTTP/%s %s %s\r\n" % (
-          frame[":version"],frame[":status"],frame[":status-text"])
-      avoid_list = [":version", ":status", ":status-text"]
-    out_frame.append(fl)
-    for (key, val) in frame.iteritems():
-      if key in avoid_list:
-        continue
-      if key == ":host":
-        key = "host"
-      for individual_val in val.split('\x00'):
-        out_frame.append(key)
-        out_frame.append(": ")
-        out_frame.append(individual_val)
-        out_frame.append("\r\n")
-    return ''.join(out_frame)
+    return FormatAsHTTP1(frame)
+
+def CompareHeaders(a, b):
+  a = dict(a)
+  b = dict(b)
+  output = []
+  if 'cookie' in a:
+    splitvals = a['cookie'].split(';')
+    a['cookie'] = '; '.join(sorted([x.lstrip(' ') for x in splitvals]))
+  if 'cookie' in b:
+    splitvals = b['cookie'].split(';')
+    b['cookie'] = '; '.join(sorted([x.lstrip(' ') for x in splitvals]))
+  for (k,v) in a.iteritems():
+    if not k in b:
+      output.append('key: %s present in only one (A)' % k)
+      continue
+    if v != b[k]:
+      output.append('key: %s has mismatched values:' % k)
+      output.append('  -> %s' % v)
+      output.append('  -> %s' % b[k])
+    del b[k]
+  for (k, v) in b:
+      output.append('key: %s present in only one (B)' % k)
+  return ''.join(output)
+
 
 def main():
   parser = OptionParser()
@@ -818,9 +796,6 @@ def main():
   (options, args) = parser.parse_args()
 
   print options
-  for (opcode, _) in opcodes.iteritems():
-    print "opcode: % 7s size: % 3d" % ("'" + opcode + "'",
-        OpcodeSize(inline_unpacking_instructions, opcode))
   requests = default_requests
   responses = default_responses
   if args >= 1:
@@ -880,28 +855,24 @@ def main():
       if options.v >= 4:
         print "request  header: ", request
       for op in rq4[6]:
-        print FormatOp(op)
+        print "rq_op: ", FormatOp(op)
 
       print "\n## response ##\n", rqh[1]
       if options.v >= 4:
         print "response header: ", response
       for op in rs4[6]:
-        print FormatOp(op)
+        print "rs_op: ", FormatOp(op)
       print
-    if not request == rq4[4]:
+    message = CompareHeaders(request, rq4[4])
+    if message:
       print "Something is wrong with the request."
       if options.v >= 1:
-        print sorted([(k,v) for k,v in request.iteritems()])
-        print "   !="
-        print sorted([(k,v) for k,v in rq4[4].iteritems()])
-        print
-    if not response == rs4[4]:
+        print message
+    message = CompareHeaders(response, rs4[4])
+    if message:
       print "Something is wrong with the response."
       if options.v >= 1:
-        print sorted([(k,v) for k,v in response.iteritems()])
-        print "   !="
-        print sorted([(k,v) for k,v in rs4[4].iteritems()])
-        print
+        print message
 
     (h1comrq, h1uncomrq) = map(len, rqh)
     h1usrq += h1uncomrq; h1csrq += h1comrq
@@ -958,17 +929,15 @@ def main():
     print "Res   Compressed/uncompressed HTTP:  % 2.5f  | % 2.5f  | % 2.5f  " % fmtarg
   print
 
-
-  #print spdy4_rq.wf
-  #rq_huff = Huffman(spdy4_rq.wf.GetFrequencies())
-  #print rq_huff.FormatCodeTable()
-
-  #print spdy4_rs.wf
-  #rs_huff = Huffman(spdy4_rs.wf.GetFrequencies())
-  #print rs_huff.FormatCodeTable()
-
-  #hrt = Huffman(request_freq_table)
-  #print
   print spdy4_rq.wf
+  print
+  print spdy4_rq.wf.length_freaks
+  print
+
+  print spdy4_rs.wf
+  print
+  print spdy4_rs.wf.length_freaks
+  print
+  #print spdy4_rs.wf
 
 main()

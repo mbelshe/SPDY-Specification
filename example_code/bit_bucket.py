@@ -1,24 +1,5 @@
-
-def PrintAsBits(output_and_bits):
-  (output, bits) = output_and_bits
-  retval = []
-  if bits % 8:
-    total_bits = (len(output) - 1) * 8 + (bits % 8)
-  else:
-    total_bits = len(output) * 8
-  idx = 0
-  while total_bits >= 8:
-    c = output[idx]
-    idx += 1
-    retval.append('|')
-    retval.append("{0:08b}".format(c))
-    total_bits -= 8
-
-  if (bits % 8) != 0:
-    retval.append('|')
-    retval.append("{0:08b}".format(output[idx])[0:(bits % 8)])
-  retval.extend([' [%d]' % bits])
-  return ''.join(retval)
+from common_utils import FormatAsBits
+import sys
 
 class BitBucket:
   def __init__(self):
@@ -33,6 +14,9 @@ class BitBucket:
 
   def StoreBits(self, input):
     (inp_bytes, inp_bits) = input
+    old_out_boff = self.out_boff
+    if not inp_bytes:
+      return
     if inp_bits % 8:
       leftover_bits = inp_bits % 8
     else:
@@ -58,14 +42,30 @@ class BitBucket:
       self.out_boff = (self.out_boff + leftover_bits) % 8
       if self.out_boff != 0:
         self.output[-1] &= ~(255 >> self.out_boff)
+    if self.out_boff != (old_out_boff + inp_bits) % 8:
+      raise StandardError()
 
   def GetAllBits(self):
     return (self.output, self.NumBits())
 
   def NumBits(self):
-    return 8 * (len(self.output) - 1) + self.out_boff
+    num_bits = 8*len(self.output)
+    if self.out_boff % 8:
+      num_bits -= 8
+      num_bits += self.out_boff
+    if num_bits < 0:
+      print "WTF"
+    return num_bits
+
+  def BitsRemaining(self):
+    return self.NumBits() - (8*self.idx_byte + self.idx_boff)
+
+  def AllConsumed(self):
+    return self.NumBits() <= (8*self.idx_byte + self.idx_boff)
 
   def GetBits(self, num_bits):
+    old_idx_boff = self.idx_boff
+
     if num_bits > self.NumBits() - (8*self.idx_byte + self.idx_boff):
       raise StandardError()
     retval = []
@@ -76,7 +76,6 @@ class BitBucket:
         self.idx_byte += 1
         bits_left -= 8
       if bits_left:
-        # get bits_left left bits
         retval.append( ~(255 >> bits_left) & self.output[self.idx_byte])
         self.idx_boff += bits_left
         self.idx_boff %= 8
@@ -90,32 +89,44 @@ class BitBucket:
         if bits_left >= 8 and lob > self.idx_byte:
           cur_byte =  255 & (self.output[self.idx_byte] << self.idx_boff)
           self.idx_byte += 1
-          cur_byte |=  (self.output[self.idx_byte] >> ( 8 - self.idx_boff))
+          cur_byte |=  (self.output[self.idx_byte] >> (8 - self.idx_boff))
           retval.append(cur_byte)
+          cur_byte = 0
           bits_left -= 8
         else:
           bits_to_consume = min(min(8 - cur_boff, 8 - self.idx_boff),
-                                num_bits)
+                                bits_left)
+
           c = self.output[self.idx_byte]
           c <<= self.idx_boff
           c &= 255
-          cur_byte |= (c >> cur_boff) & ~(255 >> bits_to_consume)
+          cur_byte |= (c & ~(255 >> (bits_to_consume))) >> cur_boff
           bits_left -= bits_to_consume
           cur_boff += bits_to_consume
           self.idx_boff += bits_to_consume
           if cur_boff >= 8:
             retval.append(cur_byte)
             cur_byte = 0
-            cur_boff %= 8
+            cur_boff -= 8
           if self.idx_boff >= 8:
             self.idx_byte += 1
-            self.idx_boff %= 8
+            self.idx_boff -= 8
       if cur_boff:
         retval.append(cur_byte)
+    if (old_idx_boff + num_bits) % 8 != self.idx_boff:
+      raise StandardError()
     return (retval, num_bits)
 
+  def DebugFormat(self):
+    print FormatAsBits((self.output, self.out_boff))
+    for i in xrange(self.idx_byte*8 + self.idx_boff - 1):
+      if not i % 8:
+        sys.stdout.write("|")
+      sys.stdout.write("-")
+    print "^"
+
   def __str__(self):
-    return PrintAsBits((self.output, self.out_boff))
+    return FormatAsBits((self.output, self.out_boff))
 
   def __repr__(self):
     return self.__str__()

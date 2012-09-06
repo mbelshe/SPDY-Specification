@@ -45,3 +45,5 @@ def ReadHarFile(filename):
     header[":version"] = re.sub("^[^/]*/","", response["httpVersion"])
     response_headers.append(header)
   return (request_headers, response_headers)
+
+
