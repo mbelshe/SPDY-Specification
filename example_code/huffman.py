@@ -76,7 +76,7 @@ class Huffman:
       if bb.GetAllBits()[1] == prelen:
         raise StandardError()
     if include_eof:
-      bb.StoreBits(self.code_table[128])
+      bb.StoreBits(self.code_table[256])
 
   def Encode(self, text, include_eof):
     bb = BitBucket()
@@ -95,7 +95,7 @@ class Huffman:
         bit = bb.GetBits(1)[0][0] >> 7
         root = root[2][bit]
         total_bits += 1
-      if includes_eof and root[1] is not None and ord(root[1]) == 128:
+      if includes_eof and root[1] is not None and ord(root[1]) == 256:
         break
       elif root[1] is not None:
         output.append(root[1])
@@ -131,7 +131,7 @@ class Huffman:
         if bit_index >= 8:
           bit_index = 0
           chr_index += 1
-      if includes_eof and root[1] is not None and ord(root[1]) == 128:
+      if includes_eof and root[1] is not None and ord(root[1]) == 256:
         break
       elif root[1] is not None:
         output.append(root[1])

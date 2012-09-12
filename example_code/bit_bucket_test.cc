@@ -27,6 +27,45 @@ void TestStoreBits(BitBucket* bb, const Testcase& test) {
 
 void TestGetBits(BitBucket*bb, const Testcase& test) {
   bb->Seek(0);
+  vector<char> storage;
+  int num_bits = bb->NumBits();
+  bb->GetBits(&storage, num_bits);
+  stringstream formatted_bits;
+  formatted_bits << FormatAsBits(storage, num_bits);
+  formatted_bits << " [" << num_bits << "," << num_bits % 8 << "]";
+  if (formatted_bits.str() != test.expected_state) {
+    cerr << "\n";
+    cerr << "       --- FAILED ---\n";
+    cerr << "   Expected: \"" << test.expected_state << "\"\n";
+    cerr << "        Got: \"" << formatted_bits.str() << "\"\n";
+    cerr << "       DEBUG: " << bb->DebugStr() << "\n";
+    abort();
+  }
+  // Now, do it again, starting from bit offsets other than 0
+  for (int i = 1; i < min(8, num_bits); ++i) {
+    bb->Seek(0);
+    formatted_bits.str("");
+    for (int j = 0; j < i; ++j) {
+      if (j % 8 == 0) {
+        formatted_bits << "|";
+      }
+      formatted_bits << bb->GetBit();
+    }
+    storage.clear();
+    bb->GetBits(&storage, num_bits - i);
+    string storage_str = FormatAsBits(storage, num_bits - i, i);
+    formatted_bits << FormatAsBits(storage, num_bits - i, i);
+    formatted_bits << " [" << num_bits << "," << num_bits % 8 << "]";
+    if (formatted_bits.str() != test.expected_state) {
+      cerr << "\n";
+      cerr << "       --- FAILED ---\n";
+      cerr << "     Offset: " << i << "\n";
+      cerr << "   Expected: \"" << test.expected_state << "\"\n";
+      cerr << "        Got: \"" << formatted_bits.str() << "\"\n";
+      cerr << "       DEBUG: " << bb->DebugStr() << "\n";
+      //abort();
+    }
+  }
 }
 
 void RunTests(const vector<Testcase>& tests) {

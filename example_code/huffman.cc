@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include <assert.h>
+#include <stdint.h>
+#include <float.h>
 
 #include <deque>
 #include <utility>
@@ -10,6 +12,9 @@
 #include "pretty_print_tree.cc"
 #include "bit_bucket.cc"
 #include <array>
+#include <limits>
+#include <map>
+#include <iomanip>
 
 using std::deque;
 using std::pair;
@@ -22,57 +27,68 @@ using std::dec;
 using std::sort;
 using std::array;
 using std::ios;
+using std::map;
+using std::make_pair;
+using std::lower_bound;
+using std::upper_bound;
+using std::setw;
 
-void OutputCharToOstream(ostream& os, unsigned int c) {
+void OutputCharToOstream(ostream& os, unsigned short c) {
   if (c > 256 + 1)
     abort();
-  os << " '";
-  if (c < 128 && (isgraph(c) || c == ' ')) {
-    os << (char)c;
+  if (c >= 256) {
+    os << c;
   } else {
-    switch (c) {
-      case '\t':
-        os << "\\t";
-        break;
-      case '\n':
-        os << "\\n";
-        break;
-      case '\r':
-        os << "\\r";
-        break;
-      case '\0':
-        os << "\\0";
-        break;
-      default:
-        if (c < 256) {
+    os << " '";
+    if (c < 128 && (isgraph(c) || c == ' ')) {
+      os << (char)c;
+    } else {
+      switch (c) {
+        case '\t':
+          os << "\\t";
+          break;
+        case '\n':
+          os << "\\n";
+          break;
+        case '\r':
+          os << "\\r";
+          break;
+        case '\0':
+          os << "\\0";
+          break;
+        default:
           if (c >= 16) {
             os << "\\x" << hex << c << dec;
           } else {
             os << "\\x0" << hex << c << dec;
           }
-        } else {
-          os << c;
-        }
-        break;
+          break;
+      }
     }
+    os << "'";
   }
-  os << "'";
+}
+
+string ReadableUShort(uint16_t c) {
+  stringstream s;
+  OutputCharToOstream(s, c);
+  return s.str();
 }
 
 class Huffman {
-
+ private:
   struct Node {
     double weight;
     Node* children[2];
-    Node* parent;
-    unsigned int c;
+    uint32_t depth;
+    unsigned short c;
     bool terminal;
 
-    explicit Node() : weight(0), parent(0), c(0), terminal(false) {
+    explicit Node() : weight(0), depth(0), c(0), terminal(false) {
       children[0] = children[1] = 0;
     }
-    explicit Node(unsigned int c, double weight) :
-        weight(weight + 1.0/256.0), parent(0), c(c), terminal(true) {
+    explicit Node(unsigned short c, double weight) :
+        weight(weight), depth(0), c(c), terminal(true) {
       children[0] = children[1] = 0;
     }
     friend ostream& operator<<(ostream& os, const Node& leaf) {
@@ -85,23 +101,41 @@ class Huffman {
     }
   };
 
+  struct VecAndLen {
+    vector<char> vec;
+    int len;
+    uint32_t val;
+    VecAndLen() : len(0), val(0) {}
+    explicit VecAndLen(int len) : len(len), val(0) {}
+  };
+
+  typedef array<VecAndLen, 256+1> CodeTable;
+
   void GetNextNode(Node* current_leaf, int child_idx,
                    deque<Node*> *leaves, deque<Node*> *internals) {
     assert (current_leaf->children[child_idx] == 0);
     if (internals->size() && leaves->size()) {
       if (leaves->front()->weight <= internals->front()->weight) {
         current_leaf->children[child_idx] = leaves->front();
+        current_leaf->depth = max(current_leaf->depth,
+                                  leaves->front()->depth + 1);
         leaves->pop_front();
       } else {
         current_leaf->children[child_idx] = internals->front();
+        current_leaf->depth = max(current_leaf->depth,
+                                  internals->front()->depth + 1);
         internals->pop_front();
       }
     } else if (internals->size()) {
       current_leaf->children[child_idx] = internals->front();
+      current_leaf->depth = max(current_leaf->depth,
+                                internals->front()->depth + 1);
       internals->pop_front();
     } else {
       assert(leaves->size() != 0);
       current_leaf->children[child_idx] = leaves->front();
+      current_leaf->depth = max(current_leaf->depth,
+                                leaves->front()->depth + 1);
       leaves->pop_front();
     }
     current_leaf->weight += current_leaf->children[child_idx]->weight;
@@ -111,7 +145,7 @@ class Huffman {
     if (a->weight != b->weight) {
       return a->weight < b->weight;
     } else if (a->terminal != b->terminal) {
-      return !a->terminal;
+      return b->terminal;
     } else if (a->terminal) {
       return a->c < b->c;
     }
@@ -136,7 +170,10 @@ class Huffman {
     code_tree = 0;
   }
 
-  void BuildCodeTree(const vector<pair<unsigned int, long> >& freq_table) {
+  // returns max depth
+  int BuildCodeTree(const vector<pair<uint16_t, uint32_t> >& freq_table,
+                     uint32_t divisor=1) {
+    cout << "Divisor: " << divisor << "\n";
     deque<Node*> leaves;
     deque<Node*> internals;
     if (freq_table.size() <= 2) {
@@ -144,12 +181,17 @@ class Huffman {
       abort();
     }
     for (int i = 0; i < freq_table.size(); ++i) {
-      leaves.push_back(new Node(freq_table[i].first, freq_table[i].second));
+      double weight = freq_table[i].second / divisor;
+      uint16_t sym = freq_table[i].first;
+      assert (sym == i);
+      if (weight == 0) {
+        weight = DBL_EPSILON;
+      }
+      leaves.push_back(new Node(freq_table[i].first, weight));
     }
     sort(leaves.begin(), leaves.end(), NodePtrComp);
 
     Node* current_leaf = new Node();
-    leaves.pop_front();
     int total_size = leaves.size();
     while (total_size >= 2) {
       GetNextNode(current_leaf, 0, &leaves, &internals);
@@ -165,70 +207,347 @@ class Huffman {
     // the last 'current_leaf' is extraneous. Delete it.
     delete current_leaf;
     assert(internals.size() == 1);
+    assert(leaves.size() == 0);
     code_tree = internals.front();
+    //cout << "max tree depth: " << code_tree->depth << "\n";
+    return code_tree->depth;
   }
 
   void BuildCodeTableHelper(Node* current, deque<bool>* state) {
     if (current->terminal) {
-
-      OutputCharToOstream(cout, current->c);
-      cout << "\n";
-
       BitBucket bb;
       for (int i = 0; i < state->size(); ++i) {
         bb.StoreBit((*state)[i]);
-        cout << (*state)[i];
       }
-      cout << "\n";
-
-      cout << bb << "\n";
-      cout << bb.DebugStr() << "\n";
-      unsigned int idx = current->c;
-      code_table[idx] = make_pair(vector<char>(), state->size());
-      bb.GetBits(&(code_table[idx].first), state->size());
-      cout << FormatAsBits(code_table[idx].first, code_table[idx].second) << "\n";
+      unsigned short idx = current->c;
+      code_table[idx] = VecAndLen(state->size());
+      bb.GetBits(&(code_table[idx].vec), state->size());
     }
-
     state->push_back(false);
     if (current->children[0]) {
       BuildCodeTableHelper(current->children[0], state);
     }
-    state->pop_back();
-
-    state->push_back(true);
+    state->back() = true;
     if (current->children[1]) {
       BuildCodeTableHelper(current->children[1], state);
     }
     state->pop_back();
+  }
+  typedef map<int, vector<unsigned short> > DepthToSym;
+
+  void DiscoverDepthAndStoreIt(DepthToSym* depth_to_sym) {
+    deque<pair<Node*, int> > stack;
+    stack.push_back(make_pair(code_tree, 0));
+    while (!stack.empty()) {
+      Node* current = stack.back().first;
+      int depth = stack.back().second + 1;
+      if (current->terminal) {
+        DepthToSym::iterator it = depth_to_sym->find(depth - 1);
+        vector<unsigned short>* depth_set = 0;
+        if (it == depth_to_sym->end()) {
+          it = depth_to_sym->insert(make_pair(depth - 1,
+                                              vector<unsigned short>())).first;
+        }
+        it->second.push_back(current->c);
+      }
+      stack.pop_back();
+      if (current->children[0])
+        stack.push_back(make_pair(current->children[0], depth));
+      if (current->children[1])
+        stack.push_back(make_pair(current->children[1], depth));
+    }
+  }
+
+  uint32_t ComputeNextCode(uint32_t prev_code,
+                           int current_code_length,
+                           int prev_code_length) {
+    uint32_t next_code = (prev_code + 1);
+    next_code <<= (current_code_length - prev_code_length);
+    return next_code;
+  }
+
+  void Uint32ToCharArray(vector<char>* vec, uint32_t val, int bit_len) {
+    uint32_t nval = val << (32 - bit_len);
+    for (int rshift = 24; rshift >= 0 && bit_len > 0; rshift -= 8, bit_len -=8) {
+      unsigned char c = nval >> rshift;
+      vec->push_back(nval >> rshift);
+    }
+  }
+
+  void AltBuildCodeTable() {
+    DepthToSym depth_to_sym;
+    DiscoverDepthAndStoreIt(&depth_to_sym);
+    uint32_t code = 0xFFFFFFFF; // adding 1 will make this 0.
+
+    int prev_code_length = 0;
+    for (DepthToSym::iterator i = depth_to_sym.begin();
+         i != depth_to_sym.end();
+         ++i) {
+      int current_code_length = i->first;
+      sort(i->second.begin(), i->second.end());
+      const vector<unsigned short> &syms = i->second;
+      for (int j = 0; j < syms.size(); ++j) {
+        unsigned short c = syms[j];
+        code = ComputeNextCode(code, current_code_length, prev_code_length);
+        prev_code_length = current_code_length;
+        code_table[c] = VecAndLen(current_code_length);
+        code_table[c].val = code << (32 - current_code_length);
+        //code_table[c].val |= 0xFFFFFFFF >> current_code_length;
+        Uint32ToCharArray(&(code_table[c].vec), code, current_code_length);
+      }
+    }
+    // cout << "ALT TABLE START\n";
+    // for (int i = 0; i < code_table.size(); ++i) {
+    //   cout << FormatAsBits(code_table[i].val, 32);
+    //   cout << " ";
+    //   cout << FormatAsBits(code_table[i].val, code_table[i].len);
+    //   cout << " ";
+    //   cout << FormatAsBits(code_table[i].vec, code_table[i].len);
+    //   cout << " ";
+    //   OutputCharToOstream(cout, i);
+    //   cout << "\n";
+    // }
+    // cout << "ALT TABLE END\n";
+  }
+
+  struct BitPatternCmp {
+    int bit_len;
+
+    explicit BitPatternCmp(int bit_len) : bit_len(bit_len) {}
+
+    bool operator()(const VecAndLen& a, uint32_t b) const{
+      cout << "a.val(" << a.val << ")";
+      if (a.val < b) cout << " < ";
+      else cout << " >= ";
+      cout << "b(" << b <<")\n";
+      return a.val < b;
+    }
+    bool operator()(uint32_t a, const VecAndLen& b) const{
+      cout << "a(" << a << ")";
+      if (a < b.val) cout << " < ";
+      else cout << " >= ";
+      cout << "b.val(" << b.val <<")\n";
+      return a < b.val;
+    }
+  };
+
+  bool Equivalent(const vector<pair<uint32_t, int> >& sorted_by_code,
+                  uint32_t idx_1,
+                  uint32_t idx_2,
+                  uint32_t msb,
+                  uint32_t bw) {
+      uint32_t cur_code = sorted_by_code[idx_1].first;
+      uint32_t nxt_code = sorted_by_code[idx_2].first;
+      uint32_t cur_idx = (cur_code << msb) >> (32 - bw);
+      uint32_t nxt_idx = (nxt_code << msb) >> (32 - bw);
+      return cur_idx == nxt_idx;
+  }
+
+  struct DecodeEntry {
+    uint16_t sym;
+    uint8_t next_table;
+    bool valid;
+    DecodeEntry() : sym(0), next_table(0), valid(0) {}
+
+    DecodeEntry(uint16_t sym, uint8_t next_table) :
+        sym(sym), next_table(next_table), valid(1) {};
+
+    friend ostream& operator<<(ostream& os, const DecodeEntry& de) {
+      if (de.valid) {
+        os << "[DE " << static_cast<uint32_t>(de.next_table)
+          << " " << ReadableUShort(de.sym) << "]";
+      } else {
+        os << "[DE INVALID]";
+      }
+      return os;
+    }
+  };
+
+  struct BranchEntry {
+    uint32_t base_idx;
+    uint8_t bw;
+    BranchEntry() : base_idx(0), bw(0) {}
+    BranchEntry(uint32_t base_idx, uint8_t bw) : base_idx(base_idx), bw(bw) {}
+    friend ostream& operator<<(ostream& os, const BranchEntry& be) {
+      os << "[BE " << be.base_idx << " " << static_cast<uint32_t>(be.bw) << "]";
+      return os;
+    }
+  };
+
+  typedef vector<DecodeEntry> DecodeTable;
+  typedef vector<BranchEntry> Branches;
+
+  void AltBuildDecodeHelper(const vector<pair<uint32_t, int> >& sorted_by_code,
+                            DecodeTable* decode_table,
+                            Branches* tables,
+                            uint32_t begin,
+                            uint32_t end,
+                            uint32_t msb,
+                            uint32_t bw) {
+    uint32_t decode_table_idx = decode_table->size();
+    decode_table->resize(decode_table->size() + (0x1U << bw));
+    //cout << "decode_table now resized to: " << decode_table->size() << "\n";
+
+    uint32_t table_idx = tables->size();
+    tables->push_back(BranchEntry(decode_table_idx, bw));
+
+    uint32_t run_start = begin;
+    uint32_t run_end = begin;
+    while (run_end < end) {
+      while (Equivalent(sorted_by_code, run_start, run_end, msb, bw)) {
+        ++run_end;
+        if (run_end == end) {
+          break;
+        }
+      }
+      // run_start != run_end.
+      // implies, that run_start -> (run_end - 1) is equivalent.
+      uint32_t dist = run_end - run_start;
+      uint32_t cur_code = sorted_by_code[run_start].first;
+      uint32_t cur_idx = (cur_code << msb) >> (32 - bw);
+      for (int i = 0; i < msb; ++i) cout << " ";
+      if (dist == 1) {
+        cout << "Terminal: " << setw(6) << cur_idx
+              << " " << setw(6) << (cur_idx + decode_table_idx);
+        uint32_t code_len = code_table[sorted_by_code[run_start].second].len;
+        cout << "\t" <<  FormatAsBits(cur_code, code_len) << "\n";
+        uint16_t sym = sorted_by_code[run_start].second;
+        //cout << "storing [L] entry into: " << decode_table_idx << "\n";
+        (*decode_table)[decode_table_idx + cur_idx] = DecodeEntry(sym, 0);
+      } else {
+        uint32_t nxt_code_len = code_table[sorted_by_code[run_end - 1].second].len;
+        uint32_t nxt_code = sorted_by_code[run_end - 1].first;
+        uint32_t nxt_bit_len = nxt_code_len - (msb + bw);
+        cout << " Recurse: " << setw(6) << cur_idx
+             << " " << setw(6) << (cur_idx + decode_table_idx)
+             << "\t" <<  FormatAsBits(cur_code, msb + bw)
+             << " " << run_start << "->" << run_end
+             << " (" << (run_end - run_start) << ")"
+             << " (" << min(nxt_bit_len, bw) << ")"
+             << " (" << table_idx << ")"
+             <<"\n";
+        //cout << "storing [R] entry into: " << decode_table_idx << "\n";
+        (*decode_table)[decode_table_idx + cur_idx] = DecodeEntry(0, tables->size());
+        AltBuildDecodeHelper(sorted_by_code, decode_table, tables,
+                             run_start, run_end,
+                             msb + bw, min(bw, nxt_bit_len));
+      }
+      run_start = run_end;
+    }
+  }
+
+  void AltBuildDecodeTable() {
+    const int lookup_bits = 8;
+    const uint32_t max_val = (0x1U << lookup_bits);
+
+    vector<pair<uint32_t, int> > sorted_by_code; // code->symbol
+    for (int i = 0; i < code_table.size(); ++i) {
+      pair<uint32_t, int> insert_val;
+      insert_val.first = code_table[i].val;
+      insert_val.second = i;
+      sorted_by_code.push_back(insert_val);
+    }
+    sort(sorted_by_code.begin(), sorted_by_code.end());
+    Branches tables;
+    tables.push_back(BranchEntry()); // 0th index will loop to the same element.
+    DecodeTable decode_table;
+    AltBuildDecodeHelper(sorted_by_code, &decode_table, &tables,
+                         0, sorted_by_code.size(),
+                         0, lookup_bits);
+    cout << "Done building tables. Displayin' 'em now\n";
+    for (uint32_t i = 0; i < decode_table.size(); ++i) {
+      if (!decode_table[i].valid)
+        decode_table[i] = decode_table[i-1];
+      cout << setw(6) << i << " " << decode_table[i] << "\n";
+    }
+    for (int i = 0; i < tables.size(); ++i) {
+      cout << i << " " << tables[i] << "\n";
+    }
   }
 
   void BuildCodeTable() {
     deque<bool> state;
     if (!code_tree)
       return;
+    AltBuildCodeTable();
+    AltBuildDecodeTable();
     BuildCodeTableHelper(code_tree, &state);
   }
 
+
   Node* code_tree;
-  array<pair<vector<char>, int>, 256+1> code_table;
+  CodeTable code_table;
+  unsigned short eof_value;
+
+  // for each possible prefix in the first 9 bits:
+  // lookup prefix. If it matches a terminal, 
 
  public:
-  Huffman() : code_tree(0) { }
+  Huffman() : code_tree(0), eof_value(256) { }
   ~Huffman() { DeleteCodeTree(); }
 
-  void Init(const vector<pair<unsigned int, long> >& freq_table) {
-    BuildCodeTree(freq_table);
+  void Init(const vector<pair<uint16_t, uint32_t> >& freq_table) {
+    for (uint32_t divisor = 1;
+         BuildCodeTree(freq_table, divisor) > 32;
+         divisor *= 2){}
+    // And now that we know that all the codes are <= 32 bits long...
     BuildCodeTable();
+  }
+
+  void Encode(BitBucket* bb, const string& str, bool use_eof) const {
+    for (int i = 0; i < str.size(); ++i) {
+      unsigned short idx = str[i];
+      bb->StoreBits(code_table[idx].vec, code_table[idx].len);
+    }
+    if (use_eof) {
+      bb->StoreBits(code_table[eof_value].vec, code_table[eof_value].len);
+    }
+  }
+
+  void Decode(string* output, BitBucket* bb,
+              bool use_eof, int bits_to_decode) const{
+    int total_bits = 0;
+    if (!use_eof && bits_to_decode < 0) {
+      cerr << "Invalid parameters for Decode\n";
+      abort();
+    }
+    while (bits_to_decode < 0 || total_bits < bits_to_decode) {
+      Node* root = code_tree;
+      while (! root->terminal) {
+        bool bit = bb->GetBit();
+        root = root->children[bit];
+        total_bits += 1;
+      }
+      if (use_eof && root->terminal && root->c == eof_value) {
+        break;
+      } else if (root->terminal) {
+        output->push_back((char)root->c);
+      } else {
+        cerr << "This shouldn't ever happen..\n";
+        abort();
+      }
+    }
+    if (bits_to_decode > 0 && total_bits < bits_to_decode) {
+      bb->SeekDelta(bits_to_decode - total_bits);
+    }
+  }
+
+
+  void AltDecode(string* output, BitBucket* bb,
+                 bool use_eof, int bits_to_decode) const{
+    uint32_t word;
+    bb->FillUInt32(&word);
+    uint8_t bw = tables[1].bw;
   }
 
   friend ostream& operator<<(ostream &os, const Huffman& huff) {
     for (int i = 0; i < huff.code_table.size(); ++i) {
+      os << FormatAsBits(huff.code_table[i].vec, huff.code_table[i].len);
+      os << " ";
       OutputCharToOstream(os, i);
-      os << "\t" << FormatAsBits(huff.code_table[i].first,
-                                 huff.code_table[i].second);
       os << "\n";
     }
-    PrettyPrintTreeToStream<Huffman::Node>(huff.code_tree, os);
+    //PrettyPrintTreeToStream<Huffman::Node>(huff.code_tree, os);
     return os;
   }
 };

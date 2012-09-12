@@ -16,26 +16,50 @@ using std::flush;
 using std::min;
 using std::max;
 
-void FormatUIAsBits(unsigned int c, string* retval, int bits) {
-  retval->push_back('|');
-  for (int i = 0; i < bits; ++i) {
-    if (c & (0x80 >> i)) {
-      retval->push_back('1');
-    } else {
-      retval->push_back('0');
-    }
+template <typename T>
+string FormatAsBits(const T& v, int num_bits, int offset = 0) {
+  stringstream retval;
+  for (int i = 0; i < num_bits; ++i) {
+    int byte_idx = i / 8;
+    unsigned int c = v[byte_idx];
+    if ((i + offset) % 8 == 0)
+      retval << "|";
+    retval << ((c & (0x80U >> (i % 8))) > 0);
   }
+  return retval.str();
 }
 
-template <typename T>
-string FormatAsBits(const T& v, int num_bits) {
-  string retval;
-  for (int i = 0; i < num_bits / 8; ++i) {
-    FormatUIAsBits(static_cast<unsigned int>(v[i]), &retval, 8);
+template <>
+string FormatAsBits<uint32_t>(const uint32_t& v, int num_bits, int offset) {
+  stringstream retval;
+  for (int i = 0; i < num_bits; ++i) {
+    if ((i + offset) % 8 == 0)
+      retval << "|";
+    retval << (((v >> (31 - i)) & 0x1U) > 0);
   }
-  if (num_bits % 8)
-    FormatUIAsBits(static_cast<unsigned int>(v.back()), &retval, num_bits % 8);
-  return retval;
+  return retval.str();
+}
+
+template <>
+string FormatAsBits<uint16_t>(const uint16_t& v, int num_bits, int offset) {
+  stringstream retval;
+  for (int i = 0; i < num_bits; ++i) {
+    if ((i + offset) % 8 == 0)
+      retval << "|";
+    retval << (((v >> (15 - i)) & 0x1U) > 0);
+  }
+  return retval.str();
+}
+
+template <>
+string FormatAsBits<uint8_t>(const uint8_t& v, int num_bits, int offset) {
+  stringstream retval;
+  for (int i = 0; i < num_bits; ++i) {
+    if ((i + offset) % 8 == 0)
+      retval << "|";
+    retval << (((v >> (7 - i)) & 0x1U) > 0);
+  }
+  return retval.str();
 }
 
 class BitBucket {
@@ -154,22 +178,27 @@ class BitBucket {
       retval->insert(retval->end(), bsa.begin() + idx_byte, bsa.begin() + idx_byte + output_bytes);
       idx_byte += num_bits / 8;
       idx_boff = num_bits % 8;
-      retval->back() &= ~(0xff >> idx_boff);
+      if (idx_boff) {
+        retval->back() &= ~(0xff >> idx_boff);
+      }
     } else { // idx_boff != 0. There WILL be shifting about.
       int idx_leftover = 8 - idx_boff;
       while (bits_left >= 8) {
-        char c = bsa[idx_byte] << idx_boff;
+        unsigned int c = bsa[idx_byte] << idx_boff;
         ++idx_byte;
         c |= bsa[idx_byte] >> idx_leftover;
-        retval->push_back(c);
+        // cout << "ONE_BYTE DOWN, BITS_LEFT:" << bits_left
+        //      << " " << FormatAsBits(&c, 8) << "\n";
+        retval->push_back((char)c);
         bits_left -= 8;
       }
       if (bits_left) {
+        //cout << "BITS LEFT: " << bits_left << "\n";
         int cur_boff = 0;
-        char cur_byte = 0;
+        unsigned int cur_byte = 0;
         while (true) {
           int bits_to_consume = min(min(8 - cur_boff, idx_leftover), bits_left);
-          char mask = ~(0xff >> bits_to_consume);
+          unsigned int mask = ~(0xff >> bits_to_consume);
           cur_byte |= ((bsa[idx_byte] << idx_boff) & mask) >> cur_boff;
           bits_left -= bits_to_consume;
           idx_boff += bits_to_consume;
@@ -186,7 +215,9 @@ class BitBucket {
             abort();
           }
           if (bits_left == 0) {
-            retval->push_back(cur_byte);
+            // cout << "BITS LEFT: " << bits_left
+            //      << " " << FormatAsBits(&cur_byte, 8) << "\n";
+            retval->push_back((char)cur_byte);
             break;
           }
         }

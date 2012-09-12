@@ -5,7 +5,7 @@
 using std::vector;
 using std::pair;
 
-vector<pair<unsigned int, long> > FreqTables::request_freq_table = {
+vector<pair<uint16_t, uint32_t> > FreqTables::request_freq_table = {
   {0x00U, 0},
   {0x01U, 0},
   {0x02U, 0},
@@ -265,7 +265,7 @@ vector<pair<unsigned int, long> > FreqTables::request_freq_table = {
   {256, 1093},
 };
 
-vector<pair<unsigned int, long> > FreqTables::response_freq_table = {
+vector<pair<uint16_t, uint32_t> > FreqTables::response_freq_table = {
   {0x00, 57},
   {0x01, 0},
   {0x02, 0},

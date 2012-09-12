@@ -12,6 +12,9 @@ class BitBucket:
     self.idx_byte = 0
     self.idx_boff = 0
 
+  def StoreBit(self, bit):
+    self.StoreBits( ([bit << 7], 1) )
+
   def StoreBits(self, input):
     (inp_bytes, inp_bits) = input
     old_out_boff = self.out_boff
