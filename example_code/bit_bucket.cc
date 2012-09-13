@@ -87,9 +87,27 @@ class BitBucket {
   }
 
   void SeekDelta(int bit_loc_delta) {
-    Seek(min(max(0,
-                 BitsConsumed() + bit_loc_delta),
-             num_bits));
+    Seek(BitsConsumed() + bit_loc_delta);
+  }
+
+  void ConsumeBits(int bits_consumed) {
+    SeekDelta(bits_consumed);
+  }
+
+  // This is horribly inefficient.
+  void ShiftBitsIntoWord(uint32_t* word, int num_bits) {
+    *word <<= num_bits;
+    int saved_idx_byte = idx_byte;
+    int saved_idx_boff = idx_boff;
+    uint32_t tmp_word = 0;
+    while (num_bits) {
+      tmp_word <<= 1;
+      tmp_word |= GetBit();
+      --num_bits;
+    }
+    *word |= tmp_word;
+    idx_byte = saved_idx_byte;
+    idx_boff = saved_idx_boff;
   }
 
   void StoreBit(bool bit) {
@@ -237,10 +255,18 @@ class BitBucket {
     ss << *this;
     return ss.str();
   }
-  string DebugStr() const {
+  string DebugStr(int offset=0, int range=1) const {
     stringstream ss;
-    ss << FormatAsBits(bsa, bsa.size()*8)
-       << "[" << num_bits << "," << bsa_boff << "]";
+    int num_bits_consumed = idx_byte * 8 + idx_boff;
+    num_bits_consumed += offset;
+    for (int i = 0; i < num_bits_consumed; ++i) {
+      if (!(i%8)) ss << "|";
+      ss << "-";
+    }
+    for (int i = num_bits_consumed ; i < num_bits_consumed + range; ++i) {
+      if (!(i%8)) ss << "|";
+      ss << "^";
+    }
     return ss.str();
   }
 

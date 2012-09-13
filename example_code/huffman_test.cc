@@ -26,10 +26,12 @@ void TestEncodeDecode(const Huffman& huff,
                       bool use_eof,
                       bool use_length,
                       int length_delta) {
-  BitBucket bb;
-  huff.Encode(&bb, input, use_eof);
   string decoded;
   int num_bits = 0;
+
+  BitBucket bb;
+  huff.Encode(&bb, input, use_eof);
+
   if (use_length)
     num_bits = bb.NumBits() + length_delta;
   huff.Decode(&decoded, &bb, use_eof, bb.NumBits());
@@ -39,16 +41,18 @@ void TestEncodeDecode(const Huffman& huff,
 int main(int argc, char**argv) {
   Huffman huff;
   huff.Init(FreqTables::request_freq_table);
-  array<string,5> tests = {
-    "abbcccddddeeeee",
+  array<string,6> tests = {
+    "dabbcccddddeeeee",
     "foobarbaz",
     "0-2rklnsvkl;-23kDFSi01k0=",
     "-9083480-12hjkadsgf8912345kl;hjajkl;       `123890",
-    "\0\0-3;jsdf"
+    "\0\0-3;jsdf",
+    "\xFF\xE0\0\0\t\ne\0\x81\x82",
   };
   for (int i = 0; i < tests.size(); ++i) {
     const string& test = tests[i];
     cerr << "TEST: " << test << "...";
+    cerr << "\n";
     TestEncodeDecode(huff, test,  true, false, 0);
     TestEncodeDecode(huff, test, false,  true, 0);
     TestEncodeDecode(huff, test,  true,  true, 8);
