@@ -1,9 +1,10 @@
-#include <vector>
 #include <utility>
+#include <vector>
+
 #include "header_freq_tables.h"
 
-using std::vector;
 using std::pair;
+using std::vector;
 
 vector<pair<uint16_t, uint32_t> > FreqTables::request_freq_table = {
   {0x00U, 0},

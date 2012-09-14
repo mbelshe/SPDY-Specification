@@ -1,44 +1,48 @@
+#ifndef PRETTY_PRINT_TREE_H
+#define PRETTY_PRINT_TREE_H
+
 #include <ostream>
-#include <vector>
-#include <string>
 #include <sstream>
+#include <string>
+#include <vector>
+
 using std::ostream;
-using std::vector;
 using std::string;
 using std::stringstream;
+using std::vector;
 
 class CharMatrix {
  public:
 
-  void WriteVisible(int* x_pos, int y_pos, const string& string_to_write) {
+  void WriteVisible(unsigned int* x_pos, unsigned int y_pos, const string& string_to_write) {
     Write(x_pos, y_pos, string_to_write, true);
   }
 
-  void WriteInvisible(int* x_pos, int y_pos, const string& string_to_write) {
+  void WriteInvisible(unsigned int* x_pos, unsigned int y_pos, const string& string_to_write) {
     Write(x_pos, y_pos, string_to_write, false);
   }
 
-  void Write(int* x_pos,
-             int y_pos,
+  void Write(unsigned int* x_pos,
+             unsigned int y_pos,
              const string& string_to_write,
              bool visible) {
     if (char_matrix_.size() <= y_pos) {
-      int old_size = char_matrix_.size();
+      unsigned int old_size = char_matrix_.size();
       char_matrix_.resize(y_pos + 1);
       offset_.resize(y_pos + 1);
-      for (int i = old_size; i < y_pos + 1; ++i) {
+      for (unsigned int i = old_size; i < y_pos + 1; ++i) {
         offset_[i] = 0;
       }
     }
-    int end_x_pos = *x_pos + string_to_write.size() + 1 + offset_[y_pos];
+    unsigned int end_x_pos = *x_pos + string_to_write.size() + 1 + offset_[y_pos];
     if (char_matrix_[y_pos].size() < end_x_pos) {
-      int old_size = char_matrix_[y_pos].size();
+      unsigned int old_size = char_matrix_[y_pos].size();
       char_matrix_[y_pos].resize(end_x_pos);
-      for (int x = old_size; x < (end_x_pos); ++x) {
+      for (unsigned int x = old_size; x < (end_x_pos); ++x) {
         char_matrix_[y_pos][x] = ' ';
       }
     }
-    for (int i = 0; i < string_to_write.size(); ++i, ++(*x_pos)) {
+    for (unsigned int i = 0; i < string_to_write.size(); ++i, ++(*x_pos)) {
       char_matrix_[y_pos][*x_pos + offset_[y_pos]] = string_to_write[i];
       if (!visible || !isprint(string_to_write[i])) {
         --(*x_pos);
@@ -48,8 +52,8 @@ class CharMatrix {
   }
 
   friend ostream& operator<<(ostream& os, const CharMatrix& cm) {
-    for (int y = 0; y < cm.char_matrix_.size(); ++y) {
-      for (int x = 0; x < cm.char_matrix_[y].size(); ++x) {
+    for (unsigned int y = 0; y < cm.char_matrix_.size(); ++y) {
+      for (unsigned int x = 0; x < cm.char_matrix_[y].size(); ++x) {
         os << cm.char_matrix_[y][x];
       }
       os << "\n";
@@ -58,13 +62,13 @@ class CharMatrix {
   }
  private:
   vector<vector<char> > char_matrix_;
-  vector<int> offset_;
+  vector<unsigned int> offset_;
 };
 
 template <typename Node>
 int PrettyPrintHelper(const Node* node,
                       int dist_from_root,
-                      int* x_pos,
+                      unsigned int* x_pos,
                       CharMatrix* char_matrix,
                       int parent_pos,
                       int direction) {
@@ -134,3 +138,5 @@ void PrettyPrintTreeToStream(Node* root, ostream& os) {
   os << char_matrix;
 };
 
+
+#endif

@@ -3,16 +3,19 @@
 
 #include <stdint.h>
 
-#include <vector>
 #include <utility>
+#include <vector>
 
-using std::vector;
 using std::pair;
+using std::vector;
+
+typedef pair<uint16_t, uint32_t> FreqEntry;
+typedef vector<FreqEntry> FreqTable;
 
 struct FreqTables {
  public:
-  static vector<pair<uint16_t, uint32_t> > request_freq_table;
-  static vector<pair<uint16_t, uint32_t> > response_freq_table;
+  static FreqTable request_freq_table;
+  static FreqTable response_freq_table;
 };
 
 #endif

@@ -1,4 +1,5 @@
-#include "bit_bucket.cc"
+#include "bit_bucket.h"
+#include "utils.h"
 
 struct Testcase {
   vector<char> v;
@@ -71,7 +72,7 @@ void TestGetBits(BitBucket*bb, const Testcase& test) {
 void RunTests(const vector<Testcase>& tests) {
   BitBucket bb;
   cout << "\n\nNew test\n";
-  for (int i = 0; i < tests.size(); ++i) {
+  for (unsigned int i = 0; i < tests.size(); ++i) {
     const Testcase& test = tests[i];
     TestStoreBits(&bb, test);
     TestGetBits(&bb, test);

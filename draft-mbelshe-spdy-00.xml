@@ -575,6 +575,7 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 <t>Flags: Flags related to this frame. Valid flags are:
 <list>
 <t>0x01 = FLAG_FIN - marks this frame as the last frame to be transmitted on this stream and puts the sender in the <xref target="StreamHalfClose">half-closed</xref> state.</t>
+<t>0x02 = FLAG_HEADER_END - marks this frame as the end of the current header. Multiple HEADERS frames may be involved in constructing a single header, if it is sufficiently large.</t>
 </list>
 </t>
 

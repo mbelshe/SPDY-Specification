@@ -1,10 +1,11 @@
-#include <stdlib.h>
-#include "huffman.cc"
-#include "header_freq_tables.cc"
 #include <iostream>
+#include <stdlib.h>
 
-using std::string;
+#include "header_freq_tables.h"
+#include "huffman.h"
+
 using std::cerr;
+using std::string;
 
 struct Testcase {
   string input;
@@ -41,15 +42,15 @@ void TestEncodeDecode(const Huffman& huff,
 int main(int argc, char**argv) {
   Huffman huff;
   huff.Init(FreqTables::request_freq_table);
-  array<string,6> tests = {
+  array<string,6> tests = {{
     "dabbcccddddeeeee",
     "foobarbaz",
     "0-2rklnsvkl;-23kDFSi01k0=",
     "-9083480-12hjkadsgf8912345kl;hjajkl;       `123890",
     "\0\0-3;jsdf",
     "\xFF\xE0\0\0\t\ne\0\x81\x82",
-  };
-  for (int i = 0; i < tests.size(); ++i) {
+  }};
+  for (unsigned int i = 0; i < tests.size(); ++i) {
     const string& test = tests[i];
     cerr << "TEST: " << test << "...";
     cerr << "\n";

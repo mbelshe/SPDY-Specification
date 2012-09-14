@@ -1,79 +1,40 @@
-#include <stdlib.h>
-#include <assert.h>
-#include <stdint.h>
-#include <float.h>
+#ifndef HUFFMAN_H
+#define HUFFMAN_H
 
-#include <deque>
-#include <utility>
-#include <vector>
-#include <ostream>
-#include <iostream>
+#include <assert.h>
+#include <float.h>
+#include <stdint.h>
+#include <stdlib.h>
+
 #include <algorithm>
-#include "pretty_print_tree.cc"
-#include "bit_bucket.cc"
 #include <array>
+#include <deque>
+#include <iomanip>
+#include <iostream>
 #include <limits>
 #include <map>
-#include <iomanip>
+#include <ostream>
+#include <utility>
+#include <vector>
 
-using std::deque;
-using std::pair;
-using std::vector;
-using std::ostream;
-using std::cout;
-using std::cerr;
-using std::hex;
-using std::dec;
-using std::sort;
+#include "bit_bucket.h"
+#include "pretty_print_tree.h"
+#include "utils.h"
+
 using std::array;
+using std::cerr;
+using std::cout;
+using std::deque;
 using std::ios;
-using std::map;
-using std::make_pair;
 using std::lower_bound;
-using std::upper_bound;
+using std::make_pair;
+using std::map;
+using std::ostream;
+using std::pair;
 using std::setw;
-
-void OutputCharToOstream(ostream& os, unsigned short c) {
-  if (c > 256 + 1)
-    abort();
-  if (c >= 256) {
-    os << c;
-  } else {
-    os << " '";
-    if (c < 128 && (isgraph(c) || c == ' ')) {
-      os << (char)c;
-    } else {
-      switch (c) {
-        case '\t':
-          os << "\\t";
-          break;
-        case '\n':
-          os << "\\n";
-          break;
-        case '\r':
-          os << "\\r";
-          break;
-        case '\0':
-          os << "\\0";
-          break;
-        default:
-          if (c >= 16) {
-            os << "\\x" << hex << c << dec;
-          } else {
-            os << "\\x0" << hex << c << dec;
-          }
-          break;
-      }
-    }
-    os << "'";
-  }
-}
-
-string ReadableUShort(uint16_t c) {
-  stringstream s;
-  OutputCharToOstream(s, c);
-  return s.str();
-}
+using std::sort;
+using std::upper_bound;
+using std::vector;
 
 class Huffman {
  private:
@@ -95,7 +56,7 @@ class Huffman {
       os.setf(ios::scientific,ios::floatfield);
       os << leaf.weight;
       if (leaf.terminal) {
-        OutputCharToOstream(os, leaf.c);
+        os << ReadableUShort(leaf.c);
       }
       return os;
     }
@@ -160,7 +121,7 @@ class Huffman {
     while (!nodes.empty()) {
       Node* node = nodes.front();
       nodes.pop_front();
-      for (int i = 0; i < 2; ++i) {
+      for (unsigned int i = 0; i < 2; ++i) {
         if (node->children[i]) {
           nodes.push_back(node->children[i]);
         }
@@ -180,7 +141,7 @@ class Huffman {
       // that would be stupid, to say the least.
       abort();
     }
-    for (int i = 0; i < freq_table.size(); ++i) {
+    for (unsigned int i = 0; i < freq_table.size(); ++i) {
       double weight = freq_table[i].second / divisor;
       uint16_t sym = freq_table[i].first;
       assert (sym == i);
@@ -192,7 +153,7 @@ class Huffman {
     sort(leaves.begin(), leaves.end(), NodePtrComp);
 
     Node* current_leaf = new Node();
-    int total_size = leaves.size();
+    unsigned int total_size = leaves.size();
     while (total_size >= 2) {
       GetNextNode(current_leaf, 0, &leaves, &internals);
       --total_size;
@@ -216,7 +177,7 @@ class Huffman {
   void BuildCodeTableHelper(Node* current, deque<bool>* state) {
     if (current->terminal) {
       BitBucket bb;
-      for (int i = 0; i < state->size(); ++i) {
+      for (unsigned int i = 0; i < state->size(); ++i) {
         bb.StoreBit((*state)[i]);
       }
       unsigned short idx = current->c;
@@ -243,7 +204,6 @@ class Huffman {
       int depth = stack.back().second + 1;
       if (current->terminal) {
         DepthToSym::iterator it = depth_to_sym->find(depth - 1);
-        vector<unsigned short>* depth_set = 0;
         if (it == depth_to_sym->end()) {
           it = depth_to_sym->insert(make_pair(depth - 1,
                                               vector<unsigned short>())).first;
@@ -271,13 +231,12 @@ class Huffman {
 
   void Uint32ToCharArray(vector<char>* vec, uint32_t val, int bit_len) {
     uint32_t nval = val << (32 - bit_len);
-    for (int rshift = 24; rshift >= 0 && bit_len > 0; rshift -= 8, bit_len -=8) {
-      unsigned char c = nval >> rshift;
+    for (unsigned int rshift = 24; rshift >= 0 && bit_len > 0; rshift -= 8, bit_len -=8) {
       vec->push_back(nval >> rshift);
     }
   }
 
-  void AltBuildCodeTable() {
+  void BuildCanonicalCodeTable() {
     DepthToSym depth_to_sym;
     DiscoverDepthAndStoreIt(&depth_to_sym);
     uint32_t code = 0xFFFFFFFF; // adding 1 will make this 0.
@@ -289,13 +248,15 @@ class Huffman {
       int current_code_length = i->first;
       sort(i->second.begin(), i->second.end());
       const vector<unsigned short> &syms = i->second;
-      for (int j = 0; j < syms.size(); ++j) {
+      for (unsigned int j = 0; j < syms.size(); ++j) {
         unsigned short c = syms[j];
         code = ComputeNextCode(code, current_code_length, prev_code_length);
         prev_code_length = current_code_length;
         code_table[c] = VecAndLen(current_code_length);
         code_table[c].val = code << (32 - current_code_length);
         Uint32ToCharArray(&(code_table[c].vec), code, current_code_length);
+        // TODO: eliminate the BuildDecode function by doing it here, where
+        // we're already assigning codes in-order.
       }
     }
   }
@@ -377,13 +338,13 @@ class Huffman {
   typedef vector<DecodeEntry> DecodeTable;
   typedef vector<BranchEntry> Branches;
 
-  void AltBuildDecodeHelper(const vector<pair<uint32_t, int> >& sorted_by_code,
-                            DecodeTable* decode_table,
-                            Branches* branches,
-                            uint32_t begin,
-                            uint32_t end,
-                            uint32_t msb,
-                            uint32_t bw) {
+  void BuildDecodeHelper(const vector<pair<uint32_t, int> >& sorted_by_code,
+                         DecodeTable* decode_table,
+                         Branches* branches,
+                         uint32_t begin,
+                         uint32_t end,
+                         uint32_t msb,
+                         uint32_t bw) {
     uint32_t branch_idx = branches->size();
     branches->push_back(BranchEntry(decode_table->size(),
                                     branch_idx,
@@ -405,7 +366,7 @@ class Huffman {
       uint32_t dist = run_end - run_start;
       uint32_t cur_code = sorted_by_code[run_start].first;
       uint32_t cur_idx = (cur_code << msb) >> (32 - bw);
-      for (int i = 0; i < msb; ++i) cout << " ";
+      for (unsigned int i = 0; i < msb; ++i) cout << " ";
       if (dist == 1) {
         uint16_t sym = sorted_by_code[run_start].second;
         cout << "Terminal: " << setw(6) << cur_idx
@@ -419,7 +380,7 @@ class Huffman {
       } else {
         uint32_t sym = sorted_by_code[run_end - 1].second;
         uint32_t nxt_code_len = code_table[sym].len;
-        uint32_t nxt_code = sorted_by_code[run_end - 1].first;
+        //uint32_t nxt_code = sorted_by_code[run_end - 1].first;
         uint32_t nxt_bit_len = nxt_code_len - (msb + bw);
         cout << " Recurse: " << setw(6) << cur_idx
              << " " << setw(6) << (cur_idx + decode_table_idx)
@@ -431,9 +392,9 @@ class Huffman {
         //cout << "storing [R] entry into: " << decode_table_idx << "\n";
         (*decode_table)[decode_table_idx + cur_idx] =
           DecodeEntry(0, branches->size());
-        AltBuildDecodeHelper(sorted_by_code, decode_table, branches,
-                             run_start, run_end,
-                             msb + bw, min(bw, nxt_bit_len));
+        BuildDecodeHelper(sorted_by_code, decode_table, branches,
+                          run_start, run_end,
+                          msb + bw, min(bw, nxt_bit_len));
       }
       run_start = run_end;
     }
@@ -442,12 +403,12 @@ class Huffman {
   Branches branches;
   DecodeTable decode_table;
 
-  void AltBuildDecodeTable() {
+  void BuildDecodeTable() {
     const int lookup_bits = 8;
-    const uint32_t max_val = (0x1U << lookup_bits);
+    //const uint32_t max_val = (0x1U << lookup_bits);
 
     vector<pair<uint32_t, int> > sorted_by_code; // code->symbol
-    for (int i = 0; i < code_table.size(); ++i) {
+    for (unsigned int i = 0; i < code_table.size(); ++i) {
       pair<uint32_t, int> insert_val;
       insert_val.first = code_table[i].val;
       insert_val.second = i;
@@ -455,16 +416,16 @@ class Huffman {
     }
     sort(sorted_by_code.begin(), sorted_by_code.end());
 
-    AltBuildDecodeHelper(sorted_by_code, &decode_table, &branches,
-                         0, sorted_by_code.size(),
-                         0, lookup_bits);
+    BuildDecodeHelper(sorted_by_code, &decode_table, &branches,
+                      0, sorted_by_code.size(),
+                      0, lookup_bits);
     cout << "Done building tables. Displayin' 'em now\n";
-    for (uint32_t i = 0; i < decode_table.size(); ++i) {
+    for (unsigned int i = 0; i < decode_table.size(); ++i) {
       if (!decode_table[i].valid)
         decode_table[i] = decode_table[i-1];
       cout << setw(6) << i << " " << decode_table[i] << "\n";
     }
-    for (int i = 0; i < branches.size(); ++i) {
+    for (unsigned int i = 0; i < branches.size(); ++i) {
       cout << i << " " << branches[i] << "\n";
     }
   }
@@ -473,9 +434,8 @@ class Huffman {
     deque<bool> state;
     if (!code_tree)
       return;
-    AltBuildCodeTable();
-    AltBuildDecodeTable();
-    //BuildCodeTableHelper(code_tree, &state);
+    BuildCanonicalCodeTable();
+    BuildDecodeTable();
   }
 
   Node* code_tree;
@@ -490,6 +450,7 @@ class Huffman {
   ~Huffman() { DeleteCodeTree(); }
 
   void Init(const vector<pair<uint16_t, uint32_t> >& freq_table) {
+    DeleteCodeTree();
     for (uint32_t divisor = 1;
          BuildCodeTree(freq_table, divisor) > 32;
          divisor *= 2){}
@@ -498,7 +459,7 @@ class Huffman {
   }
 
   void Encode(BitBucket* bb, const string& str, bool use_eof) const {
-    for (int i = 0; i < str.size(); ++i) {
+    for (unsigned int i = 0; i < str.size(); ++i) {
       unsigned short idx = str[i];
       bb->StoreBits(code_table[idx].vec, code_table[idx].len);
     }
@@ -507,33 +468,6 @@ class Huffman {
     }
   }
 
-  void AltDecode(string* output, BitBucket* bb,
-              bool use_eof, int bits_to_decode) const{
-    int total_bits = 0;
-    if (!use_eof && bits_to_decode < 0) {
-      cerr << "Invalid parameters for Decode\n";
-      abort();
-    }
-    while (bits_to_decode < 0 || total_bits < bits_to_decode) {
-      Node* root = code_tree;
-      while (! root->terminal) {
-        bool bit = bb->GetBit();
-        root = root->children[bit];
-        total_bits += 1;
-      }
-      if (use_eof && root->terminal && root->c == eof_value) {
-        break;
-      } else if (root->terminal) {
-        output->push_back((char)root->c);
-      } else {
-        cerr << "This shouldn't ever happen..\n";
-        abort();
-      }
-    }
-    if (bits_to_decode > 0 && total_bits < bits_to_decode) {
-      bb->SeekDelta(bits_to_decode - total_bits);
-    }
-  }
   void Decode(string* output, BitBucket* bb,
               bool use_eof, int bits_to_decode) const {
     uint32_t word = 0;
@@ -544,7 +478,7 @@ class Huffman {
         bb->ShiftBitsIntoWord(&word, bits_to_shift);
         bb->ConsumeBits(bits_to_shift);
         //cout << *bb << "\n";
-        bits_to_shift = AltDecodeFromWord(word, &sym);
+        bits_to_shift = DecodeFromWord(word, &sym);
         //cout << bb->DebugStr(-32, bits_to_shift) << "\n";
         if (sym == eof_value)
           return;
@@ -555,7 +489,7 @@ class Huffman {
         bb->ShiftBitsIntoWord(&word, bits_to_shift);
         bb->ConsumeBits(bits_to_shift);
         //cout << *bb << "\n";
-        bits_to_shift = AltDecodeFromWord(word, &sym);
+        bits_to_shift = DecodeFromWord(word, &sym);
         //cout << bb->DebugStr(-32, bits_to_shift) << "\n";
         if (sym == eof_value)
           return;
@@ -567,7 +501,7 @@ class Huffman {
         bb->ShiftBitsIntoWord(&word, bits_to_shift);
         bb->ConsumeBits(bits_to_shift);
         //cout << *bb << "\n";
-        bits_to_shift = AltDecodeFromWord(word, &sym);
+        bits_to_shift = DecodeFromWord(word, &sym);
         //cout << bb->DebugStr(-32, bits_to_shift) << "\n";
         output->push_back(sym);
         bits_to_decode -= bits_to_shift;
@@ -578,11 +512,11 @@ class Huffman {
   }
 
   // returns bits-consumed.
-  uint8_t AltDecodeFromWord(uint32_t word, uint16_t* c) const {
+  uint8_t DecodeFromWord(uint32_t word, uint16_t* c) const {
     uint32_t b_idx = 0;
     uint32_t d_idx = 0;
     //cout << "(b_idx: " << b_idx << " ";
-    for (int i = 0; i < 4; ++i) {
+    for (unsigned int i = 0; i < 4; ++i) {
       d_idx = branches[b_idx].base_idx;
       d_idx += (word & branches[b_idx].mask) >> branches[b_idx].shift;
       b_idx = decode_table[d_idx].next_table;
@@ -596,15 +530,13 @@ class Huffman {
   }
 
   friend ostream& operator<<(ostream &os, const Huffman& huff) {
-    for (int i = 0; i < huff.code_table.size(); ++i) {
+    for (unsigned int i = 0; i < huff.code_table.size(); ++i) {
       os << FormatAsBits(huff.code_table[i].vec, huff.code_table[i].len);
-      os << " ";
-      OutputCharToOstream(os, i);
-      os << "\n";
+      os << " " << ReadableUShort(i) << "\n";
     }
     //PrettyPrintTreeToStream<Huffman::Node>(huff.code_tree, os);
     return os;
   }
 };
 
-
+#endif  // HUFFMAN_H

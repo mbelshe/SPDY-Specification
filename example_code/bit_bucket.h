@@ -1,66 +1,25 @@
-#include <sstream>
-#include <string>
-#include <stdlib.h>
-#include <vector>
-#include <iostream>
-#include <algorithm>
+#ifndef BITBUCKET_H
+#define BITBUCKET_H
 
-using std::stringstream;
-using std::string;
-using std::vector;
+#include <algorithm>
+#include <iostream>
+#include <sstream>
+#include <stdlib.h>
+#include <string>
+#include <vector>
+
+#include "utils.h"
+
 using std::cerr;
 using std::cout;
+using std::flush;
+using std::max;
+using std::min;
 using std::min;
 using std::ostream;
-using std::flush;
-using std::min;
-using std::max;
-
-template <typename T>
-string FormatAsBits(const T& v, int num_bits, int offset = 0) {
-  stringstream retval;
-  for (int i = 0; i < num_bits; ++i) {
-    int byte_idx = i / 8;
-    unsigned int c = v[byte_idx];
-    if ((i + offset) % 8 == 0)
-      retval << "|";
-    retval << ((c & (0x80U >> (i % 8))) > 0);
-  }
-  return retval.str();
-}
-
-template <>
-string FormatAsBits<uint32_t>(const uint32_t& v, int num_bits, int offset) {
-  stringstream retval;
-  for (int i = 0; i < num_bits; ++i) {
-    if ((i + offset) % 8 == 0)
-      retval << "|";
-    retval << (((v >> (31 - i)) & 0x1U) > 0);
-  }
-  return retval.str();
-}
-
-template <>
-string FormatAsBits<uint16_t>(const uint16_t& v, int num_bits, int offset) {
-  stringstream retval;
-  for (int i = 0; i < num_bits; ++i) {
-    if ((i + offset) % 8 == 0)
-      retval << "|";
-    retval << (((v >> (15 - i)) & 0x1U) > 0);
-  }
-  return retval.str();
-}
-
-template <>
-string FormatAsBits<uint8_t>(const uint8_t& v, int num_bits, int offset) {
-  stringstream retval;
-  for (int i = 0; i < num_bits; ++i) {
-    if ((i + offset) % 8 == 0)
-      retval << "|";
-    retval << (((v >> (7 - i)) & 0x1U) > 0);
-  }
-  return retval.str();
-}
+using std::string;
+using std::stringstream;
+using std::vector;
 
 class BitBucket {
   vector<unsigned char> bsa;
@@ -112,7 +71,8 @@ class BitBucket {
 
   void StoreBit(bool bit) {
     ++num_bits;
-    if (((num_bits + 7) / 8) > bsa.size())
+    uint32_t byte_idx = ((num_bits + 7) / 8);
+    if (byte_idx > bsa.size())
       bsa.push_back(0);
     bsa.back() |= bit << (7 - bsa_boff);
     ++bsa_boff;
@@ -138,7 +98,7 @@ class BitBucket {
       }
       int bits_left_in_byte = 8 - bsa_boff;
       bsa.reserve(bsa.size() + inp_bytes.size());
-      for (int i = 0; i < inp_bytes.size(); ++i) {
+      for (unsigned int i = 0; i < inp_bytes.size(); ++i) {
         unsigned char c = inp_bytes[i];
         bsa.back() |= c >> bsa_boff;
         bsa.push_back(c << bits_left_in_byte);
@@ -277,4 +237,4 @@ class BitBucket {
   }
 };
 
-
+#endif  // BITBUCKET_H
