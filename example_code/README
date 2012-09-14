@@ -1,1 +1,18 @@
-headers_sample.py is what you want to look at. The rest exists to support that.
+Of the python stuff, headers_sample.py is what you want to look at. The rest of
+the python code exists to support it.
+
+usage:
+  ./headers_sample.py list-of-har-files
+
+A spec for .har files can be found here:
+  https://groups.google.com/forum/?fromgroups#!forum/http-archive-specification
+(somewhere).
+
+You can gather a .har file for a session you wish to analyze with Chome
+Developer tools: hit <ctrl>-<shift>-I, click on the 'network' tab, and then
+navigate to a page you wish to analyse.  When it has loaded, right-click
+someonwere in there, and select the 'save all as HAR'. This will save all
+request and response headers as well as some other information in there.
+
+
+The c++ code is not yet finished, though some of the code is functional.
