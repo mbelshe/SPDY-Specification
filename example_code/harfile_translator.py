@@ -2,6 +2,8 @@
 
 from harfile import ReadHarFile
 from optparse import OptionParser
+import sys
+import os
 
 def FormatIt(frame):
   for (k, v) in frame.iteritems():
@@ -16,6 +18,7 @@ def main():
     requests = []
     responses = []
     for filename in args:
+      sys.stderr.write(filename)
       (har_requests, har_responses) = ReadHarFile(filename)
       requests.extend(har_requests)
       responses.extend(har_responses)
@@ -24,5 +27,11 @@ def main():
     print
     FormatIt(responses[i])
     print
+  sys.stdin.close()
+  sys.stdout.close()
+  sys.stderr.close()
+  os.close(0)
+  os.close(1)
+  os.close(2)
 
 main()

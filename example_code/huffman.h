@@ -134,7 +134,7 @@ class Huffman {
   // returns max depth
   int BuildCodeTree(const vector<pair<uint16_t, uint32_t> >& freq_table,
                      uint32_t divisor=1) {
-    cout << "Divisor: " << divisor << "\n";
+    //cout << "Divisor: " << divisor << "\n";
     deque<Node*> leaves;
     deque<Node*> internals;
     if (freq_table.size() <= 2) {
@@ -223,9 +223,9 @@ class Huffman {
                            int prev_code_length) {
     uint32_t next_code = (prev_code + 1);
     next_code <<= (current_code_length - prev_code_length);
-    cout << "code: " 
-         << FormatAsBits(next_code << (32 - current_code_length), current_code_length)
-         << "\n";
+    // cout << "code: " 
+    //      << FormatAsBits(next_code << (32 - current_code_length), current_code_length)
+    //      << "\n";
     return next_code;
   }
 
@@ -366,14 +366,14 @@ class Huffman {
       uint32_t dist = run_end - run_start;
       uint32_t cur_code = sorted_by_code[run_start].first;
       uint32_t cur_idx = (cur_code << msb) >> (32 - bw);
-      for (unsigned int i = 0; i < msb; ++i) cout << " ";
+      //for (unsigned int i = 0; i < msb; ++i) cout << " ";
       if (dist == 1) {
         uint16_t sym = sorted_by_code[run_start].second;
-        cout << "Terminal: " << setw(6) << cur_idx
-              << " " << setw(6) << (cur_idx + decode_table_idx)
-              << " " << ReadableUShort(sym);
-        uint32_t code_len = code_table[sorted_by_code[run_start].second].len;
-        cout << "\t" <<  FormatAsBits(cur_code, code_len) << "\n";
+        // cout << "Terminal: " << setw(6) << cur_idx
+        //       << " " << setw(6) << (cur_idx + decode_table_idx)
+        //       << " " << ReadableUShort(sym);
+        //uint32_t code_len = code_table[sorted_by_code[run_start].second].len;
+        // cout << "\t" <<  FormatAsBits(cur_code, code_len) << "\n";
 
         //cout << "storing [L] entry into: " << decode_table_idx << "\n";
         (*decode_table)[decode_table_idx + cur_idx] = DecodeEntry(sym, branch_idx);
@@ -382,14 +382,13 @@ class Huffman {
         uint32_t nxt_code_len = code_table[sym].len;
         //uint32_t nxt_code = sorted_by_code[run_end - 1].first;
         uint32_t nxt_bit_len = nxt_code_len - (msb + bw);
-        cout << " Recurse: " << setw(6) << cur_idx
-             << " " << setw(6) << (cur_idx + decode_table_idx)
-             << "\t" <<  FormatAsBits(cur_code, msb + bw)
-             << " " << run_start << "->" << run_end
-             << " (" << (run_end - run_start) << ")"
-             << " (" << min(nxt_bit_len, bw) << ")"
-             <<"\n";
-        //cout << "storing [R] entry into: " << decode_table_idx << "\n";
+        // cout << " Recurse: " << setw(6) << cur_idx
+        //      << " " << setw(6) << (cur_idx + decode_table_idx)
+        //      << "\t" <<  FormatAsBits(cur_code, msb + bw)
+        //      << " " << run_start << "->" << run_end
+        //      << " (" << (run_end - run_start) << ")"
+        //      << " (" << min(nxt_bit_len, bw) << ")"
+        //      <<"\n";
         (*decode_table)[decode_table_idx + cur_idx] =
           DecodeEntry(0, branches->size());
         BuildDecodeHelper(sorted_by_code, decode_table, branches,
@@ -419,15 +418,17 @@ class Huffman {
     BuildDecodeHelper(sorted_by_code, &decode_table, &branches,
                       0, sorted_by_code.size(),
                       0, lookup_bits);
-    cout << "Done building tables. Displayin' 'em now\n";
+    //cout << "Done building tables. Displayin' 'em now\n";
+    // filling in values which were not previous filled in.
+    //
     for (unsigned int i = 0; i < decode_table.size(); ++i) {
       if (!decode_table[i].valid)
         decode_table[i] = decode_table[i-1];
-      cout << setw(6) << i << " " << decode_table[i] << "\n";
+      //cout << setw(6) << i << " " << decode_table[i] << "\n";
     }
-    for (unsigned int i = 0; i < branches.size(); ++i) {
-      cout << i << " " << branches[i] << "\n";
-    }
+    //for (unsigned int i = 0; i < branches.size(); ++i) {
+    //  cout << i << " " << branches[i] << "\n";
+    //}
   }
 
   void BuildCodeTable() {
