@@ -97,6 +97,8 @@ int main(int argc, char** argv) {
     //HeaderFrame out_frame;
     //req_out.ReconsituteFrame(&out_frame);
     // test that they're the same.
-    cout << "\n########### FRAME DONE #############\n";
+    cout << "\n########### FRAME DONE ############## "
+         << req_in.CurrentStateSize();
+    cout << "\n";
   }
 }

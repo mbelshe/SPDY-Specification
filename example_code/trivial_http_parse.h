@@ -4,20 +4,18 @@
 #include <fstream>
 #include <iostream>
 #include <stdlib.h>
+
 #include <string>
-#include <utility>
 #include <vector>
-#include <sstream>
 
 using std::cerr;
-using std::cout;
+//using std::cout;
 using std::getline;
 using std::ifstream;
-using std::pair;
 using std::string;
 using std::vector;
 using std::istream;
-using std::stringstream;
+using std::ostream;
 
 struct KVPair {
   string key;
@@ -28,6 +26,7 @@ struct KVPair {
     os << "\"" << kv.key << "\" \"" << kv.val << "\"";
     return os;
   }
+  size_t size() const { return key.size() + val.size(); }
 };
 
 typedef vector<KVPair> Lines;
