@@ -72,8 +72,8 @@ int PrettyPrintHelper(const Node* node,
                       CharMatrix* char_matrix,
                       int parent_pos,
                       int direction) {
-  int tmp_x_pos;
-  int y_pos = dist_from_root * 3;
+  unsigned int tmp_x_pos;
+  unsigned int y_pos = dist_from_root * 3;
   if (node->children[0]) {
     int child_end = PrettyPrintHelper(node->children[0],
                                       dist_from_root + 1,
@@ -84,19 +84,19 @@ int PrettyPrintHelper(const Node* node,
     tmp_x_pos = *x_pos - 1;
     char_matrix->WriteVisible(&tmp_x_pos, y_pos + 1, "/");
     --tmp_x_pos;
-    for (int x = child_end + 1; x < tmp_x_pos;) {
+    for (unsigned int x = child_end + 1; x < tmp_x_pos;) {
       char_matrix->WriteVisible(&x, y_pos + 1, "_");
     }
   }
 
-  int original_x_pos = *x_pos;
+  unsigned int original_x_pos = *x_pos;
   {
     stringstream s;
     s << "[" << *node << "]";
     char_matrix->WriteVisible(x_pos, y_pos, s.str());
   }
 
-  int new_x_pos = *x_pos;
+  unsigned int new_x_pos = *x_pos;
 
   if (dist_from_root != 0) {
     if (direction == 0) {
@@ -106,7 +106,7 @@ int PrettyPrintHelper(const Node* node,
       tmp_x_pos = original_x_pos - 1;
       char_matrix->WriteVisible(&tmp_x_pos, y_pos - 1, "\\");
       --tmp_x_pos;
-      for (int x = parent_pos + 1; x < tmp_x_pos;) {
+      for (unsigned int x = parent_pos + 1; x < tmp_x_pos;) {
         char_matrix->WriteVisible(&x, y_pos - 2, "_");
       }
     }

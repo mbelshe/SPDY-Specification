@@ -132,7 +132,7 @@ class Huffman {
   }
 
   // returns max depth
-  int BuildCodeTree(const vector<pair<uint16_t, uint32_t> >& freq_table,
+  int BuildCodeTree(const FreqTable& freq_table,
                      uint32_t divisor=1) {
     //cout << "Divisor: " << divisor << "\n";
     deque<Node*> leaves;
@@ -231,7 +231,7 @@ class Huffman {
 
   void Uint32ToCharArray(vector<char>* vec, uint32_t val, int bit_len) {
     uint32_t nval = val << (32 - bit_len);
-    for (unsigned int rshift = 24; rshift >= 0 && bit_len > 0; rshift -= 8, bit_len -=8) {
+    for (unsigned int rshift = 24; bit_len > 0; rshift -= 8, bit_len -=8) {
       vec->push_back(nval >> rshift);
     }
   }
@@ -450,7 +450,7 @@ class Huffman {
   Huffman() : code_tree(0), eof_value(256) { }
   ~Huffman() { DeleteCodeTree(); }
 
-  void Init(const vector<pair<uint16_t, uint32_t> >& freq_table) {
+  void Init(const FreqTable& freq_table) {
     DeleteCodeTree();
     for (uint32_t divisor = 1;
          BuildCodeTree(freq_table, divisor) > 32;

@@ -20,13 +20,13 @@ int ParseHarFiles(int n_files, char** files,
   if (child_pid == 0) {
     dup2(pipe_fds[1], 1);
     char** new_argv = new char*[n_files + 2];
-    new_argv[0] =(char*) "harfile_translator.py";
+    new_argv[0] =(char*) "./harfile_translator.py";
     for (int i = 0; i < n_files; ++i) {
       new_argv[i + 1] = files[i];
     }
     new_argv[n_files + 1] = 0;
-    if (execvp("harfile_translator.py", new_argv) == -1) {
-      perror("Great.");
+    if (execvp(new_argv[0], new_argv) == -1) {
+      perror("Great: ");
       abort();
     }
   } else {
@@ -35,7 +35,7 @@ int ParseHarFiles(int n_files, char** files,
 
   stringstream input;
   char buf[256];
-  size_t bytes_read = 0;
+  ssize_t bytes_read = 0;
   while ((bytes_read = read(pipe_fds[0], &buf, sizeof(buf)-1))) {
     if (bytes_read < 0) {
       if (errno == EINTR) {

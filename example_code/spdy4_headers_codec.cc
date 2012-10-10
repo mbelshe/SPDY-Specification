@@ -200,7 +200,7 @@ class Storage {
     if (!FindKey(lc, key)) return 0;
     ValMap& valmap = lc->k_i->second.valmap;
     lc->v_i = valmap.find(val);
-    if (lc->v_i == valmap.end());
+    if (lc->v_i == valmap.end()) return 0;
     return lc->v_i->second;
   }
 

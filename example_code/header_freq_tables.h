@@ -4,13 +4,10 @@
 #include <stdint.h>
 
 #include <utility>
-#include <vector>
+#include <array>
 
-using std::pair;
-using std::vector;
-
-typedef pair<uint16_t, uint32_t> FreqEntry;
-typedef vector<FreqEntry> FreqTable;
+typedef std::pair<uint16_t, uint32_t> FreqEntry;
+typedef std::array<FreqEntry, 257> FreqTable;
 
 struct FreqTables {
  public:
