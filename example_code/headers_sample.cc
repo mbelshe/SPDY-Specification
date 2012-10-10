@@ -1,5 +1,6 @@
 #include <unistd.h>
 #include <fcntl.h>
+#include <time.h>
 
 #include "bit_bucket.h"
 #include "header_freq_tables.h"
@@ -84,6 +85,8 @@ int main(int argc, char** argv) {
   cout << "\n\n\nBeginning processing now\n\n\n\n";
   int header_group = 1;
   int stream_id = 1;
+	timespec ts_begin;
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts_begin);
   for (unsigned int i = 0; i < requests.size(); ++i) {
     OutputStream os;
     const HeaderFrame& request = requests[i];
@@ -101,4 +104,22 @@ int main(int argc, char** argv) {
          << req_in.CurrentStateSize();
     cout << "\n";
   }
+	timespec ts_end;
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID,&ts_end);
+
+	size_t delta_nsec;
+	size_t delta_sec;
+	if (ts_end.tv_nsec < ts_begin.tv_nsec) {
+		delta_nsec = 1000000000 + ts_end.tv_nsec - ts_begin.tv_nsec;
+		delta_sec = ts_end.tv_sec - (ts_begin.tv_sec - 1);
+	} else {
+		delta_nsec = ts_end.tv_nsec - ts_begin.tv_nsec;
+		delta_sec = ts_end.tv_sec - ts_begin.tv_sec;
+	}
+	double secs = delta_sec;
+	secs += delta_nsec / 1000000000.0L;
+	cout << "Compression took: " << secs << " seconds"
+		   << " for: " << requests.size() << " header frames"
+			 << " or " << secs / requests.size() << " per header"
+			 << "\n";
 }

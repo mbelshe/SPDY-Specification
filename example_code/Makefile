@@ -1,11 +1,11 @@
 
-CXX      = g++
+#CXX      = g++
+CXX      = clang++
 DEBUG    = -g
-OPT      = -O0
+OPT      = -O3
 WARN     = -Wall -Werror
 STD      = -std=c++0x
 CXXFLAGS = $(DEBUG) $(OPT) $(WARN) $(STD)
-LDFLAGS  =
 
 TARGETS  = bit_bucket_test huffman_test headers_sample
 
@@ -23,7 +23,7 @@ clean:
 	$(CXX)    $(CXXFLAGS) $< -c -o $@
 
 headers_sample: headers_sample.o spdy4_headers_codec.o header_freq_tables.o
-	$(CXX) $(CXXFLAGS) $^ -o $@
+	$(CXX) $(CXXFLAGS) $^ -o $@ -lrt
 
 bit_bucket_test: bit_bucket_test.o
 	$(CXX) $(CXXFLAGS) $^ -o $@
