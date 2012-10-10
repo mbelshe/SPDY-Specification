@@ -127,9 +127,11 @@ class Storage {
  public:
   IDStore<LRUIdx> key_ids;
   IDStore<LRUIdx> lru_ids;
-  size_t state_size;
 
-  Storage() : state_size(0) {}
+  size_t state_size;
+	size_t max_state_size;
+	size_t num_vals;
+	size_t max_vals;
 
   struct ValEntry;
 
@@ -146,6 +148,7 @@ class Storage {
 
   typedef map<string, KeyEntry> KeyMap;
   typedef list<ValEntry*> LRU;
+	LRU::iterator pin_it;
 
   struct ValEntry {
     KeyMap::iterator k_i;
@@ -161,8 +164,15 @@ class Storage {
     }
   };
 
+	class ValEntryRemovalInterface {
+		public:
+		virtual void RemoveValEntry(ValEntry* entry) = 0;
+		virtual ~ValEntryRemovalInterface() {}
+	};
+
   KeyMap keymap;
   LRU lru;
+	ValEntryRemovalInterface* remove_val_cb;
 
   struct LookupCache {
     KeyMap::iterator k_i;
@@ -189,11 +199,56 @@ class Storage {
   }
 
   bool FindKey(LookupCache* lc, const string& key) {
-    if (lc->k_i != keymap.end()) return false;
+    if (lc->k_i != keymap.end()) return true;
     lc->k_i = keymap.find(key);
     if (lc->k_i == keymap.end()) return false;
     return true;
   }
+
+	void PinLRUEnd() {
+		if (pin_it != lru.end())
+			lru.erase(pin_it);
+		lru.push_back(0);
+		pin_it = --(lru.end());
+	}
+
+	void UnPinLRUEnd() {
+		if (pin_it == lru.end()) return;
+		lru.erase(pin_it);
+		pin_it = lru.end();
+	}
+
+	void PopOne() {
+		cout << "Popping one: ";
+		ValEntry* entry = lru.front();
+		if (entry == 0) { // we've hit the pin.
+			cout << " ... or not. Hit the pin.";
+			return;
+		}
+		cout << entry->key() << " " << entry->val();
+		cout << "\n";
+
+		if (remove_val_cb) {
+			remove_val_cb->RemoveValEntry(entry);
+		}
+		RemoveVal(entry); // that will pop the front entry already.
+	}
+
+  void MakeSpace(size_t space_required, bool is_val) {
+		if (is_val) {
+      if (num_vals + 1 > max_vals) {
+				cout << "num_vals(" << num_vals 
+					<< ") + 1 > max_vals(" << max_vals << ") ";
+				PopOne();
+			}
+		}
+		while (state_size + space_required > max_state_size) {
+				cout << "state_size(" << state_size 
+					<< ") + space_required(" << space_required
+					<< ")	> max_state_size(" << max_state_size << ") ";
+			PopOne();
+		}
+	}
 
   ValEntry* FindValEntryByKV(LookupCache* lc,
                              const string& key, const string& val) {
@@ -208,8 +263,11 @@ class Storage {
     if (lc->k_i == keymap.end()) {
       lc->k_i = keymap.find(key);
       if (lc->k_i == keymap.end()) {
+				MakeSpace(key.size(), true);
         lc->k_i = keymap.insert(make_pair(key,
                                           KeyEntry(key_ids.GetNext()))).first;
+				++num_vals;
+        state_size += key.size();
       }
     }
   }
@@ -217,7 +275,9 @@ class Storage {
   ValEntry* InsertVal(LookupCache* lc, const string& val) {
     assert(lc->k_i != keymap.end());
     ValEntry* entry = new ValEntry;
+    MakeSpace(val.size(), false);
     lc->v_i = lc->k_i->second.valmap.insert(make_pair(val, entry)).first;
+    state_size += val.size();
     entry->lru_idx = 0;
     entry->k_i = lc->k_i;
     entry->v_i = lc->v_i;
@@ -230,7 +290,7 @@ class Storage {
     InsertVal(lc, val);
   }
 
-  void AddToBackOfLRU(ValEntry* entry) {
+  void AddToHeadOfLRU(ValEntry* entry) {
     if (entry->lru_i != lru.end()) {
       abort();
     }
@@ -241,7 +301,8 @@ class Storage {
 
   void MoveToHeadOfLRU(ValEntry* entry) {
     if (entry->lru_i == lru.end()) {
-      abort();
+      AddToHeadOfLRU(entry);
+      return;
     }
     lru.splice(lru.end(), lru, entry->lru_i);
     entry->lru_i = --(lru.end());
@@ -258,6 +319,8 @@ class Storage {
   void RemoveFromValMap(ValEntry* entry) {
     RemoveFromLRU(entry);
     assert(entry->k_i != keymap.end());
+		--num_vals;
+		state_size -= entry->v_i->first.size();
     KeyEntry& keyentry = entry->k_i->second;
     if (keyentry.valmap.end() != entry->v_i)
       keyentry.valmap.erase(entry->v_i);
@@ -280,9 +343,17 @@ class Storage {
     MaybeRemoveFromKeyMap(entry);
     delete entry;
   }
+	void SetRemoveValCB(ValEntryRemovalInterface* vri) { remove_val_cb = vri; }
+  Storage() :
+	 	state_size(0),
+	 	max_state_size(10*1024),
+		num_vals(0),
+		max_vals(1024),
+		pin_it(lru.end()),
+		remove_val_cb(0) {}
 };
 
-class SPDY4HeadersCodecImpl {
+class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
  public:
   enum {CLONE, KVSTO, TOGGLE, TOGGLE_RANGE};
 
@@ -294,7 +365,6 @@ class SPDY4HeadersCodecImpl {
   uint32_t max_total_header_storage_size;
   uint32_t max_header_groups;
   uint32_t max_table_entries;
-  // ideally, you'd use a ring-buffer to store the text data.
   uint32_t frame_count;
   uint32_t current_state_size;
 
@@ -310,9 +380,6 @@ class SPDY4HeadersCodecImpl {
     KVStoOp() : key_p(0), val_p(0) {}
     const string& key() const { return *key_p; }
     const string& val() const { return *val_p; }
-    size_t DeltaSize() const{
-      return key().size() + val().size();
-    }
   };
 
   struct CloneOp {
@@ -325,10 +392,6 @@ class SPDY4HeadersCodecImpl {
     LRUIdx idx() const { return lc.k_i->second.key_idx; }
     const string& key() const { return lc.k_i->first; }
     const string& val() const { return *val_p; }
-
-    size_t DeltaSize() const{
-      return key().size() + val().size();
-    }
   };
 
   struct ToggleOp {
@@ -346,6 +409,7 @@ class SPDY4HeadersCodecImpl {
       frame_count(0),
       current_state_size(0)
   {
+		storage.SetRemoveValCB(this);
     huff.Init(sft);
     for (unsigned int i = 0;
          i < sizeof(spdy4_default_dict) / sizeof(spdy4_default_dict[0]);
@@ -363,12 +427,19 @@ class SPDY4HeadersCodecImpl {
     vector<KVStoOp> kvstos;
   };
 
+  virtual void RemoveValEntry(ValEntry* entry) {
+    for(HeaderGroups::iterator hgs_i = header_groups.begin();
+        hgs_i != header_groups.end();
+        ++hgs_i) {
+      hgs_i->second.erase(entry);
+    }
+	};
+
   void ProcessLine(Storage::LookupCache* key_lc,
                    const string& val,
                    bool can_clone,
                    HeaderGroup* header_group,
                    uint32_t group_id,
-                   size_t* size_delta,
                    Instructions* instrs) {
     const string& key = key_lc->k_i->first;
     LookupCache lc = *key_lc;
@@ -391,10 +462,9 @@ class SPDY4HeadersCodecImpl {
     } else if (can_clone) {
       instrs->clones.push_back(CloneOp(lc, &val));
     } else {
-      // Neither the line exists, nor the key exists in the LRU.
+      // Neither the key nor the key+val exists in storage.
       // We'll need to emit a KVSto to store the key and value
       instrs->kvstos.push_back(KVStoOp(&key, &val));
-      *size_delta += instrs->kvstos.back().DeltaSize();
     }
   }
 
@@ -440,6 +510,7 @@ class SPDY4HeadersCodecImpl {
                                  uint32_t group_id,
                                  const HeaderFrame& headers,
                                  bool this_ends_the_frame) {
+		storage.PinLRUEnd();
     uint8_t headers_end_flag = 0;
     if (this_ends_the_frame) {
       headers_end_flag = kHeaderEndFlag;
@@ -465,7 +536,6 @@ class SPDY4HeadersCodecImpl {
     vector<CloneOp>::iterator first_clone;
     vector<KVStoOp>::iterator first_kvsto;
 
-    size_t size_delta = 0;
     if (header_groups.find(group_id) == header_groups.end()) {
       header_groups[group_id] = HeaderGroup();
     }
@@ -507,20 +577,20 @@ class SPDY4HeadersCodecImpl {
         Storage::LookupCache clc = lc;
 
         while (crumb_begin < val.size()) {
-          crumb_end = val.find_first_of(';', crumb_begin);
           cookie_strs.push_back(val.substr(crumb_begin,
                                            crumb_end - crumb_begin));
           const string& crumb = cookie_strs.back();
-          cout << "cookie key: " << key << " val : " << crumb << "\n";
+          //cout << "cookie key: " << key << " val : " << crumb << "\n";
           ProcessLine(&clc, crumb, can_clone_cookie, &header_group,
-                      group_id, &size_delta, &instrs);
+                      group_id, &instrs);
           can_clone_cookie = true;
           if (crumb_end == string::npos) break;
           crumb_begin = val.find_first_not_of(' ', crumb_end + 1);
+          crumb_end = val.find_first_of(';', crumb_begin);
         }
       } else {
         ProcessLine(&lc, val, can_clone, &header_group,
-                    group_id, &size_delta, &instrs);
+                    group_id, &instrs);
       }
       if (storage.HasKey(lc)) lc.k_i->second.refcnt--;
     }
@@ -539,32 +609,6 @@ class SPDY4HeadersCodecImpl {
     first_kvsto = instrs.kvstos.begin();
 
     ExecuteInstructions(group_id, instrs);
-    // We now need to be sure that this will fit in memory appropriately.
-    //
-    // This involves calculating the store size for each Clone and KVSto, and
-    // adding it to the current size. If that summation exceeds the max size:
-    //
-    // for each element in clone, set the 'keep-me' bit;
-    // size_t items_to_delete_from_head = 0;
-    // size_t state_size = storage.state_size;
-    // if ((current_state_size + size_delta) > max_total_header_storage_size) {
-    //   // Since the operations here will cause us to exceed the maximum state
-    //   // size, we must remove elements from the head of the LRU.
-    //   size_t delta = 0;
-    //   size_t target_delta = ((size_delta + state_size) -
-    //                          max_total_header_storage_size);
-    //   for (LRUList::iterator lru_i = lru.begin(); lru_i != lru.end(); ++lru_i) {
-    //     cout << "Will remove: " << (*lru_i)->lru_idx << "\n";
-    //     delta += (*lru_i)->kv.size();
-    //     ++items_to_delete_from_head;
-    //     if (delta >= target_delta) break;
-    //   }
-    // }
-    // for (size_t i = 0; i < items_to_delete_from_head; ++i) {
-    //   ValEntry *entry = lru.front();
-    //   RemoveAndCleanupLine(entry);
-    // }
-    // cout << "lru size: " << lru.size() << "\n";
 
     // Order of serialization:
     //   1) toggles
@@ -608,6 +652,7 @@ class SPDY4HeadersCodecImpl {
         << "(Generation: " << i->second << ")"
         <<"\n";
     }
+		storage.UnPinLRUEnd();
   }
 
   bool SerializeAllInstructions(
@@ -664,8 +709,6 @@ class SPDY4HeadersCodecImpl {
     }
     }
     */
-
-
     return true;
   }
 
@@ -791,19 +834,10 @@ class SPDY4HeadersCodecImpl {
     ValEntry* entry = storage.InsertVal(&tlc, val);
 
     if (group_id > 0) {
-      storage.AddToBackOfLRU(entry);
+      storage.AddToHeadOfLRU(entry);
       // add the entry to that group.
       SetHeaderGroupEntry(group_id, entry, true);
     }
-  }
-
-  void RemoveAndCleanupLine(ValEntry* entry) {
-    for(HeaderGroups::iterator hgs_i = header_groups.begin();
-        hgs_i != header_groups.end();
-        ++hgs_i) {
-      hgs_i->second.erase(entry);
-    }
-    storage.RemoveVal(entry);
   }
 
   void ExecuteKVSto(uint32_t group_id, const KVStoOp& kvsto) {
@@ -820,7 +854,8 @@ class SPDY4HeadersCodecImpl {
       MoveToHeadOfLRU(entry);
       cout << " new id: " << entry->lru_idx;
     }
-    //cout << " key: " << entry->kv.key();
+    cout << " key: " << entry->key();
+    cout << " val: " << entry->val();
     cout << "\n";
   }
 
