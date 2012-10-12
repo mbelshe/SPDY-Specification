@@ -12,7 +12,11 @@ int ParseHarFiles(int n_files, char** files,
                    vector<HeaderFrame>* requests,
                    vector<HeaderFrame>* responses) {
   int pipe_fds[2];  // read, write
-  pipe(pipe_fds);
+  int pipe_retval = pipe(pipe_fds);
+  if (pipe_retval == -1) {
+    perror("");
+    abort();
+  }
   pid_t child_pid;
   if ((child_pid = fork()) == -1) {
     perror("Fork failed");
@@ -85,41 +89,54 @@ int main(int argc, char** argv) {
   cout << "\n\n\nBeginning processing now\n\n\n\n";
   int header_group = 1;
   int stream_id = 1;
-	timespec ts_begin;
-	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts_begin);
+  timespec ts_begin;
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts_begin);
+  size_t total_header_bytes = 0;
   for (unsigned int i = 0; i < requests.size(); ++i) {
-    OutputStream os;
-    const HeaderFrame& request = requests[i];
-    OutputHeaderFrame(request);
-    cout << "======================\n";
-    req_in.OutputCompleteHeaderFrame(&os, stream_id,
-                                     header_group, request,
-                                     true /* end of frame*/);
-    //req_out.ProcessInput(&os);
-    // examine the size of the OutputStream vs the original size.
-    //HeaderFrame out_frame;
-    //req_out.ReconsituteFrame(&out_frame);
-    // test that they're the same.
-    cout << "\n########### FRAME DONE ############## "
-         << req_in.CurrentStateSize();
-    cout << "\n";
+    for (unsigned int j = 0; j < requests[i].size(); ++j) {
+      total_header_bytes += requests[i][j].key.size();
+      total_header_bytes += requests[i][j].val.size();
+    }
   }
-	timespec ts_end;
-	clock_gettime(CLOCK_PROCESS_CPUTIME_ID,&ts_end);
+  unsigned int iterations = 0;
+  const unsigned int desired_iterations = 100;
+  for (; iterations < desired_iterations; ++iterations) {
+    for (unsigned int i = 0; i < requests.size(); ++i) {
+      OutputStream os;
+      const HeaderFrame& request = requests[i];
+      //OutputHeaderFrame(request);
+      //cout << "======================\n";
+      req_in.OutputCompleteHeaderFrame(&os, stream_id,
+                                       header_group, request,
+                                       true /* end of frame*/);
+      //req_out.ProcessInput(&os);
+      // examine the size of the OutputStream vs the original size.
+      //HeaderFrame out_frame;
+      //req_out.ReconsituteFrame(&out_frame);
+      // test that they're the same.
+      // cout << "\n########### FRAME DONE ############## "
+      //      << req_in.CurrentStateSize();
+      // cout << "\n";
+    }
+  }
+  timespec ts_end;
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID,&ts_end);
 
-	size_t delta_nsec;
-	size_t delta_sec;
-	if (ts_end.tv_nsec < ts_begin.tv_nsec) {
-		delta_nsec = 1000000000 + ts_end.tv_nsec - ts_begin.tv_nsec;
-		delta_sec = ts_end.tv_sec - (ts_begin.tv_sec - 1);
-	} else {
-		delta_nsec = ts_end.tv_nsec - ts_begin.tv_nsec;
-		delta_sec = ts_end.tv_sec - ts_begin.tv_sec;
-	}
-	double secs = delta_sec;
-	secs += delta_nsec / 1000000000.0L;
-	cout << "Compression took: " << secs << " seconds"
-		   << " for: " << requests.size() << " header frames"
-			 << " or " << secs / requests.size() << " per header"
-			 << "\n";
+  size_t delta_nsec;
+  size_t delta_sec;
+  if (ts_end.tv_nsec < ts_begin.tv_nsec) {
+    delta_nsec = 1000000000 + ts_end.tv_nsec - ts_begin.tv_nsec;
+    delta_sec = ts_end.tv_sec - (ts_begin.tv_sec - 1);
+  } else {
+    delta_nsec = ts_end.tv_nsec - ts_begin.tv_nsec;
+    delta_sec = ts_end.tv_sec - ts_begin.tv_sec;
+  }
+  double secs = delta_sec;
+  secs += delta_nsec / 1000000000.0L;
+  cout << "Compression took: " << secs << " seconds"
+       << " for: " << requests.size() << " header frames"
+       << " or " << secs / requests.size() << " per header"
+       << " or " << requests.size() / secs << " headers/sec"
+       << " or " << (total_header_bytes*iterations) / secs << " bytes/sec"
+       << "\n";
 }

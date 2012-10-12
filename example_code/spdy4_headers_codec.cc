@@ -27,6 +27,11 @@ using std::list;
 using std::map;
 using std::multimap;
 
+#if DEBUG
+#define DEBUG_PRINT(X) X
+#else
+#define DEBUG_PRINT(X)
+#endif
 
 string spdy4_default_dict[][2] = {
   {":host", ""},
@@ -129,9 +134,9 @@ class Storage {
   IDStore<LRUIdx> lru_ids;
 
   size_t state_size;
-	size_t max_state_size;
-	size_t num_vals;
-	size_t max_vals;
+  size_t max_state_size;
+  size_t num_vals;
+  size_t max_vals;
 
   struct ValEntry;
 
@@ -148,7 +153,7 @@ class Storage {
 
   typedef map<string, KeyEntry> KeyMap;
   typedef list<ValEntry*> LRU;
-	LRU::iterator pin_it;
+  LRU::iterator pin_it;
 
   struct ValEntry {
     KeyMap::iterator k_i;
@@ -164,15 +169,15 @@ class Storage {
     }
   };
 
-	class ValEntryRemovalInterface {
-		public:
-		virtual void RemoveValEntry(ValEntry* entry) = 0;
-		virtual ~ValEntryRemovalInterface() {}
-	};
+  class ValEntryRemovalInterface {
+    public:
+    virtual void RemoveValEntry(ValEntry* entry) = 0;
+    virtual ~ValEntryRemovalInterface() {}
+  };
 
   KeyMap keymap;
   LRU lru;
-	ValEntryRemovalInterface* remove_val_cb;
+  ValEntryRemovalInterface* remove_val_cb;
 
   struct LookupCache {
     KeyMap::iterator k_i;
@@ -205,50 +210,56 @@ class Storage {
     return true;
   }
 
-	void PinLRUEnd() {
-		if (pin_it != lru.end())
-			lru.erase(pin_it);
-		lru.push_back(0);
-		pin_it = --(lru.end());
-	}
+  void PinLRUEnd() {
+    if (pin_it != lru.end())
+      lru.erase(pin_it);
+    lru.push_back(0);
+    pin_it = --(lru.end());
+  }
 
-	void UnPinLRUEnd() {
-		if (pin_it == lru.end()) return;
-		lru.erase(pin_it);
-		pin_it = lru.end();
-	}
+  void UnPinLRUEnd() {
+    if (pin_it == lru.end()) return;
+    lru.erase(pin_it);
+    pin_it = lru.end();
+  }
 
-	void PopOne() {
-		cout << "Popping one: ";
-		ValEntry* entry = lru.front();
-		if (entry == 0) { // we've hit the pin.
-			cout << " ... or not. Hit the pin.";
-			return;
-		}
-		cout << entry->key() << " " << entry->val();
-		cout << "\n";
+  void PopOne() {
+    DEBUG_PRINT(cout << "Popping one: ";)
+    ValEntry* entry = lru.front();
+    if (entry == 0) { // we've hit the pin.
+      DEBUG_PRINT(cout << " ... or not. Hit the pin.";)
+      return;
+    }
+    DEBUG_PRINT(
+    cout << entry->key() << " " << entry->val();
+    cout << "\n";
+    )
 
-		if (remove_val_cb) {
-			remove_val_cb->RemoveValEntry(entry);
-		}
-		RemoveVal(entry); // that will pop the front entry already.
-	}
+    if (remove_val_cb) {
+      remove_val_cb->RemoveValEntry(entry);
+    }
+    RemoveVal(entry); // that will pop the front entry already.
+  }
 
   void MakeSpace(size_t space_required, bool is_val) {
-		if (is_val) {
+    if (is_val) {
       if (num_vals + 1 > max_vals) {
-				cout << "num_vals(" << num_vals 
-					<< ") + 1 > max_vals(" << max_vals << ") ";
-				PopOne();
-			}
-		}
-		while (state_size + space_required > max_state_size) {
-				cout << "state_size(" << state_size 
-					<< ") + space_required(" << space_required
-					<< ")	> max_state_size(" << max_state_size << ") ";
-			PopOne();
-		}
-	}
+        DEBUG_PRINT(
+        cout << "num_vals(" << num_vals 
+          << ") + 1 > max_vals(" << max_vals << ") ";
+          )
+        PopOne();
+      }
+    }
+    while (state_size + space_required > max_state_size) {
+      DEBUG_PRINT(
+      cout << "state_size(" << state_size 
+          << ") + space_required(" << space_required
+          << ")  > max_state_size(" << max_state_size << ") ";
+      )
+      PopOne();
+    }
+  }
 
   ValEntry* FindValEntryByKV(LookupCache* lc,
                              const string& key, const string& val) {
@@ -263,10 +274,10 @@ class Storage {
     if (lc->k_i == keymap.end()) {
       lc->k_i = keymap.find(key);
       if (lc->k_i == keymap.end()) {
-				MakeSpace(key.size(), true);
+        MakeSpace(key.size(), true);
         lc->k_i = keymap.insert(make_pair(key,
                                           KeyEntry(key_ids.GetNext()))).first;
-				++num_vals;
+        ++num_vals;
         state_size += key.size();
       }
     }
@@ -319,8 +330,8 @@ class Storage {
   void RemoveFromValMap(ValEntry* entry) {
     RemoveFromLRU(entry);
     assert(entry->k_i != keymap.end());
-		--num_vals;
-		state_size -= entry->v_i->first.size();
+    --num_vals;
+    state_size -= entry->v_i->first.size();
     KeyEntry& keyentry = entry->k_i->second;
     if (keyentry.valmap.end() != entry->v_i)
       keyentry.valmap.erase(entry->v_i);
@@ -343,14 +354,14 @@ class Storage {
     MaybeRemoveFromKeyMap(entry);
     delete entry;
   }
-	void SetRemoveValCB(ValEntryRemovalInterface* vri) { remove_val_cb = vri; }
+  void SetRemoveValCB(ValEntryRemovalInterface* vri) { remove_val_cb = vri; }
   Storage() :
-	 	state_size(0),
-	 	max_state_size(10*1024),
-		num_vals(0),
-		max_vals(1024),
-		pin_it(lru.end()),
-		remove_val_cb(0) {}
+     state_size(0),
+     max_state_size(10*1024),
+    num_vals(0),
+    max_vals(1024),
+    pin_it(lru.end()),
+    remove_val_cb(0) {}
 };
 
 class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
@@ -399,6 +410,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
    public:
     explicit ToggleOp(Storage::ValEntry* kv) : entry(kv) {}
     ToggleOp() : entry(0) {}
+    LRUIdx idx() const { return entry->lru_idx; }
   };
 
 
@@ -409,7 +421,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
       frame_count(0),
       current_state_size(0)
   {
-		storage.SetRemoveValCB(this);
+    storage.SetRemoveValCB(this);
     huff.Init(sft);
     for (unsigned int i = 0;
          i < sizeof(spdy4_default_dict) / sizeof(spdy4_default_dict[0]);
@@ -433,7 +445,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
         ++hgs_i) {
       hgs_i->second.erase(entry);
     }
-	};
+  };
 
   void ProcessLine(Storage::LookupCache* key_lc,
                    const string& val,
@@ -452,7 +464,6 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
       if (hg_i == header_group->end()) {
         // The key-value exists, but isn't turned on.
         instrs->turn_ons.push_back(ToggleOp(entry));
-        ExecuteToggle(group_id, instrs->turn_ons.back());
       } else {
         // Touch the current entry so that we don't prune this entry when we
         // prune the header-group for items that aren't in the current set of
@@ -469,7 +480,11 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
   }
 
   void ExecuteInstructions(uint32_t group_id, const Instructions& instrs) {
-    // No need to execute the turn-ons-- they've already been executed.
+    for (vector<ToggleOp>::const_iterator i = instrs.turn_ons.begin();
+         i != instrs.turn_ons.end();
+         ++i) {
+      ExecuteToggle(group_id, *i);
+    }
     for (vector<ToggleOp>::const_iterator i = instrs.turn_offs.begin();
          i != instrs.turn_offs.end();
          ++i) {
@@ -510,7 +525,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
                                  uint32_t group_id,
                                  const HeaderFrame& headers,
                                  bool this_ends_the_frame) {
-		storage.PinLRUEnd();
+    storage.PinLRUEnd();
     uint8_t headers_end_flag = 0;
     if (this_ends_the_frame) {
       headers_end_flag = kHeaderEndFlag;
@@ -592,6 +607,8 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
         ProcessLine(&lc, val, can_clone, &header_group,
                     group_id, &instrs);
       }
+      // As we're proceeding thruogh, we reduce the refcnt by one
+      // if we had incremented it before.
       if (storage.HasKey(lc)) lc.k_i->second.refcnt--;
     }
 
@@ -637,22 +654,43 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
                                      stream_id));
 
     FrameDone();
+#if DEBUG
     cout << "headers.size(): " << headers.size()
-                                  << " header_group.size(): " << header_group.size()
-                                                                 <<"\n";
-
-
+         << " header_group.size(): " << header_group.size()
+         <<"\n";
 
     for (HeaderGroup::iterator i = header_group.begin();
          i != header_group.end();
          ++i) {
-      cout << "HG[" << group_id << "]: "
+      cout << "HG[" << group_id << "]: ")
         << "(" << i->first->k_i->second.key_idx  << "," << i->first->lru_idx << ")"
         << "(" << i->first->k_i->first << "," << i->first->v_i->first << ")"
         << "(Generation: " << i->second << ")"
         <<"\n";
     }
-		storage.UnPinLRUEnd();
+#endif
+
+    storage.UnPinLRUEnd();
+  }
+
+  void PreProcessForSerialization(Instructions* instrs) {
+    return;
+    // in particular, we need to manage the toggles.
+    vector<LRUIdx> all_toggles;
+    for (unsigned int i = 0; i < instrs->turn_ons.size(); ++i) {
+      all_toggles.push_back(instrs->turn_ons[i].idx());
+    }
+    for (unsigned int i = 0; i < instrs->turn_offs.size(); ++i) {
+      all_toggles.push_back(instrs->turn_offs[i].idx());
+    }
+    sort(all_toggles.begin(), all_toggles.end());
+    for (unsigned int i = 1; i < all_toggles.size(); ++i) {
+      if ((all_toggles[i] - all_toggles[i-1]) == 1) {
+        // these belong in a range.
+      }
+    }
+    vector<pair<LRUIdx, LRUIdx> > toggle_ranges;
+    vector<LRUIdx> toggles;
   }
 
   bool SerializeAllInstructions(
@@ -714,10 +752,10 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
 
   void TouchHeaderGroupEntry(HeaderGroup::iterator i) {
     i->second = frame_count;
-    cout << "Touching: " << i->first->lru_idx;
+    DEBUG_PRINT(cout << "Touching: " << i->first->lru_idx;)
     MoveToHeadOfLRU(i->first);
-    cout << " new idx: " << i->first->lru_idx;
-    cout << "\n";
+    DEBUG_PRINT(cout << " new idx: " << i->first->lru_idx;)
+    DEBUG_PRINT(cout << "\n";)
   }
 
   bool HeaderGroupEntryUpToDate(HeaderGroup::iterator i) const {
@@ -764,9 +802,11 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
   }
 
   void ExecuteClone(uint32_t group_id, const CloneOp& clone) {
-    const string& key = clone.key();
     const string& val = clone.val();
+#if DEBUG
+    const string& key = clone.key();
     cout << "Executing Clone: \"" << key << "\" \"" << val << "\"\n";
+#endif
     AddLine(group_id, clone.lc, val);
     // If we knew for certain that this meant that the previous header line was
     // being supplanted, we'd also set visibility of the thing which we're
@@ -786,7 +826,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     assert(group_id > 0);
     HeaderGroups::iterator hgs_i = header_groups.find(group_id);
     if (hgs_i == header_groups.end()) {
-      cout << "on (creating HG " << group_id << ")";
+      DEBUG_PRINT(cout << "on (creating HG " << group_id << ")";)
       hgs_i = header_groups.insert(make_pair(group_id, HeaderGroup())).first;
       hgs_i->second.insert(make_pair(entry, frame_count));
       return false;
@@ -796,10 +836,10 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     HeaderGroup::iterator hg_i = header_group.find(entry);
     bool was_visible = (hg_i != header_group.end());
     if (!was_visible) {
-      cout << "on";
+      DEBUG_PRINT(cout << "on";)
       header_group.insert(make_pair(entry, frame_count));
     } else {
-      cout << "off";
+      DEBUG_PRINT(cout << "off";)
       header_group.erase(hg_i);
     }
     return was_visible;
@@ -844,19 +884,23 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     LookupCache lc = storage.DefaultLookupCache();
     storage.FindOrAddKey(&lc, kvsto.key());
     AddLine(group_id, lc, kvsto.val());
-    cout << "Executing KVSto: \"" << kvsto.key() << "\" \"" << kvsto.val() << "\"\n";
+    DEBUG_PRINT(
+        cout << "Executing KVSto: \"" << kvsto.key()
+             << "\" \"" << kvsto.val() << "\"\n";
+             )
+
   }
 
   void ExecuteToggle(uint32_t group_id, const ToggleOp& to) {
     ValEntry* entry = to.entry;
-    cout << "Executing Toggle: " << entry->lru_idx << " ";
+    DEBUG_PRINT(cout << "Executing Toggle: " << entry->lru_idx << " ";)
     if (!ToggleHeaderGroupEntry(group_id, entry)) {
       MoveToHeadOfLRU(entry);
-      cout << " new id: " << entry->lru_idx;
+      DEBUG_PRINT(cout << " new id: " << entry->lru_idx;)
     }
-    cout << " key: " << entry->key();
-    cout << " val: " << entry->val();
-    cout << "\n";
+    DEBUG_PRINT(cout << " key: " << entry->key();)
+    DEBUG_PRINT(cout << " val: " << entry->val();)
+    DEBUG_PRINT(cout << "\n";)
   }
 
   void MoveToHeadOfLRU(ValEntry* entry) {
@@ -898,7 +942,6 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     return ((CurrentStateSize() + additional_size) <
             max_total_header_storage_size);
   }
-
 };
 
 ////////////////////////////////////////////////////////////////////////////////

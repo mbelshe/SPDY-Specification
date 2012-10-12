@@ -1,6 +1,6 @@
 
-#CXX      = g++
-CXX      = clang++
+CXX      = g++
+#CXX      = clang++
 DEBUG    = -g
 OPT      = -O3
 WARN     = -Wall -Werror
