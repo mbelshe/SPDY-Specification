@@ -147,11 +147,11 @@
 <tr><td class="header">Intended status: Informational</td><td class="header">Oct 12, 2012</td></tr>
 <tr><td class="header">Expires: April 15, 2013</td><td class="header">&nbsp;</td></tr>
 </table></td></tr></table>
-<h1><br />Header Delta-Compression for HTTP/2.0<br />draft-rpeon-header-compression-00</h1>
+<h1><br />Header Delta-Compression for HTTP/2.0<br />draft-rpeon-httpbis-header-compression-00</h1>
 
 <h3>Abstract</h3>
 
-<p>This document describes a mechanism for compressing streams of groups key-value pairs, often known as Headers in an HTTP session. See RFC 2616 or successors for more information about headers.
+<p>This document describes a mechanism for compressing streams of groups of key-value pairs, often known as Headers in an HTTP session. See <a class='info' href='#RFC2616'>RFC 2616<span> (</span><span class='info'>Fielding, R., Gettys, J., Mogul, J., Frystyk, H., Masinter, L., Leach, P., and T. Berners-Lee, &ldquo;Hypertext Transfer Protocol -- HTTP/1.1,&rdquo; June&nbsp;1999.</span><span>)</span></a> [RFC2616] or successors for more information about headers.
 </p>
 <h3>Status of this Memo</h3>
 <p>
@@ -219,7 +219,7 @@ Author's Address<br />
 <a name="rfc.section.1"></a><h3>1.&nbsp;
 Overview</h3>
 
-<p>There have been several problems pointed out with the use of the gzip compressor in SPDY. The biggest of these problems is that it is possible for a smart attacker to inject content into the compressor, and then to test hypothesis about the prior contents of the compressor by examining the output size. The other issue is that gzip often consumes more CPU than many would like, especially in situations where one is doing forward or reverse proxying. The compressor proposed here intends to solve the first issue and significantly mitigate the second.
+<p>There have been several problems pointed out with the use of the gzip compressor in <a class='info' href='#SPDY'>SPDY<span> (</span><span class='info'>Belshe, M. and R. Peon, &ldquo;SPDY PROTOCOL,&rdquo; .</span><span>)</span></a> [SPDY]. The biggest of these problems is that it is possible for a smart attacker to inject content into the compressor, and then to test hypotheses about the prior contents of the compressor by examining the output size after each such content injection. The other issue is that gzip often consumes more CPU than many would like, especially in situations where one is doing forward or reverse proxying. The compressor proposed here intends to solve the first issue and significantly mitigate the second, while providing compression that is not too much worse than gzip.
 </p>
 <a name="anchor1"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
@@ -236,13 +236,13 @@ Definitions</h3>
 <dd>client: Synonym for user-agent
 </dd>
 <dt></dt>
-<dd>server: The computer or device which typically accepts a connection and serves data
+<dd>server: The computer or device which typically accepts a connection, stores, and serves data
 </dd>
 <dt></dt>
 <dd>proxy: An entity acting as a server for the client, and a client for the server
 </dd>
 <dt></dt>
-<dd>header: An complete set of key-value pairs. In HTTP1/1 this would be all of the data preceeding the entity-body.
+<dd>header: An complete set of key-value pairs, either request-headers, or response headers as defined in <a class='info' href='#RFC2616'>RFC2616<span> (</span><span class='info'>Fielding, R., Gettys, J., Mogul, J., Frystyk, H., Masinter, L., Leach, P., and T. Berners-Lee, &ldquo;Hypertext Transfer Protocol -- HTTP/1.1,&rdquo; June&nbsp;1999.</span><span>)</span></a> [RFC2616] section 5.3 or 6.2, respectively
 </dd>
 </dl></blockquote><p>
         
@@ -251,7 +251,9 @@ Definitions</h3>
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
 <a name="rfc.section.3"></a><h3>3.&nbsp;
 Example-data-model</h3>
-<div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
+
+<p> The author's current experimental implementation uses something very close to the following data-model for doing compression.
+</p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
             struct ValEntry {
               KeyMapIterator krt;
               ValMapIterator vrt;
@@ -293,91 +295,91 @@ Compression-overview</h3>
 
 <p> Note that this only describes conceptually how the algorithm works and is very much pseudo-code
 </p>
-<p> user-agents and servers compress MUST using roughly this algorithm.
+<p> User-agents and servers SHOULD NOT NOT use EREF operations.
 </p>
-<p> user-agents and servers MUST use huffman-coding when so doing reduces the size of the bytes on the wire
+<p> User-agents and servers SHOULD use huffman-coding when so doing reduces the size of the bytes on the wire
 </p>
-<p> proxies MAY compress using this algorithm, or something equivalent, but MAY also use EREF operations when throughput is more important than client experienced latency.
+<p> Proxies MAY use EREF operations when throughput is more important than client experienced latency.
 </p>
-<p> proxies MAY ignore doing huffman coding
+<p> Proxies MAY choose to encode all strings as literal strings and skip huffman coding.
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-  Compress(headers):
-    first_used_val_idx = CurrentValIdx()
-    old_keymap = keymap
+Compress(headers):
+  first_used_val_idx = CurrentValIdx()
+  old_keymap = keymap
 
-    For header in headers:
-      if key in keymap:
-        keymap[key].refcnt += 1
+  For header in headers:
+    if key in keymap:
+      keymap[key].refcnt += 1
 
-    for header in headers:
-      key_map_iterator = lookup(header.key)
-      if (!key_map_iterator):
-        key_iterator = insert_new_key(header.key)
-        insert_new_value_from_key(key_iterator, header.val)
-        instructions.append(KVSto(key,val))
-      else if (val_iterator = lookup_val_in_keymap_entry(key_map_iterator,
-                                                          header.val)):
-        // we've found that the key,value pair already exists in the compressor
-        // we now must check to see if it is already visible, in which case
-        // there is nothing to do. If it isn't visible, however, we'll toggle
-        // the visibility on.
-        if (!header_group.includes(val_iterator_&gt;val_idx)):
-          instructions.append(Toggle(val_iterator_&gt;val_idx));
-      else:
-        // we know we found a key, but not the entire key_value.
-        // thus, we emit a clone() instructions.
-        instructions.append(Clone(key_iterator_&gt;key_id, header.val)
+  for header in headers:
+    key_map_iterator = lookup(header.key)
+    if (!key_map_iterator):
+      key_iterator = insert_new_key(header.key)
+      insert_new_value_from_key(key_iterator, header.val)
+      instructions.append(KVSto(key,val))
+    else if (val_iterator = lookup_val_in_keymap_entry(key_map_iterator,
+                                                        header.val)):
+      // we've found that the key,value pair already exists in the compressor
+      // we now must check to see if it is already visible, in which case
+      // there is nothing to do. If it isn't visible, however, we'll toggle
+      // the visibility on.
+      if (!header_group.includes(val_iterator_&gt;val_idx)):
+        instructions.append(Toggle(val_iterator_&gt;val_idx));
+    else:
+      // we know we found a key, but not the entire key_value.
+      // thus, we emit a clone() instructions.
+      instructions.append(Clone(key_iterator_&gt;key_id, header.val)
 
-      if key in old_keymap:
-        keymap[key].refcnt += 1
+    if key in old_keymap:
+      keymap[key].refcnt += 1
 
-      for header_group_entry in header_group:
-        if header_group_entry not in header:
-          instructions.append(header_group_entry_&gt;idx())
-      for instruction in instructions:
-        ExecuteInstruction(instructions)
-      SerializeInstructions(output_buffer, instructions, first_used_val_idx)
-
-
-   ExecuteInstruction(instruction):
-     while (instruction.size_delta() + state_size &amp;gt; max_state_size):
-       RemoveOldestLRUItem()
-     if instruction.opcode == "clone":
-       InsertKV(instruction.lookup_key(), instruction.val(), GetNextLRUIdx())
-     elif instruction.opcode == "kvsto":
-       InsertKV(instruction.key(), instruction.val(), GetNextLRUIdx())
-     elif instruction.opcode == "togglerange":
-       for (i=instruction.start; i &amp;lt;= instruction.last; ++i)
-         bool prev_state = ToggleIdx(i)
-         if prev_state == NOT_VISIBLE:
-           MoveToFrontOfLRU(i)
-     elif instruction.opcode == "toggle":
-       bool prev_state = ToggleIdx(instruction.index)
-       if prev_state == NOT_VISIBLE:
-         MoveToFrontOfLRU(instruction.index)
+    for header_group_entry in header_group:
+      if header_group_entry not in header:
+        instructions.append(header_group_entry_&gt;idx())
+    for instruction in instructions:
+      ExecuteInstruction(instructions)
+    SerializeInstructions(output_buffer, instructions, first_used_val_idx)
 
 
-   SerializeInstructions(output_buffer, instructions, first_val_idx):
-     // Note that huffman-encoding is optional-- a bit (somwhere) would indicate
-     // that it was or was not used for any particular string.
-     output_buffer.WriteValIdx(first_val_idx)
-     for toggle in filter(TOGGLE, instructions):
-       output_buffer.WriteBits(TOGGLE)
-       output_buffer.WriteValIdx(toggle.val_idx)
-     for toggle in filter(TOGGLE_RANGE, instructions):
-       output_buffer.WriteBits(TOGGLE_RANGE)
-       output_buffer.WriteValIdx(toggle.start)
-       output_buffer.WriteValIdx(toggle.last)
-     for clone in filter(CLONE, instructions):
-       output_buffer.WriteBits(CLONE)
-       output_buffer.WriteKeyIdx(clone.key_idx)
-       output_buffer.WriteString(huffman.encode(clone.val))
-     for kvsto in filter(KVSTO, instructions):
-       output_buffer.WriteString(huffman.encode(kvsto.key))
-       output_buffer.WriteString(huffman.encode(kvsto.val))
-     for eref in filter(EREF, instructions):
-       output_buffer.WriteString(huffman.encode(kvsto.key))
-       output_buffer.WriteString(huffman.encode(kvsto.val))
+ExecuteInstruction(instruction):
+  while (instruction.size_delta() + state_size &amp;gt; max_state_size):
+    RemoveOldestLRUItem()
+  if instruction.opcode == "clone":
+    InsertKV(instruction.lookup_key(), instruction.val(), GetNextLRUIdx())
+  elif instruction.opcode == "kvsto":
+    InsertKV(instruction.key(), instruction.val(), GetNextLRUIdx())
+  elif instruction.opcode == "togglerange":
+    for (i=instruction.start; i &amp;lt;= instruction.last; ++i)
+      bool prev_state = ToggleIdx(i)
+      if prev_state == NOT_VISIBLE:
+        MoveToFrontOfLRU(i)
+  elif instruction.opcode == "toggle":
+    bool prev_state = ToggleIdx(instruction.index)
+    if prev_state == NOT_VISIBLE:
+      MoveToFrontOfLRU(instruction.index)
+
+
+SerializeInstructions(output_buffer, instructions, first_val_idx):
+  // Note that huffman-encoding is optional-- a bit (somwhere) would
+  // indicate that it was or was not used for any particular string.
+  output_buffer.WriteValIdx(first_val_idx)
+  for toggle in filter(TOGGLE, instructions):
+    output_buffer.WriteBits(TOGGLE)
+    output_buffer.WriteValIdx(toggle.val_idx)
+  for toggle in filter(TOGGLE_RANGE, instructions):
+    output_buffer.WriteBits(TOGGLE_RANGE)
+    output_buffer.WriteValIdx(toggle.start)
+    output_buffer.WriteValIdx(toggle.last)
+  for clone in filter(CLONE, instructions):
+    output_buffer.WriteBits(CLONE)
+    output_buffer.WriteKeyIdx(clone.key_idx)
+    output_buffer.WriteString(huffman.encode(clone.val))
+  for kvsto in filter(KVSTO, instructions):
+    output_buffer.WriteString(huffman.encode(kvsto.key))
+    output_buffer.WriteString(huffman.encode(kvsto.val))
+  for eref in filter(EREF, instructions):
+    output_buffer.WriteString(huffman.encode(kvsto.key))
+    output_buffer.WriteString(huffman.encode(kvsto.val))
 
 
 </pre></div>
@@ -460,9 +462,11 @@ On-the-wire-overview</h3>
           operations have been emitted, the 'finished' bit of the HEADERS frame
           which encapsulates the last instruction MUST be set to 1.
 </p>
-<p> The BNF for this would be:
+<p> The rough ABNF for this would be:
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-HEADERS_FRAME: FRAME_BOILERPLATE GROUP-ID FIRST-VAL-IDX INSTRUCTIONS
+HEADERS_FRAME: HEADER_FRAME_BOILERPLATE GROUP-ID FIRST-VAL-IDX INSTRUCTIONS
+HEADER_FRAME_BOILERPLATE: LENGTH STREAM_ID HEADERS_OPCODE HEADER_DONE_FLAG
+HEADER_DONE_FLAG: (TRUE | FALSE)
 INSTRUCTIONS : *(TOGGLE | TOGGLERANGE) *( CLONE | KVSTO) *(EREF)
 TOGGLE: TOGGLE_OPCODE VAL_IDX
 TOGGLERANGE: TOGGLERANGE_OPCODE VAL_IDX_START VAL_IDX_END
@@ -479,6 +483,8 @@ VAL_IDX_END: int
 VAL_IDX: int
 
 </pre></div>
+<p> A complete set of headers has only been expressed when the HEADERS frame has the HEADERS_DONE bit set to true. If the headers being serialized do not fit into one HEADERS frame, the HEADERS_DONE flag for all but the last HEADERS frame MUST be set to false
+</p>
 <p> There are alternate serializations which have various interesting properties. Here are some interesting variations among these alternatives:
           </p>
 <blockquote class="text"><dl>
@@ -489,7 +495,7 @@ VAL_IDX: int
 <dd> Have explicit sections for each opcode type, with a sentinel denoting the end of each range of opcode. Since the number of opcode types is small, this could reduce the overhead consumed in repeating the opcode.
 </dd>
 <dt></dt>
-<dd> As above, but have a count for the number of each opcode
+<dd> As above, but have a count for the number of each opcode instead of using a sentinel
 </dd>
 <dt></dt>
 <dd> Use huffman coding on the entire payload of the HEADERS frame, not just the strings. TOGGLES are far more common than other operations, and using fewer bits for these could be beneficial
