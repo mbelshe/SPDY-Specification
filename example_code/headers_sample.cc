@@ -1,3 +1,6 @@
+// Copyright (c) 2012 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 #include <unistd.h>
 #include <fcntl.h>
 #include <time.h>
@@ -104,19 +107,24 @@ int main(int argc, char** argv) {
     for (unsigned int i = 0; i < requests.size(); ++i) {
       OutputStream os;
       const HeaderFrame& request = requests[i];
+#if DEBUG
       //OutputHeaderFrame(request);
       //cout << "======================\n";
+#endif
       req_in.OutputCompleteHeaderFrame(&os, stream_id,
                                        header_group, request,
                                        true /* end of frame*/);
+
       //req_out.ProcessInput(&os);
       // examine the size of the OutputStream vs the original size.
       //HeaderFrame out_frame;
       //req_out.ReconsituteFrame(&out_frame);
       // test that they're the same.
+#if DEBUG
       // cout << "\n########### FRAME DONE ############## "
       //      << req_in.CurrentStateSize();
       // cout << "\n";
+#endif
     }
   }
   timespec ts_end;
@@ -134,9 +142,9 @@ int main(int argc, char** argv) {
   double secs = delta_sec;
   secs += delta_nsec / 1000000000.0L;
   cout << "Compression took: " << secs << " seconds"
-       << " for: " << requests.size() << " header frames"
-       << " or " << secs / requests.size() << " per header"
-       << " or " << requests.size() / secs << " headers/sec"
+       << " for: " << (requests.size()*iterations) << " header frames"
+       << " or " << secs / (requests.size()*iterations) << " per header"
+       << " or " << (requests.size()*iterations) / secs << " headers/sec"
        << " or " << (total_header_bytes*iterations) / secs << " bytes/sec"
        << "\n";
 }

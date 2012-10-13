@@ -1,16 +1,23 @@
+CXX        = g++
+#CXX        = clang++
+DEBUGFLAGS = -DDEBUG -g
+OPT        = -O3
+WARN       = -Wall -Werror
+STD        = -std=c++0x
+CXXFLAGS   = $(DEBUG) $(OPT) $(WARN) $(STD)
 
-CXX      = g++
-#CXX      = clang++
-DEBUG    = -g
-OPT      = -O3
-WARN     = -Wall -Werror
-STD      = -std=c++0x
-CXXFLAGS = $(DEBUG) $(OPT) $(WARN) $(STD)
+TARGETS    = bit_bucket_test huffman_test headers_sample
 
-TARGETS  = bit_bucket_test huffman_test headers_sample
+SRCS       = *.cc
+OBJS       = $(SRCS:%.cc=%.o)
 
-SRCS     = *.cc
-OBJS     = $(SRCS:%.cc=%.o)
+
+ifndef DEBUG
+DEBUG =
+else
+DEBUG = $(DEBUGFLAGS)
+endif
+
 
 .PHONEY: clean all
 
@@ -20,7 +27,7 @@ clean:
 	rm -f $(TARGETS) $(OBJS) $(DEPS) *.pyc
 
 .cc.o:
-	$(CXX)    $(CXXFLAGS) $< -c -o $@
+	$(CXX) $(CXXFLAGS) $< -c -o $@
 
 headers_sample: headers_sample.o spdy4_headers_codec.o header_freq_tables.o
 	$(CXX) $(CXXFLAGS) $^ -o $@ -lrt

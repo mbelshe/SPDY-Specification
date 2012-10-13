@@ -1,3 +1,6 @@
+// Copyright (c) 2012 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 #include <arpa/inet.h>
 
 #include <array>
@@ -662,7 +665,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     for (HeaderGroup::iterator i = header_group.begin();
          i != header_group.end();
          ++i) {
-      cout << "HG[" << group_id << "]: ")
+      cout << "HG[" << group_id << "]: "
         << "(" << i->first->k_i->second.key_idx  << "," << i->first->lru_idx << ")"
         << "(" << i->first->k_i->first << "," << i->first->v_i->first << ")"
         << "(Generation: " << i->second << ")"
