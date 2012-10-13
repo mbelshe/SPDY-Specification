@@ -361,10 +361,10 @@ class Storage {
   Storage() :
      state_size(0),
      max_state_size(10*1024),
-    num_vals(0),
-    max_vals(1024),
-    pin_it(lru.end()),
-    remove_val_cb(0) {}
+		 num_vals(0),
+		 max_vals(1024),
+		 pin_it(lru.end()),
+		 remove_val_cb(0) {}
 };
 
 class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
@@ -377,8 +377,6 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
   typedef Storage::LookupCache LookupCache;
 
   uint32_t max_total_header_storage_size;
-  uint32_t max_header_groups;
-  uint32_t max_table_entries;
   uint32_t frame_count;
   uint32_t current_state_size;
 
@@ -419,8 +417,6 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
 
   SPDY4HeadersCodecImpl(const FreqTable& sft) :
       max_total_header_storage_size(10*1024),
-      max_header_groups(1),
-      max_table_entries(640),
       frame_count(0),
       current_state_size(0)
   {
@@ -938,12 +934,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
   }
 
   size_t CurrentStateSize() const {
-    return current_state_size;
-  }
-
-  bool StorageRemaining(size_t additional_size) {
-    return ((CurrentStateSize() + additional_size) <
-            max_total_header_storage_size);
+    return storage.state_size;
   }
 };
 

@@ -13,7 +13,12 @@ Developer Tools:
 While using Chrome, hit <ctrl>-<shift>-I, click on the 'network' tab, and then
 navigate to a page you wish to analyse.  When it has loaded, right-click
 somewhere in there, and select the 'save all as HAR'. This will save all
-request and response headers as well as some other information in there.
+request and response headers as well as some other information in the specified
+HAR file.
 
 
 The c++ code is not yet finished, though some of the code is functional.
+It will compute delta-codings and timings, but doesn't yet do serialization,
+deserialization, or decompression.
+The c++ code depends on "harfile_translator.py", so don't remove it if you wish
+to experiment with it.

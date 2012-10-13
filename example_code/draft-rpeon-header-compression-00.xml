@@ -53,9 +53,9 @@
         <figure>
           <artwork><![CDATA[
             struct ValEntry {
-              KeyMapIterator * krt;
-              ValMapIterator* vrt;
-              LRUIterator* lrt;
+              KeyMapIterator krt;
+              ValMapIterator vrt;
+              LRUIterator lrt;
               Index val_idx;
             };
 
@@ -97,81 +97,83 @@
         <t> proxies MAY ignore doing huffman coding</t>
         <figure>
           <artwork><![CDATA[
-        Compress(headers):
-          first_used_val_idx = CurrentValIdx()
-          old_keymap = keymap
+  Compress(headers):
+    first_used_val_idx = CurrentValIdx()
+    old_keymap = keymap
 
-          For header in headers:
-            if key in keymap:
-              keymap[key].refcnt += 1
+    For header in headers:
+      if key in keymap:
+        keymap[key].refcnt += 1
 
-          for header in headers:
-            key-map-iterator = lookup(header.key)
-            if (!key-map-interator)
-              key_iterator = insert-new-key(header.key)
-              insert-new-value-from-key(key_iterator, header.val)
-              instructions.append(KVSto(key,val))
-            else if (val_iterator = lookup-in-key(key-map-iterator, header.val)):
-              // we've found that the key-value already exists in the compressor
-              // we check to see if it is already visible, in which case there is nothing to do,
-              // if it isn't visible, we'll toggle the visibility on.
-              if (!header_group.includes(val_iterator->val_idx)):
-                instructions.append(Toggle(val_iterator->val_idx));
-            else:
-              // we know we found a key, but not the entire key-value.
-              // thus, we emit a clone() instructions.
-              instructions.append(Clone(key_iterator->key_id, header.val)
+    for header in headers:
+      key_map_iterator = lookup(header.key)
+      if (!key_map_iterator):
+        key_iterator = insert_new_key(header.key)
+        insert_new_value_from_key(key_iterator, header.val)
+        instructions.append(KVSto(key,val))
+      else if (val_iterator = lookup_val_in_keymap_entry(key_map_iterator,
+					                                              	header.val)):
+        // we've found that the key,value pair already exists in the compressor
+				// we now must check to see if it is already visible, in which case
+				// there is nothing to do. If it isn't visible, however, we'll toggle
+				// the visibility on.
+        if (!header_group.includes(val_iterator_>val_idx)):
+          instructions.append(Toggle(val_iterator_>val_idx));
+      else:
+        // we know we found a key, but not the entire key_value.
+        // thus, we emit a clone() instructions.
+        instructions.append(Clone(key_iterator_>key_id, header.val)
 
-            if key in old_keymap:
-              keymap[key].refcnt += 1
+      if key in old_keymap:
+        keymap[key].refcnt += 1
 
-            for header_group_entry in header_group:
-              if header_group_entry not in header:
-                instructions.append(header_group_entry->idx())
-            for instruction in instructions:
-              ExecuteInstruction(instructions)
-            SerializeInstructions(output_buffer, instructions, first_used_val_idx)
-
-
-         ExecuteInstruction(instruction):
-           while (instruction.size_delta() + state_size &gt; max_state_size):
-             RemoveOldestLRUItem()
-           if instruction.opcode == "clone":
-             InsertKV(instruction.lookup_key(), instruction.val(), GetNextLRUIdx())
-           elif instruction.opcode == "kvsto":
-             InsertKV(instruction.key(), instruction.val(), GetNextLRUIdx())
-           elif instruction.opcode == "togglerange":
-             for (i=instruction.start; i &lt;= instruction.last; ++i)
-               bool prev_state = ToggleIdx(i)
-               if prev_state == NOT_VISIBLE:
-                 MoveToFrontOfLRU(i)
-           elif instruction.opcode == "toggle":
-             bool prev_state = ToggleIdx(instruction.index)
-             if prev_state == NOT_VISIBLE:
-               MoveToFrontOfLRU(instruction.index)
+      for header_group_entry in header_group:
+        if header_group_entry not in header:
+          instructions.append(header_group_entry_>idx())
+      for instruction in instructions:
+        ExecuteInstruction(instructions)
+      SerializeInstructions(output_buffer, instructions, first_used_val_idx)
 
 
-         SerializeInstructions(output_buffer, instructions, first_val_idx):
-           // Note that huffman-encoding is optional-- a bit (somwhere) would indicate
-           // that it was or was not used for any particular string.
-           output_buffer.WriteValIdx(first_val_idx)
-           for toggle in filter(TOGGLE, instructions):
-             output_buffer.WriteBits(TOGGLE)
-             output_buffer.WriteValIdx(toggle.val_idx)
-           for toggle in filter(TOGGLE_RANGE, instructions):
-             output_buffer.WriteBits(TOGGLE_RANGE)
-             output_buffer.WriteValIdx(toggle.start)
-             output_buffer.WriteValIdx(toggle.last)
-           for clone in filter(CLONE, instructions):
-             output_buffer.WriteBits(CLONE)
-             output_buffer.WriteKeyIdx(clone.key_idx)
-             output_buffer.WriteString(huffman.encode(clone.val))
-           for kvsto in filter(KVSTO, instructions):
-             output_buffer.WriteString(huffman.encode(kvsto.key))
-             output_buffer.WriteString(huffman.encode(kvsto.val))
-           for eref in filter(EREF, instructions):
-             output_buffer.WriteString(huffman.encode(kvsto.key))
-             output_buffer.WriteString(huffman.encode(kvsto.val))
+   ExecuteInstruction(instruction):
+     while (instruction.size_delta() + state_size &gt; max_state_size):
+       RemoveOldestLRUItem()
+     if instruction.opcode == "clone":
+       InsertKV(instruction.lookup_key(), instruction.val(), GetNextLRUIdx())
+     elif instruction.opcode == "kvsto":
+       InsertKV(instruction.key(), instruction.val(), GetNextLRUIdx())
+     elif instruction.opcode == "togglerange":
+       for (i=instruction.start; i &lt;= instruction.last; ++i)
+         bool prev_state = ToggleIdx(i)
+         if prev_state == NOT_VISIBLE:
+           MoveToFrontOfLRU(i)
+     elif instruction.opcode == "toggle":
+       bool prev_state = ToggleIdx(instruction.index)
+       if prev_state == NOT_VISIBLE:
+         MoveToFrontOfLRU(instruction.index)
+
+
+   SerializeInstructions(output_buffer, instructions, first_val_idx):
+     // Note that huffman-encoding is optional-- a bit (somwhere) would indicate
+     // that it was or was not used for any particular string.
+     output_buffer.WriteValIdx(first_val_idx)
+     for toggle in filter(TOGGLE, instructions):
+       output_buffer.WriteBits(TOGGLE)
+       output_buffer.WriteValIdx(toggle.val_idx)
+     for toggle in filter(TOGGLE_RANGE, instructions):
+       output_buffer.WriteBits(TOGGLE_RANGE)
+       output_buffer.WriteValIdx(toggle.start)
+       output_buffer.WriteValIdx(toggle.last)
+     for clone in filter(CLONE, instructions):
+       output_buffer.WriteBits(CLONE)
+       output_buffer.WriteKeyIdx(clone.key_idx)
+       output_buffer.WriteString(huffman.encode(clone.val))
+     for kvsto in filter(KVSTO, instructions):
+       output_buffer.WriteString(huffman.encode(kvsto.key))
+       output_buffer.WriteString(huffman.encode(kvsto.val))
+     for eref in filter(EREF, instructions):
+       output_buffer.WriteString(huffman.encode(kvsto.key))
+       output_buffer.WriteString(huffman.encode(kvsto.val))
 
             ]]>
           </artwork>
@@ -182,50 +184,54 @@
         <t> Note that this only describes conceptually how the algorithm works and is very much pseudo-code</t>
         <figure>
           <artwork><![CDATA[
-          Decode():
-            header_group = headers.header_group // as received from sender
-            val_idx = headers_frame.first_val_idx // as received from sender.
-            header_groups[header_group].ephemereal_headers.clear()
-            for instruction in instructions:
-              ExecuteInstruction(instruction, header_group)
+  Decode():
+    header_group = headers.header_group // as received from sender
+    val_idx = headers_frame.first_val_idx // as received from sender.
+    header_groups[header_group].ephemereal_headers.clear()
+    for instruction in instructions:
+      ExecuteInstruction(instruction, header_group)
 
-            ExecuteInstruction(instruction, header_group):
-              while (instruction.size_delta() + state_size &gt; max_state_size):
-                RemoveOldestLRUItem()
-              if instruction.opcode == TOGGLE:
-                if instruction.idx in header_groups[header_group]:
-                  header_groups[header_group].remove(instruction.idx)
-                else:
-                  header_groups[header_group].insert(instruction.idx)
-                  MoveToHeadOfLRU(instruction.idx)
-              elif instruction.opcode == TOGGLE_GROUP:
-                for i=instruction.begin; i <= instruction.last; ++i:
-                  ExecuteInstruction(Toggle(i), header_group);
-              elif instruction.opcode == CLONE:
-                KeyIdxMap::iterator kimi = key_idx_map.lookup(instruction.key_idx)
-                val_idx_map.insert(++val_idx, pair(kimi, instruction.val))
-              elif instruction.opcode == KVSTO:
-                key_idx = GetNextKeyIdx()
-                KeyIdxMap::iterator kimi = key_idx_map.insert(key_idx, instruction.key)
-                val_idx_map.insert(++val_idx, pair(kimi, instruction.val))
-              elif instruction.opcode == EREF:
-                header_groups[header_group].ephemereal_headers.append(pair(instruction.key, instruction.val))
+    ExecuteInstruction(instruction, header_group):
+      while (instruction.size_delta() + state_size &gt; max_state_size):
+        RemoveOldestLRUItem()
+      if instruction.opcode == TOGGLE:
+        if instruction.idx in header_groups[header_group]:
+          header_groups[header_group].remove(instruction.idx)
+        else:
+          header_groups[header_group].insert(instruction.idx)
+          MoveToHeadOfLRU(instruction.idx)
+      elif instruction.opcode == TOGGLE_GROUP:
+        for i=instruction.begin; i <= instruction.last; ++i:
+          ExecuteInstruction(Toggle(i), header_group);
+      elif instruction.opcode == CLONE:
+        KeyIdxMap::iterator kimi = key_idx_map.lookup(instruction.key_idx)
+        val_idx_map.insert(++val_idx, pair(kimi, instruction.val))
+      elif instruction.opcode == KVSTO:
+        key_idx = GetNextKeyIdx()
+        KeyIdxMap::iterator kimi = key_idx_map.insert(key_idx,
+					                                          	instruction.key)
+        val_idx_map.insert(++val_idx, pair(kimi, instruction.val))
+      elif instruction.opcode == EREF:
+        header_groups[header_group].ephemereal_headers.append(
+						pair(instruction.key, instruction.val))
 
 
-            InflateHeaders(header_group):
-              Headers headers
-              for idx in header_groups[header_group]:
-                headers.append(ValIdxMap[idx].first->first, ValIdxMap[idx].second)
-              headers.append(header_groups[header_group].ephemereal_headers);
-              return headers
-
+		// This would return the complete set of headers, e.g. for an HTTP
+		// request or response
+	  
+    InflateHeaders(header_group):
+      Headers headers
+      for idx in header_groups[header_group]:
+        headers.append(ValIdxMap[idx].first->first, ValIdxMap[idx].second)
+      headers.append(header_groups[header_group].ephemereal_headers);
+      return headers
             ]]>
           </artwork>
         </figure>
 
 
       <section title="On-the-wire-overview">
-        <t> This would replace the current HEADERS frame described in SPDY/2.</t>
+        <t> This would replace the current HEADERS frame described in the SPDY/2 draft specification.</t>
         <t> A field indicating the start of the ID-sequence space MUST be
           emitted immediately after the HEADERS frame boilerplate.</t>
         <t> A sequence of 'Toggle' or 'ToggleRange' operations MUST follow, if
@@ -244,18 +250,15 @@
       </section>
 
       <section title="Operations">
-        <t> Toggle: This encodes a single ValIdx, which, if already present in the HeaderGroup associated with the current HEADERS frame, will be removed, else added. If added, then the LRU entry which the index references will be moved to the head of the LRU.</t>
-        <t> ToggleRange: This incodes two ValIdx, denoting an inclusive range of ValIdx which shall be toggled.</t>
-        <t> Clone: This encodes a KeyIdx which references a pre-existing key, and references a new string. The Clone operation inserts a new ValEntry into the ValMap associated with the KeyMap entry identified by the KeyIdx. The ValIdx for this new ValEntry is the ++current_val_idx; The new ValEntry will be inserted at the head of the LRU.</t>
-        <t> KVSto: This encodes a new key string and new value string. The key will be inserted into the KeyMap, and assigned a new KeyIdx. The value string will be inserted into the Valmap associated with the KeyMap entry that was just added. As with Clone, a new unique ValIdx will be associated with it in a monotonically increasing sequence by using the value of ++current_val_idx. The new ValEntry will be inserted at the head of the LRU.</t>
-        <t> Eref: This encodes a key and value literal which, while interpreted as part of the header frame, don't cause any persistent change in the compressor state. ERef stands for "ephemereal reference".</t>
+        <t> Toggle: This encodes a single ValIdx, which, if already present in the HeaderGroup associated with the current HEADERS frame, will be removed, else added. If added, then the LRU entry which the index references MUST be moved to the head of the LRU.</t>
+        <t> ToggleRange: This incodes two ValIdx, denoting an inclusive range of ValIdx which shall be toggled as per the Toggle operation, above.</t>
+        <t> Clone: This encodes a KeyIdx which references a pre-existing key, and references a new string. The Clone operation inserts a new ValEntry into the ValMap associated with the KeyMap entry identified by the KeyIdx. The ValIdx for this new ValEntry is the ++current_val_idx; The new ValEntry MUST be inserted at the head of the LRU.</t>
+        <t> KVSto: This encodes a new key string and new value string. The key will be inserted into the KeyMap, and assigned a new KeyIdx. The value string will be inserted into the Valmap associated with the KeyMap entry that was just added. As with Clone, a new unique ValIdx will be associated with it in a monotonically increasing sequence by using the value of ++current_val_idx. The new ValEntry MUST be inserted at the head of the LRU.</t>
+        <t> Eref: This encodes a key and value literal which, while interpreted as part of the header frame, doesn't cause any persistent change in the compressor state. ERef stands for "ephemereal reference".</t>
       </section>
 
-
-
-
         <section title="Security Considerations">
-          <t> The compressor algorithm described here is expected to be immune to the current attacks against encrypted stream-based encryptors such as gzip, but there has been no external peer scruitiny yet. The reason that it is believed that the algorithm(s) expressed here are immune is that they always do a whole-text match, and thus any probe of the compression context confirms no hypothesis unless the attacker has guessed the entire plaintext of a value. </t>
+          <t> The compressor algorithm described here is expected to be immune to the current attacks against encrypted stream-based compressors such as TLS+gzip, but more scrutiny is warranted. The reason that it is believed that the algorithm(s) expressed here is immune is that any backreference to a header key or value always requires a whole-text match, and thus any probe of the compression context confirms no hypothesis unless the attacker has guessed the entire plaintext. </t>
         </section>
 
         <section title="Requirements Notation">
@@ -267,9 +270,6 @@
         </section>
 
         <section title="Acknowledgements">
-          <t>
-            <xref target="RFC6454"/>;
-          </t>
         </section>
       </middle>
 
