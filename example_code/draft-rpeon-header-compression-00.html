@@ -1,0 +1,561 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en"><head><title>Header Delta-Compression for HTTP/2.0</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="description" content="Header Delta-Compression for HTTP/2.0">
+<meta name="keywords" content="HTTP">
+<meta name="generator" content="xml2rfc v1.36 (http://xml.resource.org/)">
+<style type='text/css'><!--
+        body {
+                font-family: verdana, charcoal, helvetica, arial, sans-serif;
+                font-size: small; color: #000; background-color: #FFF;
+                margin: 2em;
+        }
+        h1, h2, h3, h4, h5, h6 {
+                font-family: helvetica, monaco, "MS Sans Serif", arial, sans-serif;
+                font-weight: bold; font-style: normal;
+        }
+        h1 { color: #900; background-color: transparent; text-align: right; }
+        h3 { color: #333; background-color: transparent; }
+
+        td.RFCbug {
+                font-size: x-small; text-decoration: none;
+                width: 30px; height: 30px; padding-top: 2px;
+                text-align: justify; vertical-align: middle;
+                background-color: #000;
+        }
+        td.RFCbug span.RFC {
+                font-family: monaco, charcoal, geneva, "MS Sans Serif", helvetica, verdana, sans-serif;
+                font-weight: bold; color: #666;
+        }
+        td.RFCbug span.hotText {
+                font-family: charcoal, monaco, geneva, "MS Sans Serif", helvetica, verdana, sans-serif;
+                font-weight: normal; text-align: center; color: #FFF;
+        }
+
+        table.TOCbug { width: 30px; height: 15px; }
+        td.TOCbug {
+                text-align: center; width: 30px; height: 15px;
+                color: #FFF; background-color: #900;
+        }
+        td.TOCbug a {
+                font-family: monaco, charcoal, geneva, "MS Sans Serif", helvetica, sans-serif;
+                font-weight: bold; font-size: x-small; text-decoration: none;
+                color: #FFF; background-color: transparent;
+        }
+
+        td.header {
+                font-family: arial, helvetica, sans-serif; font-size: x-small;
+                vertical-align: top; width: 33%;
+                color: #FFF; background-color: #666;
+        }
+        td.author { font-weight: bold; font-size: x-small; margin-left: 4em; }
+        td.author-text { font-size: x-small; }
+
+        /* info code from SantaKlauss at http://www.madaboutstyle.com/tooltip2.html */
+        a.info {
+                /* This is the key. */
+                position: relative;
+                z-index: 24;
+                text-decoration: none;
+        }
+        a.info:hover {
+                z-index: 25;
+                color: #FFF; background-color: #900;
+        }
+        a.info span { display: none; }
+        a.info:hover span.info {
+                /* The span will display just on :hover state. */
+                display: block;
+                position: absolute;
+                font-size: smaller;
+                top: 2em; left: -5em; width: 15em;
+                padding: 2px; border: 1px solid #333;
+                color: #900; background-color: #EEE;
+                text-align: left;
+        }
+
+        a { font-weight: bold; }
+        a:link    { color: #900; background-color: transparent; }
+        a:visited { color: #633; background-color: transparent; }
+        a:active  { color: #633; background-color: transparent; }
+
+        p { margin-left: 2em; margin-right: 2em; }
+        p.copyright { font-size: x-small; }
+        p.toc { font-size: small; font-weight: bold; margin-left: 3em; }
+        table.toc { margin: 0 0 0 3em; padding: 0; border: 0; vertical-align: text-top; }
+        td.toc { font-size: small; font-weight: bold; vertical-align: text-top; }
+
+        ol.text { margin-left: 2em; margin-right: 2em; }
+        ul.text { margin-left: 2em; margin-right: 2em; }
+        li      { margin-left: 3em; }
+
+        /* RFC-2629 <spanx>s and <artwork>s. */
+        em     { font-style: italic; }
+        strong { font-weight: bold; }
+        dfn    { font-weight: bold; font-style: normal; }
+        cite   { font-weight: normal; font-style: normal; }
+        tt     { color: #036; }
+        tt, pre, pre dfn, pre em, pre cite, pre span {
+                font-family: "Courier New", Courier, monospace; font-size: small;
+        }
+        pre {
+                text-align: left; padding: 4px;
+                color: #000; background-color: #CCC;
+        }
+        pre dfn  { color: #900; }
+        pre em   { color: #66F; background-color: #FFC; font-weight: normal; }
+        pre .key { color: #33C; font-weight: bold; }
+        pre .id  { color: #900; }
+        pre .str { color: #000; background-color: #CFF; }
+        pre .val { color: #066; }
+        pre .rep { color: #909; }
+        pre .oth { color: #000; background-color: #FCF; }
+        pre .err { background-color: #FCC; }
+
+        /* RFC-2629 <texttable>s. */
+        table.all, table.full, table.headers, table.none {
+                font-size: small; text-align: center; border-width: 2px;
+                vertical-align: top; border-collapse: collapse;
+        }
+        table.all, table.full { border-style: solid; border-color: black; }
+        table.headers, table.none { border-style: none; }
+        th {
+                font-weight: bold; border-color: black;
+                border-width: 2px 2px 3px 2px;
+        }
+        table.all th, table.full th { border-style: solid; }
+        table.headers th { border-style: none none solid none; }
+        table.none th { border-style: none; }
+        table.all td {
+                border-style: solid; border-color: #333;
+                border-width: 1px 2px;
+        }
+        table.full td, table.headers td, table.none td { border-style: none; }
+
+        hr { height: 1px; }
+        hr.insert {
+                width: 80%; border-style: none; border-width: 0;
+                color: #CCC; background-color: #CCC;
+        }
+--></style>
+</head>
+<body>
+<table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
+<table summary="layout" width="66%" border="0" cellpadding="0" cellspacing="0"><tr><td><table summary="layout" width="100%" border="0" cellpadding="2" cellspacing="1">
+<tr><td class="header">Network Working Group</td><td class="header">R. Peon</td></tr>
+<tr><td class="header">Internet-Draft</td><td class="header">Google, Inc</td></tr>
+<tr><td class="header">Intended status: Informational</td><td class="header">Oct 12, 2012</td></tr>
+<tr><td class="header">Expires: April 15, 2013</td><td class="header">&nbsp;</td></tr>
+</table></td></tr></table>
+<h1><br />Header Delta-Compression for HTTP/2.0<br />draft-rpeon-header-compression-00</h1>
+
+<h3>Abstract</h3>
+
+<p>This document describes a mechanism for compressing streams of groups key-value pairs, often known as Headers in an HTTP session. See RFC 2616 or successors for more information about headers.
+</p>
+<h3>Status of this Memo</h3>
+<p>
+This Internet-Draft is submitted  in full
+conformance with the provisions of BCP&nbsp;78 and BCP&nbsp;79.</p>
+<p>
+Internet-Drafts are working documents of the Internet Engineering
+Task Force (IETF).  Note that other groups may also distribute
+working documents as Internet-Drafts.  The list of current
+Internet-Drafts is at http://datatracker.ietf.org/drafts/current/.</p>
+<p>
+Internet-Drafts are draft documents valid for a maximum of six months
+and may be updated, replaced, or obsoleted by other documents at any time.
+It is inappropriate to use Internet-Drafts as reference material or to cite
+them other than as &ldquo;work in progress.&rdquo;</p>
+<p>
+This Internet-Draft will expire on April 15, 2013.</p>
+
+<h3>Copyright Notice</h3>
+<p>
+Copyright (c) 2012 IETF Trust and the persons identified as the
+document authors.  All rights reserved.</p>
+<p>
+This document is subject to BCP 78 and the IETF Trust's Legal
+Provisions Relating to IETF Documents
+(http://trustee.ietf.org/license-info) in effect on the date of
+publication of this document.  Please review these documents
+carefully, as they describe your rights and restrictions with respect
+to this document. Code Components extracted from this document must
+include Simplified BSD License text as described in Section 4.e of
+the Trust Legal Provisions and are provided without warranty as
+described in the Simplified BSD License.</p>
+<a name="toc"></a><br /><hr />
+<h3>Table of Contents</h3>
+<p class="toc">
+<a href="#intro">1.</a>&nbsp;
+Overview<br />
+<a href="#anchor1">2.</a>&nbsp;
+Definitions<br />
+<a href="#anchor2">3.</a>&nbsp;
+Example-data-model<br />
+<a href="#anchor3">4.</a>&nbsp;
+Compression-overview<br />
+<a href="#anchor4">5.</a>&nbsp;
+Decompression-overview<br />
+<a href="#anchor5">6.</a>&nbsp;
+On-the-wire-overview<br />
+<a href="#anchor6">7.</a>&nbsp;
+Operations<br />
+<a href="#anchor7">8.</a>&nbsp;
+Security Considerations<br />
+<a href="#anchor8">9.</a>&nbsp;
+Requirements Notation<br />
+<a href="#anchor9">10.</a>&nbsp;
+Acknowledgements<br />
+<a href="#rfc.references1">11.</a>&nbsp;
+Normative References<br />
+<a href="#rfc.authors">&#167;</a>&nbsp;
+Author's Address<br />
+</p>
+<br clear="all" />
+
+<a name="intro"></a><br /><hr />
+<table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
+<a name="rfc.section.1"></a><h3>1.&nbsp;
+Overview</h3>
+
+<p>There have been several problems pointed out with the use of the gzip compressor in SPDY. The biggest of these problems is that it is possible for a smart attacker to inject content into the compressor, and then to test hypothesis about the prior contents of the compressor by examining the output size. The other issue is that gzip often consumes more CPU than many would like, especially in situations where one is doing forward or reverse proxying. The compressor proposed here intends to solve the first issue and significantly mitigate the second.
+</p>
+<a name="anchor1"></a><br /><hr />
+<table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
+<a name="rfc.section.2"></a><h3>2.&nbsp;
+Definitions</h3>
+
+<p>
+          </p>
+<blockquote class="text"><dl>
+<dt></dt>
+<dd>user-agent: The program or device which a human interacts with directly and which typically initiates the transport layer connection or session
+</dd>
+<dt></dt>
+<dd>client: Synonym for user-agent
+</dd>
+<dt></dt>
+<dd>server: The computer or device which typically accepts a connection and serves data
+</dd>
+<dt></dt>
+<dd>proxy: An entity acting as a server for the client, and a client for the server
+</dd>
+<dt></dt>
+<dd>header: An complete set of key-value pairs. In HTTP1/1 this would be all of the data preceeding the entity-body.
+</dd>
+</dl></blockquote><p>
+        
+</p>
+<a name="anchor2"></a><br /><hr />
+<table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
+<a name="rfc.section.3"></a><h3>3.&nbsp;
+Example-data-model</h3>
+<div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
+            struct ValEntry {
+              KeyMapIterator krt;
+              ValMapIterator vrt;
+              LRUIterator lrt;
+              Index val_idx;
+            };
+
+            typedef map&lt;string, ValEntry*&gt; ValMap;
+
+            struct KeyEntry {
+              int refcnt;
+              Index key_idx;
+              ValMap valmap;
+            }
+            typedef map&lt;string, KeyEntry&gt; KeyMap;
+            typedef set&lt;Index&gt; HeaderGroup;
+            typedef map&lt;Index, HeaderGroup&gt; HeaderGroups;
+
+            struct CompressorState {
+              HeaderGroups header_groups;
+              KeyMap key_map;
+              list&lt;ValEntry*&gt; lru;
+            };
+
+            typedef map&lt;KeyIdx, string&gt;; KeyIdxMap;
+            typedef map&lt;ValIdx, pair&lt;KeyIdxMap::iterator,string&gt;; ValIdxMap;
+
+            struct DecompressorState {
+              KeyIdxMap key_idx_map;
+              ValIdxMap val_idx_map;
+              list&lt;KeyIdxMap::iterator&gt; lru;
+            };
+
+</pre></div>
+<a name="anchor3"></a><br /><hr />
+<table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
+<a name="rfc.section.4"></a><h3>4.&nbsp;
+Compression-overview</h3>
+
+<p> Note that this only describes conceptually how the algorithm works and is very much pseudo-code
+</p>
+<p> user-agents and servers compress MUST using roughly this algorithm.
+</p>
+<p> user-agents and servers MUST use huffman-coding when so doing reduces the size of the bytes on the wire
+</p>
+<p> proxies MAY compress using this algorithm, or something equivalent, but MAY also use EREF operations when throughput is more important than client experienced latency.
+</p>
+<p> proxies MAY ignore doing huffman coding
+</p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
+  Compress(headers):
+    first_used_val_idx = CurrentValIdx()
+    old_keymap = keymap
+
+    For header in headers:
+      if key in keymap:
+        keymap[key].refcnt += 1
+
+    for header in headers:
+      key_map_iterator = lookup(header.key)
+      if (!key_map_iterator):
+        key_iterator = insert_new_key(header.key)
+        insert_new_value_from_key(key_iterator, header.val)
+        instructions.append(KVSto(key,val))
+      else if (val_iterator = lookup_val_in_keymap_entry(key_map_iterator,
+                                                          header.val)):
+        // we've found that the key,value pair already exists in the compressor
+        // we now must check to see if it is already visible, in which case
+        // there is nothing to do. If it isn't visible, however, we'll toggle
+        // the visibility on.
+        if (!header_group.includes(val_iterator_&gt;val_idx)):
+          instructions.append(Toggle(val_iterator_&gt;val_idx));
+      else:
+        // we know we found a key, but not the entire key_value.
+        // thus, we emit a clone() instructions.
+        instructions.append(Clone(key_iterator_&gt;key_id, header.val)
+
+      if key in old_keymap:
+        keymap[key].refcnt += 1
+
+      for header_group_entry in header_group:
+        if header_group_entry not in header:
+          instructions.append(header_group_entry_&gt;idx())
+      for instruction in instructions:
+        ExecuteInstruction(instructions)
+      SerializeInstructions(output_buffer, instructions, first_used_val_idx)
+
+
+   ExecuteInstruction(instruction):
+     while (instruction.size_delta() + state_size &amp;gt; max_state_size):
+       RemoveOldestLRUItem()
+     if instruction.opcode == "clone":
+       InsertKV(instruction.lookup_key(), instruction.val(), GetNextLRUIdx())
+     elif instruction.opcode == "kvsto":
+       InsertKV(instruction.key(), instruction.val(), GetNextLRUIdx())
+     elif instruction.opcode == "togglerange":
+       for (i=instruction.start; i &amp;lt;= instruction.last; ++i)
+         bool prev_state = ToggleIdx(i)
+         if prev_state == NOT_VISIBLE:
+           MoveToFrontOfLRU(i)
+     elif instruction.opcode == "toggle":
+       bool prev_state = ToggleIdx(instruction.index)
+       if prev_state == NOT_VISIBLE:
+         MoveToFrontOfLRU(instruction.index)
+
+
+   SerializeInstructions(output_buffer, instructions, first_val_idx):
+     // Note that huffman-encoding is optional-- a bit (somwhere) would indicate
+     // that it was or was not used for any particular string.
+     output_buffer.WriteValIdx(first_val_idx)
+     for toggle in filter(TOGGLE, instructions):
+       output_buffer.WriteBits(TOGGLE)
+       output_buffer.WriteValIdx(toggle.val_idx)
+     for toggle in filter(TOGGLE_RANGE, instructions):
+       output_buffer.WriteBits(TOGGLE_RANGE)
+       output_buffer.WriteValIdx(toggle.start)
+       output_buffer.WriteValIdx(toggle.last)
+     for clone in filter(CLONE, instructions):
+       output_buffer.WriteBits(CLONE)
+       output_buffer.WriteKeyIdx(clone.key_idx)
+       output_buffer.WriteString(huffman.encode(clone.val))
+     for kvsto in filter(KVSTO, instructions):
+       output_buffer.WriteString(huffman.encode(kvsto.key))
+       output_buffer.WriteString(huffman.encode(kvsto.val))
+     for eref in filter(EREF, instructions):
+       output_buffer.WriteString(huffman.encode(kvsto.key))
+       output_buffer.WriteString(huffman.encode(kvsto.val))
+
+
+</pre></div>
+<a name="anchor4"></a><br /><hr />
+<table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
+<a name="rfc.section.5"></a><h3>5.&nbsp;
+Decompression-overview</h3>
+
+<p> Note that this only describes conceptually how the algorithm works and is very much pseudo-code
+</p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
+  Decode():
+    header_group = headers.header_group // as received from sender
+    val_idx = headers_frame.first_val_idx // as received from sender.
+    header_groups[header_group].ephemereal_headers.clear()
+    for instruction in instructions:
+      ExecuteInstruction(instruction, header_group)
+
+    ExecuteInstruction(instruction, header_group):
+      while (instruction.size_delta() + state_size &amp;gt; max_state_size):
+        RemoveOldestLRUItem()
+      if instruction.opcode == TOGGLE:
+        if instruction.idx in header_groups[header_group]:
+          header_groups[header_group].remove(instruction.idx)
+        else:
+          header_groups[header_group].insert(instruction.idx)
+          MoveToHeadOfLRU(instruction.idx)
+      elif instruction.opcode == TOGGLE_GROUP:
+        for i=instruction.begin; i &lt;= instruction.last; ++i:
+          ExecuteInstruction(Toggle(i), header_group);
+      elif instruction.opcode == CLONE:
+        KeyIdxMap::iterator kimi = key_idx_map.lookup(instruction.key_idx)
+        val_idx_map.insert(++val_idx, pair(kimi, instruction.val))
+      elif instruction.opcode == KVSTO:
+        key_idx = GetNextKeyIdx()
+        KeyIdxMap::iterator kimi = key_idx_map.insert(key_idx,
+                                                      instruction.key)
+        val_idx_map.insert(++val_idx, pair(kimi, instruction.val))
+      elif instruction.opcode == EREF:
+        header_groups[header_group].ephemereal_headers.append(
+            pair(instruction.key, instruction.val))
+
+
+    // This would return the complete set of headers, e.g. for an HTTP
+    // request or response
+
+    InflateHeaders(header_group):
+      Headers headers
+      for idx in header_groups[header_group]:
+        headers.append(ValIdxMap[idx].first-&gt;first, ValIdxMap[idx].second)
+      headers.append(header_groups[header_group].ephemereal_headers);
+      return headers
+
+</pre></div>
+<a name="anchor5"></a><br /><hr />
+<table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
+<a name="rfc.section.6"></a><h3>6.&nbsp;
+On-the-wire-overview</h3>
+
+<p> This would replace the current HEADERS frame described in the SPDY/2 draft specification.
+</p>
+<p> The header-group-id MUST be emitted immediately after the HEADERS frame boilerplate.
+</p>
+<p> A field indicating the start of the ID-sequence space MUST be immediately after the header-group-id
+</p>
+<p> A sequence of 'Toggle' or 'ToggleRange' operations MUST follow, if
+          any of these operations are to be emitted at all
+</p>
+<p> A sequence of 'Clone' or 'KVSto' operations MUST then follow, if
+          any of these operations are to be emitted at all
+</p>
+<p> A sequence of 'ERef' operations MUST then follow, if any of these are to be emitted.
+</p>
+<p> If the size of the aggregate set of instructions is larger than the
+          frame-length, the 'finished' bit of the HEADERS frame boilerplate
+          MUST be set to 0. This will indicate that the next subsequent HEADERS
+          frame on that stream is a continuation of a previous HEADERS
+          frame
+</p>
+<p> If all of the 'Toggle', 'ToggleRange', 'Clone', and 'KVSTo'
+          operations have been emitted, the 'finished' bit of the HEADERS frame
+          which encapsulates the last instruction MUST be set to 1.
+</p>
+<p> The BNF for this would be:
+</p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
+HEADERS_FRAME: FRAME_BOILERPLATE GROUP-ID FIRST-VAL-IDX INSTRUCTIONS
+INSTRUCTIONS : *(TOGGLE | TOGGLERANGE) *( CLONE | KVSTO) *(EREF)
+TOGGLE: TOGGLE_OPCODE VAL_IDX
+TOGGLERANGE: TOGGLERANGE_OPCODE VAL_IDX_START VAL_IDX_END
+CLONE:  CLONE_OPCODE KEY_IDX VAL_STRING
+KVSTO:  KVSTO_OPCODE KEY_STRING VAL_STRING
+EREF:   EREF_OPCODE KEY_STRING VAL_STRING
+
+KEY_STRING: MAYBE_COMPRESSED_STRING
+VAL_STRING: MAYBE_COMPRESSED_STRING
+MAYBE_COMPRESSED_STRING:  TRUE HUFFMAN_COMPRESSED_STRING |
+                         FALSE STRING_LITERAL
+VAL_IDX_START: int
+VAL_IDX_END: int
+VAL_IDX: int
+
+</pre></div>
+<p> There are alternate serializations which have various interesting properties. Here are some interesting variations among these alternatives:
+          </p>
+<blockquote class="text"><dl>
+<dt></dt>
+<dd> Serialize all constant-length information before serializing any string data. This allows for a clear separation of byte-aligned vs. potentially non-byte-aligned data
+</dd>
+<dt></dt>
+<dd> Have explicit sections for each opcode type, with a sentinel denoting the end of each range of opcode. Since the number of opcode types is small, this could reduce the overhead consumed in repeating the opcode.
+</dd>
+<dt></dt>
+<dd> As above, but have a count for the number of each opcode
+</dd>
+<dt></dt>
+<dd> Use huffman coding on the entire payload of the HEADERS frame, not just the strings. TOGGLES are far more common than other operations, and using fewer bits for these could be beneficial
+</dd>
+</dl></blockquote><p>
+					
+</p>
+<a name="anchor6"></a><br /><hr />
+<table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
+<a name="rfc.section.7"></a><h3>7.&nbsp;
+Operations</h3>
+
+<p> Toggle: This encodes a single ValIdx, which, if already present in the HeaderGroup associated with the current HEADERS frame, will be removed, else added. If added, then the LRU entry which the index references MUST be moved to the head of the LRU.
+</p>
+<p> ToggleRange: This incodes two ValIdx, denoting an inclusive range of ValIdx which shall be toggled as per the Toggle operation, above.
+</p>
+<p> Clone: This encodes a KeyIdx which references a pre-existing key, and references a new string. The Clone operation inserts a new ValEntry into the ValMap associated with the KeyMap entry identified by the KeyIdx. The ValIdx for this new ValEntry is the ++current_val_idx; The new ValEntry MUST be inserted at the head of the LRU.
+</p>
+<p> KVSto: This encodes a new key string and new value string. The key will be inserted into the KeyMap, and assigned a new KeyIdx. The value string will be inserted into the Valmap associated with the KeyMap entry that was just added. As with Clone, a new unique ValIdx will be associated with it in a monotonically increasing sequence by using the value of ++current_val_idx. The new ValEntry MUST be inserted at the head of the LRU.
+</p>
+<p> Eref: This encodes a key and value literal which, while interpreted as part of the header frame, doesn't cause any persistent change in the compressor state. ERef stands for "ephemereal reference".
+</p>
+<a name="anchor7"></a><br /><hr />
+<table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
+<a name="rfc.section.8"></a><h3>8.&nbsp;
+Security Considerations</h3>
+
+<p> The compressor algorithm described here is expected to be immune to the current attacks against encrypted stream-based compressors such as TLS+gzip, but more scrutiny is warranted. The reason that it is believed that the algorithm(s) expressed here is immune is that any backreference to a header key or value always requires a whole-text match, and thus any probe of the compression context confirms no hypothesis unless the attacker has guessed the entire plaintext. 
+</p>
+<a name="anchor8"></a><br /><hr />
+<table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
+<a name="rfc.section.9"></a><h3>9.&nbsp;
+Requirements Notation</h3>
+
+<p>
+            The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+            "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
+            document are to be interpreted as described in <a class='info' href='#RFC2119'>[RFC2119]<span> (</span><span class='info'>Bradner, S., &ldquo;Key words for use in RFCs to Indicate Requirement Levels,&rdquo; March&nbsp;1997.</span><span>)</span></a>.
+          
+</p>
+<a name="anchor9"></a><br /><hr />
+<table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
+<a name="rfc.section.10"></a><h3>10.&nbsp;
+Acknowledgements</h3>
+
+<a name="rfc.references1"></a><br /><hr />
+<table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
+<h3>11.&nbsp;Normative References</h3>
+<table width="99%" border="0">
+<tr><td class="author-text" valign="top"><a name="RFC2119">[RFC2119]</a></td>
+<td class="author-text"><a href="mailto:sob@harvard.edu">Bradner, S.</a>, &ldquo;<a href="http://tools.ietf.org/html/rfc2119">Key words for use in RFCs to Indicate Requirement Levels</a>,&rdquo; BCP&nbsp;14, RFC&nbsp;2119, March&nbsp;1997 (<a href="http://www.rfc-editor.org/rfc/rfc2119.txt">TXT</a>, <a href="http://xml.resource.org/public/rfc/html/rfc2119.html">HTML</a>, <a href="http://xml.resource.org/public/rfc/xml/rfc2119.xml">XML</a>).</td></tr>
+<tr><td class="author-text" valign="top"><a name="RFC2616">[RFC2616]</a></td>
+<td class="author-text"><a href="mailto:fielding@ics.uci.edu">Fielding, R.</a>, <a href="mailto:jg@w3.org">Gettys, J.</a>, <a href="mailto:mogul@wrl.dec.com">Mogul, J.</a>, <a href="mailto:frystyk@w3.org">Frystyk, H.</a>, <a href="mailto:masinter@parc.xerox.com">Masinter, L.</a>, <a href="mailto:paulle@microsoft.com">Leach, P.</a>, and <a href="mailto:timbl@w3.org">T. Berners-Lee</a>, &ldquo;<a href="http://tools.ietf.org/html/rfc2616">Hypertext Transfer Protocol -- HTTP/1.1</a>,&rdquo; RFC&nbsp;2616, June&nbsp;1999 (<a href="http://www.rfc-editor.org/rfc/rfc2616.txt">TXT</a>, <a href="http://www.rfc-editor.org/rfc/rfc2616.ps">PS</a>, <a href="http://www.rfc-editor.org/rfc/rfc2616.pdf">PDF</a>, <a href="http://xml.resource.org/public/rfc/html/rfc2616.html">HTML</a>, <a href="http://xml.resource.org/public/rfc/xml/rfc2616.xml">XML</a>).</td></tr>
+<tr><td class="author-text" valign="top"><a name="SPDY">[SPDY]</a></td>
+<td class="author-text">Belshe, M. and R. Peon, &ldquo;<a href="http://tools.ietf.org/html/draft-mbelshe-httpbis-spdy">SPDY PROTOCOL</a>.&rdquo;</td></tr>
+</table>
+
+<a name="rfc.authors"></a><br /><hr />
+<table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
+<h3>Author's Address</h3>
+<table width="99%" border="0" cellpadding="0" cellspacing="0">
+<tr><td class="author-text">&nbsp;</td>
+<td class="author-text">Roberto Peon</td></tr>
+<tr><td class="author-text">&nbsp;</td>
+<td class="author-text">Google, Inc</td></tr>
+<tr><td class="author" align="right">Email:&nbsp;</td>
+<td class="author-text"><a href="mailto:fenix@google.com">fenix@google.com</a></td></tr>
+</table>
+</body></html>
