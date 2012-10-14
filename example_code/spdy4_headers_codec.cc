@@ -30,6 +30,9 @@ using std::list;
 using std::map;
 using std::multimap;
 
+typedef uint32_t GroupId;
+typedef uint32_t StreamId;
+
 #if DEBUG
 #define DEBUG_PRINT(X) X
 #else
@@ -361,28 +364,23 @@ class Storage {
   Storage() :
      state_size(0),
      max_state_size(10*1024),
-		 num_vals(0),
-		 max_vals(1024),
-		 pin_it(lru.end()),
-		 remove_val_cb(0) {}
+     num_vals(0),
+     max_vals(1024),
+     pin_it(lru.end()),
+     remove_val_cb(0) {}
 };
 
 class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
  public:
   enum {CLONE, KVSTO, TOGGLE, TOGGLE_RANGE};
 
-  Huffman huff;
-  Storage storage;
   typedef Storage::ValEntry ValEntry;
   typedef Storage::LookupCache LookupCache;
+  typedef uint32_t GenerationIdx;
 
-  uint32_t max_total_header_storage_size;
-  uint32_t frame_count;
-  uint32_t current_state_size;
 
-  typedef map<Storage::ValEntry*, uint32_t> HeaderGroup;
-  typedef map<uint32_t, HeaderGroup> HeaderGroups;
-  HeaderGroups header_groups;
+  typedef map<ValEntry*, GenerationIdx> HeaderGroup;
+  typedef map<GroupId, HeaderGroup> HeaderGroups;
 
   struct KVStoOp {
     const string* key_p;
@@ -407,19 +405,37 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
   };
 
   struct ToggleOp {
-    Storage::ValEntry* entry;
+    ValEntry* entry;
    public:
-    explicit ToggleOp(Storage::ValEntry* kv) : entry(kv) {}
+    explicit ToggleOp(ValEntry* kv) : entry(kv) {}
     ToggleOp() : entry(0) {}
     LRUIdx idx() const { return entry->lru_idx; }
   };
 
+  struct Instructions {
+    vector<ToggleOp> turn_ons;
+    vector<ToggleOp> turn_offs;
+    vector<CloneOp> clones;
+    vector<KVStoOp> kvstos;
+  };
 
-  SPDY4HeadersCodecImpl(const FreqTable& sft) :
-      max_total_header_storage_size(10*1024),
-      frame_count(0),
-      current_state_size(0)
-  {
+  class SerializationInterface {
+    public:
+    virtual size_t SerializeInstructions(OutputStream* os, Instructions* instrs) = 0;
+    virtual size_t DeSerializeInstructions(Instructions* instrs, OutputStream* os) = 0;
+    virtual ~SerializationInterface(){}
+  };
+
+ private:
+
+  HeaderGroups header_groups;
+  Huffman huff;
+  Storage storage;
+  GenerationIdx frame_count;
+
+ public:
+
+  SPDY4HeadersCodecImpl(const FreqTable& sft) : frame_count(0) {
     storage.SetRemoveValCB(this);
     huff.Init(sft);
     for (unsigned int i = 0;
@@ -431,13 +447,6 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     }
   }
 
-  struct Instructions {
-    vector<ToggleOp> turn_ons;
-    vector<ToggleOp> turn_offs;
-    vector<CloneOp> clones;
-    vector<KVStoOp> kvstos;
-  };
-
   virtual void RemoveValEntry(ValEntry* entry) {
     for(HeaderGroups::iterator hgs_i = header_groups.begin();
         hgs_i != header_groups.end();
@@ -446,11 +455,11 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     }
   };
 
-  void ProcessLine(Storage::LookupCache* key_lc,
+  void ProcessLine(const LookupCache* key_lc,
                    const string& val,
                    bool can_clone,
                    HeaderGroup* header_group,
-                   uint32_t group_id,
+                   GroupId group_id,
                    Instructions* instrs) {
     const string& key = key_lc->k_i->first;
     LookupCache lc = *key_lc;
@@ -478,7 +487,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     }
   }
 
-  void ExecuteInstructions(uint32_t group_id, const Instructions& instrs) {
+  void ExecuteInstructions(GroupId group_id, const Instructions& instrs) {
     for (vector<ToggleOp>::const_iterator i = instrs.turn_ons.begin();
          i != instrs.turn_ons.end();
          ++i) {
@@ -520,8 +529,8 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
   // 3) Renumber every referenced element when it is referenced.
   //    This is similar #2, but could be done with the current implementation.
   void OutputCompleteHeaderFrame(OutputStream* os,
-                                 uint32_t stream_id,
-                                 uint32_t group_id,
+                                 StreamId stream_id,
+                                 GroupId group_id,
                                  const HeaderFrame& headers,
                                  bool this_ends_the_frame) {
     storage.PinLRUEnd();
@@ -555,8 +564,8 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     }
     HeaderGroup& header_group = header_groups[group_id];
     list<string> cookie_strs;  // Yes, this must exist for the func scope.
-    vector<Storage::LookupCache> key_lookups;
-    vector<Storage::LookupCache>::iterator key_lu_it;
+    vector<LookupCache> key_lookups;
+    vector<LookupCache>::iterator key_lu_it;
 
     // Since we'll be going eliminating entries as we construct operations,
     // we'll need to go through and ensure that the key for each of the things
@@ -567,7 +576,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
          hf_i != headers.end();
          ++hf_i) {
       const string& key = hf_i->key;
-      Storage::LookupCache lc = storage.DefaultLookupCache();
+      LookupCache lc = storage.DefaultLookupCache();
       storage.FindKey(&lc, key);
       key_lookups.push_back(lc);
       if (storage.HasKey(lc)) lc.k_i->second.refcnt++;
@@ -580,7 +589,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
       const string& key = hf_i->key;
       const string& val = hf_i->val;
       bool can_clone = storage.HasKey(*key_lu_it);
-      Storage::LookupCache lc = *key_lu_it;
+      LookupCache lc = *key_lu_it;
       storage.FindOrAddKey(&lc, key);
 
       size_t crumb_end;
@@ -588,7 +597,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
           (crumb_end = val.find_first_of(';')) != string::npos) {
         bool can_clone_cookie = can_clone;
         size_t crumb_begin = 0;
-        Storage::LookupCache clc = lc;
+        LookupCache clc = lc;
 
         while (crumb_begin < val.size()) {
           cookie_strs.push_back(val.substr(crumb_begin,
@@ -626,23 +635,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
 
     ExecuteInstructions(group_id, instrs);
 
-    // Order of serialization:
-    //   1) toggles
-    //   2) remove
-    //   3) clone
-    //   4) kvsto
-    // We first want to serialize the toggles-on.
-    // Then we want to serialize the remove operations.
-    // Then we want to serialize the toggles-off.
-    // We next want to execute remove operations.
-    // Then, we do either clones/mutates or KVStos or  (doesn't matter).
-    //
-    // This ordering will reduce:
-    //   1) the amount of data transmitted on the wire since
-    //   we will be able to reference state without having to
-    //   recreate it more often
-    //   2) the amount of state used at any portion of time
-    //   while executing the instructions.
+
     while (!SerializeAllInstructions(os,
                                      instrs,
                                      &first_turn_on,
@@ -700,7 +693,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
       vector<CloneOp>::iterator* first_clone,
       vector<KVStoOp>::iterator* first_kvsto,
       uint8_t headers_end_flag,
-      uint32_t stream_id) {
+      StreamId stream_id) {
 
     // We need to loop over this until all of the instructions have been
     // serialized
@@ -726,7 +719,6 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     for (; *first_kvsto != instrs.kvstos.end(); ++(*first_kvsto)) {
       WriteKVSto(os, **first_kvsto);
     }
-
 
     /*
       {
@@ -766,7 +758,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
   }
 
   void DiscoverTurnOffs(vector<ToggleOp>* turn_offs,
-                        uint32_t group_id) {
+                        GroupId group_id) {
     HeaderGroup& header_group = header_groups[group_id];
     for (HeaderGroup::iterator i = header_group.begin();
          i != header_group.end();++i) {
@@ -779,7 +771,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
   void WriteControlFrameBoilerplate(OutputStream* os,
                                     uint32_t frame_len,
                                     uint8_t flags,
-                                    uint32_t stream_id,
+                                    StreamId stream_id,
                                     uint8_t type) {
     os->WriteUint16(frame_len);
     os->WriteUint8(flags);
@@ -787,7 +779,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     os->WriteUint8(type);
   }
 
-  void WriteControlFrameStreamId(OutputStream* os, uint32_t stream_id) {
+  void WriteControlFrameStreamId(OutputStream* os, StreamId stream_id) {
     if (stream_id & 0x8000U) {
       abort(); // can't have that top-order bit set....
     }
@@ -800,7 +792,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     return 0;
   }
 
-  void ExecuteClone(uint32_t group_id, const CloneOp& clone) {
+  void ExecuteClone(GroupId group_id, const CloneOp& clone) {
     const string& val = clone.val();
 #if DEBUG
     const string& key = clone.key();
@@ -820,7 +812,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     return 0;
   }
 
-  bool ToggleHeaderGroupEntry(uint32_t group_id,
+  bool ToggleHeaderGroupEntry(GroupId group_id,
                               ValEntry* entry) {
     assert(group_id > 0);
     HeaderGroups::iterator hgs_i = header_groups.find(group_id);
@@ -845,7 +837,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
   }
 
   // return value indicates whether it was visibile before this call.
-  bool SetHeaderGroupEntry(uint32_t group_id,
+  bool SetHeaderGroupEntry(GroupId group_id,
                            ValEntry* entry,
                            bool should_be_visible) {
     assert(group_id > 0);
@@ -868,7 +860,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     return was_visible;
   }
 
-  void AddLine(uint32_t group_id, const LookupCache& lc, const string& val) {
+  void AddLine(GroupId group_id, const LookupCache& lc, const string& val) {
     LookupCache tlc = lc;
     ValEntry* entry = storage.InsertVal(&tlc, val);
 
@@ -879,7 +871,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     }
   }
 
-  void ExecuteKVSto(uint32_t group_id, const KVStoOp& kvsto) {
+  void ExecuteKVSto(GroupId group_id, const KVStoOp& kvsto) {
     LookupCache lc = storage.DefaultLookupCache();
     storage.FindOrAddKey(&lc, kvsto.key());
     AddLine(group_id, lc, kvsto.val());
@@ -890,7 +882,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
 
   }
 
-  void ExecuteToggle(uint32_t group_id, const ToggleOp& to) {
+  void ExecuteToggle(GroupId group_id, const ToggleOp& to) {
     ValEntry* entry = to.entry;
     DEBUG_PRINT(cout << "Executing Toggle: " << entry->lru_idx << " ";)
     if (!ToggleHeaderGroupEntry(group_id, entry)) {
@@ -936,7 +928,72 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
   size_t CurrentStateSize() const {
     return storage.state_size;
   }
+
+
 };
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+
+typedef SPDY4HeadersCodecImpl::Instructions Instructions;
+// In this serialization implementation, all data is serialized ignoring
+// byte offsets, inline, with mention of the opcode for each operation.
+// As noted in the 'Other serialization...' section below this class,
+// there are other (likely better) ways of doing this.
+class InlineSerialization : SPDY4HeadersCodecImpl::SerializationInterface {
+  public:
+    // Order of serialization:
+    //   1) toggles
+    //   2) clone
+    //   3) kvsto
+    // We first want to serialize the toggles-on.
+    // Then we want to serialize the toggles-off.
+    // Then, we do either clones/mutates or KVStos or  (doesn't matter).
+    //
+    // This ordering will reduce:
+    //   1) the amount of data transmitted on the wire since
+    //   we will be able to reference state without having to
+    //   recreate it more often
+    //   2) the amount of state used at any portion of time
+    //   while executing the instructions.
+  size_t SerializeInstructions(OutputStream* os, Instructions* instrs) {
+    // for each instruction
+    // serialize opcode
+    // serialize arguments
+    return 0;
+  };
+  size_t DeSerializeInstructions(Instructions* instrs, OutputStream* os) {
+    return 0;
+  }
+};
+
+// Other serializations/variations/ideas:
+//  1) fixed-width fields are all serialized together.
+//     variable-width fields are also serialized together (and thus separately
+//     from fixed-width fields). This implies that something exist which
+//     demarks the end of the fixed-width section, whether that be a sentinel
+//     or a size-of-bytes, or opcount.
+//  2) No mention of opcodes is made, rather, it is implicit that all operations
+//     before a sentry are of type A, after that sentry type B, after the
+//     next sentry type C, etc.
+//  3) As in #2, but instead a count of fields, operations, or byte-length is
+//     used for demarcation.
+//  4) The opcode for the sequence of operations is mentioned
+//     explicitly at the beginning of the sequence exactly once. Either
+//     sentinel based demarcation or count-based demarcation is used to
+//     indicate the end of each section
+//  5) all huffman-coded strings are padded to the next byte-boundary.
+//     This is potentially particularly interesting to proxies, as they'll
+//     potentially not have to do any bit-twiddling in the deserialization.
+//  5) huffman-encoded strings use an EOF symbol is used to indicate the end of
+//     the string
+//  6) a bit-width or token-count is used to indicate the end of the string.
+//  7) var-int length fields instead of fixed-width length fields
+//  8) huffman-coding over the opcodes and fixed-width values.
+// this list is not exhaustive, but I'm exhausted, so I'll stop here. This should
+// be plenty to play around with.
+
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -951,8 +1008,8 @@ size_t SPDY4HeadersCodec::CurrentStateSize() const {
 }
 
 void SPDY4HeadersCodec::OutputCompleteHeaderFrame(OutputStream* os,
-                                              uint32_t stream_id,
-                                              uint32_t group_id,
+                                              StreamId stream_id,
+                                              GroupId group_id,
                                               const HeaderFrame& headers,
                                               bool this_ends_the_frame) {
   impl->OutputCompleteHeaderFrame(os, stream_id, group_id,
