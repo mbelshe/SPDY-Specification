@@ -12,6 +12,7 @@
 #include <unordered_map>
 #include <functional>
 #include <string>
+#include <algorithm>
 
 #include "spdy4_headers_codec.h"
 #include "header_freq_tables.h"
@@ -19,6 +20,7 @@
 #include "utils.h"
 #include "trivial_http_parse.h"
 
+using std::min;
 using std::string;
 using std::array;
 using std::vector;
@@ -146,12 +148,21 @@ class Storage {
 
   struct ValEntry;
 
-  typedef map<string, ValEntry*> ValMap;
+  typedef multimap<string, ValEntry*> ValMap;
 
   struct KeyEntry {
     LRUIdx key_idx;
     size_t refcnt;
     ValMap valmap;
+
+    void IncRefcnt() {
+      ++refcnt;
+    }
+
+    void DecRefcnt() {
+      if (refcnt == 0) abort();
+      --refcnt;
+    }
 
     KeyEntry(): key_idx(0), refcnt(0) {}
     KeyEntry(LRUIdx key_idx): key_idx(key_idx), refcnt(0) {}
@@ -188,7 +199,14 @@ class Storage {
   struct LookupCache {
     KeyMap::iterator k_i;
     ValMap::iterator v_i;
-    LookupCache(KeyMap::iterator k_i) : k_i(k_i) {}
+    explicit LookupCache(KeyMap::iterator k_i) : k_i(k_i) {}
+    // LookupCache(const LookupCache& lc) : k_i(lc.k_i), v_i(lc.v_i) {}
+
+    // LookupCache& operator=(const LookupCache& lc) {
+    //   k_i = lc.k_i;
+    //   v_i = lc.v_i;
+    //   return *this;
+    // }
   };
 
   LookupCache DefaultLookupCache() {
@@ -229,12 +247,12 @@ class Storage {
     pin_it = lru.end();
   }
 
-  void PopOne() {
+  bool PopOne() {
     DEBUG_PRINT(cout << "Popping one: ";)
     ValEntry* entry = lru.front();
     if (entry == 0) { // we've hit the pin.
       DEBUG_PRINT(cout << " ... or not. Hit the pin.";)
-      return;
+      return false;
     }
     DEBUG_PRINT(
     cout << entry->key() << " " << entry->val();
@@ -245,13 +263,15 @@ class Storage {
       remove_val_cb->RemoveValEntry(entry);
     }
     RemoveVal(entry); // that will pop the front entry already.
+    delete entry;
+    return true;
   }
 
   void MakeSpace(size_t space_required, bool is_val) {
     if (is_val) {
       if (num_vals + 1 > max_vals) {
         DEBUG_PRINT(
-        cout << "num_vals(" << num_vals 
+        cout << "num_vals(" << num_vals
           << ") + 1 > max_vals(" << max_vals << ") ";
           )
         PopOne();
@@ -259,16 +279,17 @@ class Storage {
     }
     while (state_size + space_required > max_state_size) {
       DEBUG_PRINT(
-      cout << "state_size(" << state_size 
+      cout << "state_size(" << state_size
           << ") + space_required(" << space_required
           << ")  > max_state_size(" << max_state_size << ") ";
       )
-      PopOne();
+      if (!PopOne()) break;
     }
   }
 
   ValEntry* FindValEntryByKV(LookupCache* lc,
-                             const string& key, const string& val) {
+                             const string& key,
+                             const string& val) {
     if (!FindKey(lc, key)) return 0;
     ValMap& valmap = lc->k_i->second.valmap;
     lc->v_i = valmap.find(val);
@@ -283,7 +304,6 @@ class Storage {
         MakeSpace(key.size(), true);
         lc->k_i = keymap.insert(make_pair(key,
                                           KeyEntry(key_ids.GetNext()))).first;
-        ++num_vals;
         state_size += key.size();
       }
     }
@@ -293,7 +313,8 @@ class Storage {
     assert(lc->k_i != keymap.end());
     ValEntry* entry = new ValEntry;
     MakeSpace(val.size(), false);
-    lc->v_i = lc->k_i->second.valmap.insert(make_pair(val, entry)).first;
+    lc->v_i = lc->k_i->second.valmap.insert(make_pair(val, entry));
+    ++num_vals;
     state_size += val.size();
     entry->lru_idx = 0;
     entry->k_i = lc->k_i;
@@ -334,13 +355,12 @@ class Storage {
   }
 
   void RemoveFromValMap(ValEntry* entry) {
-    RemoveFromLRU(entry);
     assert(entry->k_i != keymap.end());
-    --num_vals;
     state_size -= entry->v_i->first.size();
     KeyEntry& keyentry = entry->k_i->second;
     if (keyentry.valmap.end() != entry->v_i)
       keyentry.valmap.erase(entry->v_i);
+    --num_vals;
     entry->v_i = keyentry.valmap.end();
   }
 
@@ -348,7 +368,7 @@ class Storage {
     if (entry->k_i == keymap.end())
       return;
     KeyEntry& keyentry = entry->k_i->second;
-    if (keyentry.valmap.empty() && keyentry.refcnt == 0) {
+    if (keyentry.valmap.empty() && (keyentry.refcnt == 0)) {
       key_ids.DoneWithId(keyentry.key_idx);
       keymap.erase(entry->k_i);
       entry->k_i = keymap.end();
@@ -356,9 +376,9 @@ class Storage {
   }
 
   void RemoveVal(ValEntry* entry) {
-    RemoveFromValMap(entry); // this will remove it from the LRU if necessary.
+    RemoveFromLRU(entry);
+    RemoveFromValMap(entry);
     MaybeRemoveFromKeyMap(entry);
-    delete entry;
   }
   void SetRemoveValCB(ValEntryRemovalInterface* vri) { remove_val_cb = vri; }
   Storage() :
@@ -370,9 +390,11 @@ class Storage {
      remove_val_cb(0) {}
 };
 
+enum {CLONE, KVSTO, TOGGLE, TOGGLE_RANGE};
+
 class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
  public:
-  enum {CLONE, KVSTO, TOGGLE, TOGGLE_RANGE};
+
 
   typedef Storage::ValEntry ValEntry;
   typedef Storage::LookupCache LookupCache;
@@ -410,19 +432,28 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     explicit ToggleOp(ValEntry* kv) : entry(kv) {}
     ToggleOp() : entry(0) {}
     LRUIdx idx() const { return entry->lru_idx; }
+    bool operator<(const ToggleOp& ob_b) const {
+      return idx() < ob_b.idx();
+    }
   };
 
   struct Instructions {
-    vector<ToggleOp> turn_ons;
-    vector<ToggleOp> turn_offs;
-    vector<CloneOp> clones;
-    vector<KVStoOp> kvstos;
+    typedef vector<ToggleOp> Toggles;
+    typedef vector<CloneOp> Clones;
+    typedef vector<KVStoOp> KVStos;
+
+    Toggles toggle_ons;
+    Toggles toggle_offs;
+    Clones clones;
+    KVStos kvstos;
   };
 
   class SerializationInterface {
     public:
-    virtual size_t SerializeInstructions(OutputStream* os, Instructions* instrs) = 0;
-    virtual size_t DeSerializeInstructions(Instructions* instrs, OutputStream* os) = 0;
+    virtual size_t SerializeInstructions(OutputStream* os,
+                                         Instructions* instrs,
+                                         StreamId stream_id,
+                                         bool end_of_frame) = 0;
     virtual ~SerializationInterface(){}
   };
 
@@ -455,14 +486,15 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     }
   };
 
-  void ProcessLine(const LookupCache* key_lc,
+  void ProcessLine(const LookupCache& key_lc,
                    const string& val,
                    bool can_clone,
                    HeaderGroup* header_group,
                    GroupId group_id,
                    Instructions* instrs) {
-    const string& key = key_lc->k_i->first;
-    LookupCache lc = *key_lc;
+    assert (storage.HasKey(key_lc));
+    const string& key = key_lc.k_i->first;
+    LookupCache lc = key_lc;
     ValEntry* entry = storage.FindValEntryByKV(&lc, key, val);
     if (entry) {
       // So, the key-value exists, but we don't yet know if it is already
@@ -471,7 +503,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
       HeaderGroup::iterator hg_i = header_group->find(entry);
       if (hg_i == header_group->end()) {
         // The key-value exists, but isn't turned on.
-        instrs->turn_ons.push_back(ToggleOp(entry));
+        instrs->toggle_ons.push_back(ToggleOp(entry));
       } else {
         // Touch the current entry so that we don't prune this entry when we
         // prune the header-group for items that aren't in the current set of
@@ -488,13 +520,13 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
   }
 
   void ExecuteInstructions(GroupId group_id, const Instructions& instrs) {
-    for (vector<ToggleOp>::const_iterator i = instrs.turn_ons.begin();
-         i != instrs.turn_ons.end();
+    for (vector<ToggleOp>::const_iterator i = instrs.toggle_ons.begin();
+         i != instrs.toggle_ons.end();
          ++i) {
       ExecuteToggle(group_id, *i);
     }
-    for (vector<ToggleOp>::const_iterator i = instrs.turn_offs.begin();
-         i != instrs.turn_offs.end();
+    for (vector<ToggleOp>::const_iterator i = instrs.toggle_offs.begin();
+         i != instrs.toggle_offs.end();
          ++i) {
       ExecuteToggle(group_id, *i);
     }
@@ -554,8 +586,8 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     //         headers
     //
     Instructions instrs;
-    vector<ToggleOp>::iterator first_turn_on;
-    vector<ToggleOp>::iterator first_turn_off;
+    vector<ToggleOp>::iterator first_toggle_on;
+    vector<ToggleOp>::iterator first_toggle_off;
     vector<CloneOp>::iterator first_clone;
     vector<KVStoOp>::iterator first_kvsto;
 
@@ -565,7 +597,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     HeaderGroup& header_group = header_groups[group_id];
     list<string> cookie_strs;  // Yes, this must exist for the func scope.
     vector<LookupCache> key_lookups;
-    vector<LookupCache>::iterator key_lu_it;
+
 
     // Since we'll be going eliminating entries as we construct operations,
     // we'll need to go through and ensure that the key for each of the things
@@ -577,12 +609,16 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
          ++hf_i) {
       const string& key = hf_i->key;
       LookupCache lc = storage.DefaultLookupCache();
+      LookupCache tlc = lc;
       storage.FindKey(&lc, key);
       key_lookups.push_back(lc);
-      if (storage.HasKey(lc)) lc.k_i->second.refcnt++;
+      if (storage.HasKey(lc)) {
+        lc.k_i->second.IncRefcnt();
+        assert(lc.k_i->second.refcnt == 1);
+      }
     }
 
-    key_lu_it = key_lookups.begin();
+    vector<LookupCache>::iterator key_lu_it = key_lookups.begin();
     for (HeaderFrame::const_iterator hf_i = headers.begin();
          hf_i != headers.end();
          ++hf_i, ++key_lu_it) {
@@ -592,7 +628,10 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
       LookupCache lc = *key_lu_it;
       storage.FindOrAddKey(&lc, key);
 
+      /*
+       // this is buggy.
       size_t crumb_end;
+
       if (key == "cookie" &&
           (crumb_end = val.find_first_of(';')) != string::npos) {
         bool can_clone_cookie = can_clone;
@@ -604,20 +643,19 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
                                            crumb_end - crumb_begin));
           const string& crumb = cookie_strs.back();
           //cout << "cookie key: " << key << " val : " << crumb << "\n";
-          ProcessLine(&clc, crumb, can_clone_cookie, &header_group,
+          ProcessLine(clc, crumb, can_clone_cookie, &header_group,
                       group_id, &instrs);
           can_clone_cookie = true;
           if (crumb_end == string::npos) break;
           crumb_begin = val.find_first_not_of(' ', crumb_end + 1);
           crumb_end = val.find_first_of(';', crumb_begin);
         }
-      } else {
-        ProcessLine(&lc, val, can_clone, &header_group,
+      } else
+     */ {
+        ProcessLine(lc, val, can_clone, &header_group,
                     group_id, &instrs);
       }
-      // As we're proceeding thruogh, we reduce the refcnt by one
-      // if we had incremented it before.
-      if (storage.HasKey(lc)) lc.k_i->second.refcnt--;
+
     }
 
     // Here we discover any elements in the header_group which are referenced
@@ -626,25 +664,29 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     // Note that this is done after doing deletions due to exceeding the max
     // buffer size, since some of the deletions may have already cleared some of
     // the elements we must be turning off.
-    DiscoverTurnOffs(&(instrs.turn_offs), stream_id);
+    DiscoverTurnOffs(&(instrs.toggle_offs), stream_id);
 
-    first_turn_on = instrs.turn_ons.begin();
-    first_turn_off = instrs.turn_offs.begin();
+    first_toggle_on = instrs.toggle_ons.begin();
+    first_toggle_off = instrs.toggle_offs.begin();
     first_clone = instrs.clones.begin();
     first_kvsto = instrs.kvstos.begin();
 
     ExecuteInstructions(group_id, instrs);
 
+    for (vector<LookupCache>::iterator key_lu_it = key_lookups.begin();
+         key_lu_it != key_lookups.end();
+         ++key_lu_it) {
+      // As we're proceeding through, we reduce the refcnt by one
+      // if we had incremented it before.
+      if (storage.HasKey(*key_lu_it)) {
+        assert(key_lu_it->k_i->second.refcnt == 1);
+        key_lu_it->k_i->second.DecRefcnt();
+      }
+    }
 
-    while (!SerializeAllInstructions(os,
-                                     instrs,
-                                     &first_turn_on,
-                                     &first_turn_off,
-                                     &first_clone,
-                                     &first_kvsto,
-                                     headers_end_flag,
-                                     stream_id));
 
+
+    //serializer->SerializeInstructions(os, &instrs, headers_end_flag);
     FrameDone();
 #if DEBUG
     cout << "headers.size(): " << headers.size()
@@ -669,11 +711,11 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     return;
     // in particular, we need to manage the toggles.
     vector<LRUIdx> all_toggles;
-    for (unsigned int i = 0; i < instrs->turn_ons.size(); ++i) {
-      all_toggles.push_back(instrs->turn_ons[i].idx());
+    for (unsigned int i = 0; i < instrs->toggle_ons.size(); ++i) {
+      all_toggles.push_back(instrs->toggle_ons[i].idx());
     }
-    for (unsigned int i = 0; i < instrs->turn_offs.size(); ++i) {
-      all_toggles.push_back(instrs->turn_offs[i].idx());
+    for (unsigned int i = 0; i < instrs->toggle_offs.size(); ++i) {
+      all_toggles.push_back(instrs->toggle_offs[i].idx());
     }
     sort(all_toggles.begin(), all_toggles.end());
     for (unsigned int i = 1; i < all_toggles.size(); ++i) {
@@ -683,62 +725,6 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     }
     vector<pair<LRUIdx, LRUIdx> > toggle_ranges;
     vector<LRUIdx> toggles;
-  }
-
-  bool SerializeAllInstructions(
-      OutputStream* os,
-      const Instructions& instrs,
-      vector<ToggleOp>::iterator* first_turn_on,
-      vector<ToggleOp>::iterator* first_turn_off,
-      vector<CloneOp>::iterator* first_clone,
-      vector<KVStoOp>::iterator* first_kvsto,
-      uint8_t headers_end_flag,
-      StreamId stream_id) {
-
-    // We need to loop over this until all of the instructions have been
-    // serialized
-
-    uint32_t start_of_frame_pos = os->StreamPos();
-    // Write the control frame boilerplate. We'll have to come back
-    // and write out the length later, and may have to modify the flags
-    // later as well...
-    WriteControlFrameBoilerplate(os, 0, headers_end_flag, stream_id, 0x8U);
-    uint32_t bytes_used = os->StreamPos() - start_of_frame_pos;
-    // sanity check again that we're not overflowing the max frame size.
-    if (bytes_used > kMaxFrameSize)
-      abort();
-    for (; *first_turn_on != instrs.turn_ons.end(); ++(*first_turn_on)) {
-      WriteToggle(os, (*first_turn_on)->entry->lru_idx);
-    }
-    for (; *first_turn_off != instrs.turn_offs.end(); ++(*first_turn_off)) {
-      WriteToggle(os, (*first_turn_off)->entry->lru_idx);
-    }
-    for (; *first_clone != instrs.clones.end(); ++(*first_clone)) {
-      WriteClone(os, **first_clone);
-    }
-    for (; *first_kvsto != instrs.kvstos.end(); ++(*first_kvsto)) {
-      WriteKVSto(os, **first_kvsto);
-    }
-
-    /*
-      {
-      uint32_t bytes_used = os->StreamPos() - start_of_frame_pos;
-      if (bytes_used > kMaxFrameSize)
-      abort();
-      uint32_t frame_size_field_pos = start_of_frame_pos;
-      os->OverwriteUint16(frame_size_field_pos,
-      static_cast<uint16_t>(kMaxFrameSize - bytes_used));
-      if (header_kvs_processed != headers.size() && this_ends_the_frame) {
-    // The headers didn't fit into the frame so we need to be sure that
-    // we've not indicated that this is the end of the frame.
-    uint32_t flags_field_pos = (start_of_frame_pos +
-    kFlagFieldOffsetFromFrameStart);
-    uint8_t new_flags_val = os->GetUint8(flags_field_pos) & ~kHeaderEndFlag;
-    os->OverwriteUint8(flags_field_pos, new_flags_val);
-    }
-    }
-    */
-    return true;
   }
 
   void TouchHeaderGroupEntry(HeaderGroup::iterator i) {
@@ -757,40 +743,17 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     ++frame_count;
   }
 
-  void DiscoverTurnOffs(vector<ToggleOp>* turn_offs,
+  void DiscoverTurnOffs(vector<ToggleOp>* toggle_offs,
                         GroupId group_id) {
     HeaderGroup& header_group = header_groups[group_id];
     for (HeaderGroup::iterator i = header_group.begin();
          i != header_group.end();++i) {
       if (!HeaderGroupEntryUpToDate(i)) {
-        turn_offs->push_back(ToggleOp(i->first));
+        toggle_offs->push_back(ToggleOp(i->first));
       }
     }
   }
 
-  void WriteControlFrameBoilerplate(OutputStream* os,
-                                    uint32_t frame_len,
-                                    uint8_t flags,
-                                    StreamId stream_id,
-                                    uint8_t type) {
-    os->WriteUint16(frame_len);
-    os->WriteUint8(flags);
-    WriteControlFrameStreamId(os, stream_id);
-    os->WriteUint8(type);
-  }
-
-  void WriteControlFrameStreamId(OutputStream* os, StreamId stream_id) {
-    if (stream_id & 0x8000U) {
-      abort(); // can't have that top-order bit set....
-    }
-    os->WriteUint32(0x8000U | stream_id);
-  }
-  uint32_t WriteClone(OutputStream* os, const CloneOp& clone) {
-    WriteOpcode(os, CLONE);
-    WriteLRUIdx(os, clone.idx());
-    WriteString(os, clone.val());
-    return 0;
-  }
 
   void ExecuteClone(GroupId group_id, const CloneOp& clone) {
     const string& val = clone.val();
@@ -799,18 +762,8 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     cout << "Executing Clone: \"" << key << "\" \"" << val << "\"\n";
 #endif
     AddLine(group_id, clone.lc, val);
-    // If we knew for certain that this meant that the previous header line was
-    // being supplanted, we'd also set visibility of the thing which we're
-    // cloning to false.
-    // SetHeaderGroupEntry(group_id, clone.entry, false);
   }
 
-  uint32_t WriteKVSto(OutputStream* os, const KVStoOp& kvsto) {
-    WriteOpcode(os, KVSTO);
-    WriteString(os, kvsto.key());
-    WriteString(os, kvsto.val());
-    return 0;
-  }
 
   bool ToggleHeaderGroupEntry(GroupId group_id,
                               ValEntry* entry) {
@@ -879,7 +832,6 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
         cout << "Executing KVSto: \"" << kvsto.key()
              << "\" \"" << kvsto.val() << "\"\n";
              )
-
   }
 
   void ExecuteToggle(GroupId group_id, const ToggleOp& to) {
@@ -898,38 +850,9 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     storage.MoveToHeadOfLRU(entry);
   }
 
-  uint32_t WriteToggle(OutputStream* os, LRUIdx lru_idx) {
-    WriteOpcode(os, TOGGLE);
-    WriteLRUIdx(os, lru_idx);
-    return 0;
-  }
-
-  uint32_t WriteToggleRange(OutputStream* os,
-                            LRUIdx lru_idx_first,
-                            LRUIdx lru_idx_last) {
-    WriteOpcode(os, TOGGLE);
-    WriteLRUIdx(os, lru_idx_first);
-    WriteLRUIdx(os, lru_idx_last);
-    return 0;
-  }
-
-  void WriteOpcode(OutputStream* os, int opcode) {
-    os->WriteUint8(opcode);
-  }
-
-  void WriteLRUIdx(OutputStream* os, LRUIdx idx) {
-    os->WriteUint16(idx);
-  }
-
-  void WriteString(OutputStream* os, const string& str) {
-    os->WriteBytes(str.begin(), str.end());
-  }
-
   size_t CurrentStateSize() const {
     return storage.state_size;
   }
-
-
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -957,15 +880,172 @@ class InlineSerialization : SPDY4HeadersCodecImpl::SerializationInterface {
     //   recreate it more often
     //   2) the amount of state used at any portion of time
     //   while executing the instructions.
-  size_t SerializeInstructions(OutputStream* os, Instructions* instrs) {
+  typedef vector<LRUIdx> OutputToggles;
+  typedef vector<pair<LRUIdx, LRUIdx> > OutputToggleRanges;
+
+  void PreProcessToggles(Instructions* instrs,
+                         OutputToggles* ot,
+                         OutputToggleRanges* otr) {
+    sort(instrs->toggle_ons.begin(), instrs->toggle_ons.begin());
+    sort(instrs->toggle_offs.begin(), instrs->toggle_offs.begin());
+
+    Instructions::Toggles::iterator ons_it = instrs->toggle_ons.begin();
+    Instructions::Toggles::iterator offs_it = instrs->toggle_offs.begin();
+
+    while (true) {
+      LRUIdx idx = 0;
+      if (ons_it != instrs->toggle_ons.end()) {
+        if (offs_it != instrs->toggle_offs.end()) {
+          if (ons_it->idx() < offs_it->idx()) {
+            idx = ons_it->idx();
+            ++ons_it;
+          } else {
+            idx = offs_it->idx();
+            ++offs_it;
+          }
+        } else {
+          idx = ons_it->idx();
+          ++ons_it;
+        }
+      } else if (offs_it != instrs->toggle_offs.end()){
+        idx = offs_it->idx();
+        ++offs_it;
+      } else {
+        break;
+      }
+
+      if (!ot->empty()) {
+        if ((idx - ot->back()) == 1) {
+          ot->pop_back();
+          otr->push_back(make_pair(ot->back(), idx));
+          continue;
+        }
+      }
+      if (!otr->empty()) {
+        if ((idx - otr->back().second) == 1) {
+          otr->back().second = idx;
+        }
+      }
+    }
+  }
+
+  static void WriteLRUIdx(OutputStream* os, LRUIdx idx) {
+    os->WriteUint16(idx);
+  }
+
+  static void WriteString(OutputStream* os, const string& str) {
+    os->WriteBytes(str.begin(), str.end());
+    os->WriteUint8(0);
+  }
+
+  static void WriteOpcode(OutputStream* os, uint8_t opcode) {
+    os->WriteUint8(opcode);
+  }
+
+  struct LRUIdxWriter {
+    void Write(OutputStream* os, const LRUIdx& idx) {
+      WriteLRUIdx(os, idx);
+    }
+  };
+
+  struct LRUIdxPairWriter {
+    void Write(OutputStream* os, const pair<LRUIdx, LRUIdx>& idx_pair) {
+      WriteLRUIdx(os, idx_pair.first);
+      WriteLRUIdx(os, idx_pair.second);
+    }
+  };
+
+  struct CloneWriter {
+    void Write(OutputStream* os, const SPDY4HeadersCodecImpl::CloneOp& clone) {
+      WriteLRUIdx(os, clone.idx());
+      WriteString(os, clone.val());
+    }
+  };
+
+  struct KVStoWriter {
+    void Write(OutputStream* os, const SPDY4HeadersCodecImpl::KVStoOp& kvsto) {
+      WriteString(os, kvsto.key());
+      WriteString(os, kvsto.val());
+    }
+  };
+
+  template <typename T, typename Opwriter>
+  void OutputOps(OutputStream* os, uint8_t opcode,
+                 const vector<T>& opvec, Opwriter opwriter) {
+    if (!opvec.empty()) {
+      unsigned int ops_idx = 0;
+      while (opvec.size() > ops_idx) {
+        unsigned int ops_to_go = opvec.size() - ops_idx;
+        unsigned int iteration_end = min(ops_to_go, 255u) + ops_idx;
+        os->WriteUint8(opcode);
+        if (ops_to_go <= 255) {
+          os->WriteUint8((uint8_t)ops_to_go);
+        } else {
+          os->WriteUint8((uint8_t)255);
+        }
+        for (; ops_idx < iteration_end; ++ops_idx) {
+          opwriter.Write(os, opvec[ops_idx]);
+        }
+      }
+    }
+  }
+
+  size_t SerializeInstructions(OutputStream* os,
+                               Instructions* instrs,
+                               StreamId stream_id,
+                               bool this_ends_the_frame) {
+    OutputStream los;
     // for each instruction
     // serialize opcode
     // serialize arguments
+    //uint32_t start_of_frame_pos = os->StreamPos();
+    OutputToggles output_toggles;
+    OutputToggleRanges output_toggle_ranges;
+    PreProcessToggles(instrs, &output_toggles, &output_toggle_ranges);
+
+    WriteControlFrameBoilerplate(os, 0, this_ends_the_frame, stream_id, 0x8U);
+    while (true) {
+      //uint32_t bytes_used = os->StreamPos() - start_of_frame_pos;
+
+      OutputOps(os, TOGGLE, output_toggles, LRUIdxWriter());
+      OutputOps(os, CLONE , instrs->clones,  CloneWriter());
+      OutputOps(os, KVSTO , instrs->kvstos,  KVStoWriter());
+
+      //FixupFrameBoilerplate(os, start_of_frame_pos, bytes_used, new_flags_val);
+    }
     return 0;
   };
-  size_t DeSerializeInstructions(Instructions* instrs, OutputStream* os) {
-    return 0;
+
+  void FixupFrameBoilerplate(OutputStream* os,
+                             uint32_t start_of_frame_pos,
+                             uint32_t frame_length,
+                             uint32_t frame_flags) {
+    uint32_t frame_size_field_pos = start_of_frame_pos;
+    uint32_t flags_field_pos = (start_of_frame_pos +
+                                kFlagFieldOffsetFromFrameStart);
+    os->OverwriteUint16(frame_size_field_pos,
+                        static_cast<uint16_t>(frame_length));
+    os->OverwriteUint8(flags_field_pos, frame_flags);
   }
+
+  void WriteControlFrameBoilerplate(OutputStream* os,
+                                    uint32_t frame_len,
+                                    uint8_t flags,
+                                    StreamId stream_id,
+                                    uint8_t type) {
+    os->WriteUint16(frame_len);
+    os->WriteUint8(flags);
+    WriteControlFrameStreamId(os, stream_id);
+    os->WriteUint8(type);
+  }
+
+  void WriteControlFrameStreamId(OutputStream* os, StreamId stream_id) {
+    if (stream_id & 0x8000U) {
+      abort(); // can't have that top-order bit set....
+    }
+    os->WriteUint32(0x8000U | stream_id);
+  }
+
 };
 
 // Other serializations/variations/ideas:
