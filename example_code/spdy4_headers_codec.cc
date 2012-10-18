@@ -487,13 +487,17 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
   };
 
   void ProcessLine(const LookupCache& key_lc,
+                   const string& key,
                    const string& val,
-                   bool can_clone,
                    HeaderGroup* header_group,
                    GroupId group_id,
                    Instructions* instrs) {
-    assert (storage.HasKey(key_lc));
-    const string& key = key_lc.k_i->first;
+    if (!storage.HasKey(key_lc)) {
+      // Neither the key nor the key+val exists in storage.
+      // We'll need to emit a KVSto to store the key and value
+      instrs->kvstos.push_back(KVStoOp(&key, &val));
+      return;
+    }
     LookupCache lc = key_lc;
     ValEntry* entry = storage.FindValEntryByKV(&lc, key, val);
     if (entry) {
@@ -510,12 +514,8 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
         // headers.
         TouchHeaderGroupEntry(hg_i);
       }
-    } else if (can_clone) {
-      instrs->clones.push_back(CloneOp(lc, &val));
     } else {
-      // Neither the key nor the key+val exists in storage.
-      // We'll need to emit a KVSto to store the key and value
-      instrs->kvstos.push_back(KVStoOp(&key, &val));
+      instrs->clones.push_back(CloneOp(lc, &val));
     }
   }
 
@@ -566,10 +566,6 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
                                  const HeaderFrame& headers,
                                  bool this_ends_the_frame) {
     storage.PinLRUEnd();
-    uint8_t headers_end_flag = 0;
-    if (this_ends_the_frame) {
-      headers_end_flag = kHeaderEndFlag;
-    }
     // We'll want to discover the KVPs to turn off, then
     //   - turn off stream group indices which don't exist in the headers.
     // We'll want to discover the KVPs to turn on,
@@ -609,7 +605,6 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
          ++hf_i) {
       const string& key = hf_i->key;
       LookupCache lc = storage.DefaultLookupCache();
-      LookupCache tlc = lc;
       storage.FindKey(&lc, key);
       key_lookups.push_back(lc);
       if (storage.HasKey(lc)) {
@@ -624,17 +619,14 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
          ++hf_i, ++key_lu_it) {
       const string& key = hf_i->key;
       const string& val = hf_i->val;
-      bool can_clone = storage.HasKey(*key_lu_it);
-      LookupCache lc = *key_lu_it;
-      storage.FindOrAddKey(&lc, key);
+      const LookupCache& lc = *key_lu_it;
+      //storage.FindOrAddKey(&lc, key);
 
-      /*
        // this is buggy.
       size_t crumb_end;
 
       if (key == "cookie" &&
           (crumb_end = val.find_first_of(';')) != string::npos) {
-        bool can_clone_cookie = can_clone;
         size_t crumb_begin = 0;
         LookupCache clc = lc;
 
@@ -643,19 +635,16 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
                                            crumb_end - crumb_begin));
           const string& crumb = cookie_strs.back();
           //cout << "cookie key: " << key << " val : " << crumb << "\n";
-          ProcessLine(clc, crumb, can_clone_cookie, &header_group,
+          ProcessLine(clc, key, crumb, &header_group,
                       group_id, &instrs);
-          can_clone_cookie = true;
           if (crumb_end == string::npos) break;
           crumb_begin = val.find_first_not_of(' ', crumb_end + 1);
           crumb_end = val.find_first_of(';', crumb_begin);
         }
-      } else
-     */ {
-        ProcessLine(lc, val, can_clone, &header_group,
+      } else {
+        ProcessLine(lc, key, val, &header_group,
                     group_id, &instrs);
       }
-
     }
 
     // Here we discover any elements in the header_group which are referenced
@@ -827,6 +816,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
   void ExecuteKVSto(GroupId group_id, const KVStoOp& kvsto) {
     LookupCache lc = storage.DefaultLookupCache();
     storage.FindOrAddKey(&lc, kvsto.key());
+
     AddLine(group_id, lc, kvsto.val());
     DEBUG_PRINT(
         cout << "Executing KVSto: \"" << kvsto.key()
