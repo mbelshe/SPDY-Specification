@@ -146,8 +146,8 @@ class Huffman {
     }
     for (unsigned int i = 0; i < freq_table.size(); ++i) {
       double weight = freq_table[i].second / divisor;
-      uint16_t sym = freq_table[i].first;
-      assert (sym == i);
+      //uint16_t sym = freq_table[i].first;
+      assert (freq_table[i].first == i);
       if (weight == 0) {
         weight = DBL_EPSILON;
       }

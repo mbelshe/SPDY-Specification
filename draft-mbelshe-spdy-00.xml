@@ -601,12 +601,12 @@ If a client receives an odd numbered PING which it did not initiate, it must ign
 <t>Flow control in SPDY is implemented by a data transfer window kept by the sender of each stream. The data transfer window is a simple uint32 that indicates how many bytes of data the sender can transmit. After a stream is created, but before any data frames have been transmitted, the sender begins with the initial window size. This window size is a measure of the buffering capability of the recipient. The sender must not send a data frame with data length greater than the transfer window size. After sending each data frame, the sender decrements its transfer window size by the amount of data transmitted. When the window size becomes less than or equal to 0, the sender must pause transmitting data frames. At the other end of the stream, the recipient sends a WINDOW_UPDATE control back to notify the sender that it has consumed some data and freed up buffer space to receive more data.</t>
           <figure>
             <artwork>
-     0        1        2        3         4        5        6        7     
+     0        1        2        3         4        5        6        7
 +--------+--------+--------+-|-------+--------+--------+--------+--------+
 | Length(16)      |Flags(8)|1| Stream-ID(31)                    |     0x9| -&gt;
 +--------+--------+--------+-|-------+--------+--------+--------+--------+
 
-     8        9        10       11   
+     8        9        10       11
 +--------+--------+--------+--------+
 |Delta-Window-Size                  |
 +--------+--------+--------+--------+

@@ -1,7 +1,7 @@
 CXX        = g++
 #CXX        = clang++
-DEBUGFLAGS = -DDEBUG -g
-OPT        = -O3
+DEBUGFLAGS = -DDEBUG -g _D_GLIBCXX_DEBUG
+OPTFLAGS   = -O3 -DNDEBUG
 WARN       = -Wall -Werror
 STD        = -std=c++0x
 CXXFLAGS   = $(DEBUG) $(OPT) $(WARN) $(STD)
@@ -13,8 +13,10 @@ OBJS       = $(SRCS:%.cc=%.o)
 
 
 ifndef DEBUG
-DEBUG =
+OPT = $(OPTFLAGS)
+DEBUG = -g
 else
+OPT =
 DEBUG = $(DEBUGFLAGS)
 endif
 

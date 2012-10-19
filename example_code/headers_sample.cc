@@ -88,7 +88,6 @@ int main(int argc, char** argv) {
   //SPDY4HeadersCodec req_out(FreqTables::request_freq_table);
   //SPDY4HeadersCodec res_out(FreqTables::response_freq_table);
 
-
   cout << "\n\n\nBeginning processing now\n\n\n\n";
   int header_group = 1;
   int stream_id = 1;
@@ -107,23 +106,23 @@ int main(int argc, char** argv) {
     for (unsigned int i = 0; i < requests.size(); ++i) {
       OutputStream os;
       const HeaderFrame& request = requests[i];
-#if DEBUG
-      //OutputHeaderFrame(request);
-      //cout << "======================\n";
+#ifdef DEBUG
+      cout << "++++++++++++++++++++++\n";
+      OutputHeaderFrame(request);
+      cout << "||||||||||||||||||||||\n";
 #endif
       req_in.OutputCompleteHeaderFrame(&os, stream_id,
                                        header_group, request,
                                        true /* end of frame*/);
-
       //req_out.ProcessInput(&os);
       // examine the size of the OutputStream vs the original size.
       //HeaderFrame out_frame;
       //req_out.ReconsituteFrame(&out_frame);
       // test that they're the same.
-#if DEBUG
-      // cout << "\n########### FRAME DONE ############## "
-      //      << req_in.CurrentStateSize();
-      // cout << "\n";
+#ifdef DEBUG
+      cout << "\n########### FRAME DONE ############## "
+           << req_in.CurrentStateSize();
+      cout << "\n";
 #endif
     }
   }
@@ -148,3 +147,4 @@ int main(int argc, char** argv) {
        << " or " << (total_header_bytes*iterations) / secs << " bytes/sec"
        << "\n";
 }
+

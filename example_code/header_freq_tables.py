@@ -1,3 +1,6 @@
+# Copyright (c) 2012 The Chromium Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
 
 request_freq_table = [
   ('e', 3447), ('/', 3366), ('a', 3281), ('s', 3133), ('2', 3072), ('t', 2752),
