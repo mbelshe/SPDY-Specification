@@ -26,11 +26,11 @@ using std::stringstream;
 using std::vector;
 
 class BitBucket {
-  vector<unsigned char> bsa;
-  int bsa_boff;
-  int idx_byte;
-  int idx_boff;
-  int num_bits;
+  vector<unsigned char> bsa;  // Byte Storage Array
+  size_t bsa_boff;               // Byte Storage Array Bit OFFset
+  size_t idx_byte;
+  size_t idx_boff;               // index byte offset
+  size_t num_bits;
   BitBucket(const BitBucket&);
  public:
   BitBucket() {
@@ -44,24 +44,34 @@ class BitBucket {
     num_bits = 0;
   }
 
+  void StoreByteAligned(const vector<char> inp_bytes) {
+    bsa.insert(bsa.end(), inp_bytes.begin(), inp_bytes.end());
+    bsa_boff = 0;
+  }
+
+  typedef vector<unsigned char>::iterator byte_iterator;
+
+  byte_iterator BytesBegin() { return bsa.begin(); }
+  byte_iterator BytesEnd()   { return bsa.end(); }
+
   void Seek(unsigned int bit_loc) {
     idx_boff = bit_loc % 8;
     idx_byte = bit_loc / 8;
   }
 
-  void SeekDelta(int bit_loc_delta) {
+  void SeekDelta(size_t bit_loc_delta) {
     Seek(BitsConsumed() + bit_loc_delta);
   }
 
-  void ConsumeBits(int bits_consumed) {
+  void ConsumeBits(size_t bits_consumed) {
     SeekDelta(bits_consumed);
   }
 
   // This is horribly inefficient.
-  void ShiftBitsIntoWord(uint32_t* word, int num_bits) {
+  void ShiftBitsIntoWord(uint32_t* word, size_t num_bits) {
     *word <<= num_bits;
-    int saved_idx_byte = idx_byte;
-    int saved_idx_boff = idx_boff;
+    size_t saved_idx_byte = idx_byte;
+    size_t saved_idx_boff = idx_boff;
     uint32_t tmp_word = 0;
     while (num_bits) {
       tmp_word <<= 1;
@@ -83,27 +93,35 @@ class BitBucket {
     bsa_boff %= 8;
   }
 
-  void StoreBits(const vector<char>& inp_bytes, int inp_bits) {
+  void StoreBits(const vector<char>& inp_bytes, size_t inp_bits) {
+    StoreBits(inp_bytes.begin(), inp_bytes.end(), inp_bits);
+  }
+
+  template <typename char_const_iterator_type>
+  void StoreBits(char_const_iterator_type inp_bytes_begin,
+                 char_const_iterator_type inp_bytes_end,
+                 size_t inp_bits) {
+    size_t inp_bytes_size = inp_bytes_end - inp_bytes_begin;
     if (inp_bits == 0) return;
-    int old_bsa_boff = bsa_boff;
+    size_t old_bsa_boff = bsa_boff;
     num_bits += inp_bits;
     if (bsa_boff == 0) {
-      bsa.insert(bsa.end(), inp_bytes.begin(), inp_bytes.end());
+      bsa.insert(bsa.end(), inp_bytes_begin, inp_bytes_end);
       bsa_boff = inp_bits % 8;
       if (bsa_boff) {
         bsa.back() &= ~(0xff >> bsa_boff);  // zero out trailing  right-bits
       }
     } else {
-      int leftover_bits = 0;
+      size_t leftover_bits = 0;
       if (inp_bits % 8) {
         leftover_bits = inp_bits % 8;
       } else {
         leftover_bits = 8;
       }
-      int bits_left_in_byte = 8 - bsa_boff;
-      bsa.reserve(bsa.size() + inp_bytes.size());
-      for (unsigned int i = 0; i < inp_bytes.size(); ++i) {
-        unsigned char c = inp_bytes[i];
+      size_t bits_left_in_byte = 8 - bsa_boff;
+      bsa.reserve(bsa.size() + inp_bytes_size);
+      for (unsigned int i = 0; i < inp_bytes_size; ++i) {
+        unsigned char c = inp_bytes_begin[i];
         bsa.back() |= c >> bsa_boff;
         bsa.push_back(c << bits_left_in_byte);
       }
@@ -122,16 +140,16 @@ class BitBucket {
     }
   }
 
-  int NumBits() const {
+  size_t NumBits() const {
     return num_bits;
   }
-  int BitsConsumed() const {
+  size_t BitsConsumed() const {
     return idx_byte * 8 + idx_boff;
   }
   bool AllConsumed() const {
     return BitsConsumed() >= NumBits();
   }
-  int BitsRemaining() const {
+  size_t BitsRemaining() const {
     return NumBits() - BitsConsumed();
   }
 
@@ -145,17 +163,17 @@ class BitBucket {
     return bit;
   }
 
-  void GetBits(vector<char>* retval, int num_bits) {
-    int output_bytes = (num_bits + 7) / 8;
+  void GetBits(vector<char>* retval, size_t num_bits) {
+    size_t output_bytes = (num_bits + 7) / 8;
     retval->reserve(output_bytes);
-    int old_idx_boff = idx_boff;
+    size_t old_idx_boff = idx_boff;
     if (num_bits > NumBits()) {
       cerr << "Oops, we're asking to get more bits than are available.\n";
       cerr << "Bits available: " << BitsRemaining() << "\n";
       cerr << "Bits requested: " << num_bits << "\n";
       abort();
     }
-    int bits_left = num_bits;
+    size_t bits_left = num_bits;
     if (idx_boff == 0) {
       retval->insert(retval->end(), bsa.begin() + idx_byte, bsa.begin() + idx_byte + output_bytes);
       idx_byte += num_bits / 8;
@@ -164,7 +182,7 @@ class BitBucket {
         retval->back() &= ~(0xff >> idx_boff);
       }
     } else { // idx_boff != 0. There WILL be shifting about.
-      int idx_leftover = 8 - idx_boff;
+      size_t idx_leftover = 8 - idx_boff;
       while (bits_left >= 8) {
         unsigned int c = bsa[idx_byte] << idx_boff;
         ++idx_byte;
@@ -176,10 +194,10 @@ class BitBucket {
       }
       if (bits_left) {
         //cout << "BITS LEFT: " << bits_left << "\n";
-        int cur_boff = 0;
+        size_t cur_boff = 0;
         unsigned int cur_byte = 0;
         while (true) {
-          int bits_to_consume = min(min(8 - cur_boff, idx_leftover), bits_left);
+          size_t bits_to_consume = min(min(8 - cur_boff, idx_leftover), bits_left);
           unsigned int mask = ~(0xff >> bits_to_consume);
           cur_byte |= ((bsa[idx_byte] << idx_boff) & mask) >> cur_boff;
           bits_left -= bits_to_consume;
@@ -219,15 +237,15 @@ class BitBucket {
     ss << *this;
     return ss.str();
   }
-  string DebugStr(int offset=0, int range=1) const {
+  string DebugStr(size_t offset=0, size_t range=1) const {
     stringstream ss;
-    int num_bits_consumed = idx_byte * 8 + idx_boff;
+    size_t num_bits_consumed = idx_byte * 8 + idx_boff;
     num_bits_consumed += offset;
-    for (int i = 0; i < num_bits_consumed; ++i) {
+    for (size_t i = 0; i < num_bits_consumed; ++i) {
       if (!(i%8)) ss << "|";
       ss << "-";
     }
-    for (int i = num_bits_consumed ; i < num_bits_consumed + range; ++i) {
+    for (size_t i = num_bits_consumed ; i < num_bits_consumed + range; ++i) {
       if (!(i%8)) ss << "|";
       ss << "^";
     }
@@ -238,6 +256,9 @@ class BitBucket {
     os << FormatAsBits(bb.bsa, bb.NumBits())
        << " [" << bb.NumBits() << "," << bb.bsa_boff << "]";
     return os;
+  }
+  size_t BytesRequired() {
+    return bsa.size();
   }
 };
 

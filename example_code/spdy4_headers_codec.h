@@ -1,6 +1,9 @@
 // Copyright (c) 2012 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+#ifndef SPDY4_HEADERS_CODEC_H__
+#define SPDY4_HEADERS_CODEC_H__
+
 #include <stdint.h>
 
 #include "header_freq_tables.h"
@@ -12,9 +15,6 @@ class OutputStream {
  public:
   vector<char> storage;
 
-  uint32_t StreamPos() {
-    return storage.size();
-  }
   uint8_t GetUint8(uint32_t pos) {
     return static_cast<uint8_t>(storage[pos]);
   }
@@ -43,6 +43,9 @@ class OutputStream {
   void OverwriteUint8(uint32_t pos, uint8_t byte) {
     storage[pos] = static_cast<char>(byte);
   }
+  size_t BytesRequired() {
+    return storage.size();
+  }
 };
 
 class SPDY4HeadersCodecImpl;
@@ -52,6 +55,7 @@ class SPDY4HeadersCodec {
   SPDY4HeadersCodecImpl* impl;
  public:
   SPDY4HeadersCodec(const FreqTable& sft);
+  ~SPDY4HeadersCodec();
 
   size_t CurrentStateSize() const;
 
@@ -63,5 +67,6 @@ class SPDY4HeadersCodec {
 };
 
 
+#endif //SPDY4_HEADERS_CODEC_H__
 
 

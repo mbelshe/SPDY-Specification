@@ -3,34 +3,34 @@
 // found in the LICENSE file.
 #include <arpa/inet.h>
 
-#include <array>
-#include <utility>
-#include <set>
-#include <list>
-#include <vector>
-#include <unordered_set>
-#include <unordered_map>
-#include <functional>
-#include <string>
 #include <algorithm>
+#include <array>
+#include <functional>
+#include <list>
+#include <set>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
-#include "spdy4_headers_codec.h"
 #include "header_freq_tables.h"
 #include "huffman.h"
-#include "utils.h"
+#include "spdy4_headers_codec.h"
 #include "trivial_http_parse.h"
+#include "utils.h"
 
-using std::min;
-using std::string;
 using std::array;
-using std::vector;
-using std::pair;
-using std::make_pair;
-using std::set;
 using std::hash;
 using std::list;
+using std::make_pair;
 using std::map;
+using std::min;
 using std::multimap;
+using std::pair;
+using std::set;
+using std::string;
+using std::vector;
 
 typedef uint32_t GroupId;
 typedef uint32_t StreamId;
@@ -40,6 +40,9 @@ typedef uint32_t StreamId;
 #else
 #define DEBUG_PRINT(X)
 #endif
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 string spdy4_default_dict[][2] = {
   {":host", ""},
@@ -108,12 +111,18 @@ string spdy4_default_dict[][2] = {
   {"x-xss-protection", ""},
 };
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
 const LRUIdx kInvalidLRUIdx = 0;
 const uint8_t kFrameLengthFieldLengthInBytes = 2;
 const uint8_t kFlagFieldOffsetFromFrameStart = kFrameLengthFieldLengthInBytes;
 const uint32_t kMaxFrameSize = ~(0xFFFFFFFFU <<
                                  (kFrameLengthFieldLengthInBytes * 8));
 const uint8_t kHeaderEndFlag = 0x1;
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 template <typename T>
 class IDStore {
@@ -135,6 +144,9 @@ class IDStore {
     ids.insert(id);
   }
 };
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 class Storage {
  public:
@@ -436,7 +448,6 @@ class Storage {
   uint64_t seq_num;
 
   Storage() :
-
      state_size(0),
      max_state_size(10*1024),
      num_vals(0),
@@ -448,9 +459,25 @@ class Storage {
   {
     keymap.insert(make_pair("", KeyEntry(0)));
   }
+
+  ~Storage() {
+    for (KeyMap::iterator k_i = keymap.begin(); k_i != keymap.end(); ++k_i) {
+      ValMap& valmap = k_i->second.valmap;
+      for (ValMap::iterator v_i = valmap.begin(); v_i != valmap.end(); ++v_i) {
+        delete v_i->second;
+        v_i->second = 0;
+      }
+    }
+  }
 };
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
 enum {CLONE, KVSTO, TOGGLE, TOGGLE_RANGE, EREF};
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
  public:
@@ -534,10 +561,11 @@ DEBUG_PRINT(
 
   class SerializationInterface {
     public:
-    virtual size_t SerializeInstructions(OutputStream* os,
-                                         Instructions* instrs,
-                                         StreamId stream_id,
-                                         bool end_of_frame) = 0;
+    virtual void SerializeInstructions(OutputStream* os,
+                                       Instructions* instrs,
+                                       const Huffman* huff,
+                                       StreamId stream_id,
+                                       bool end_of_frame) = 0;
     virtual ~SerializationInterface(){}
   };
 
@@ -547,20 +575,16 @@ DEBUG_PRINT(
   Huffman huff;
   Storage storage;
   GenerationIdx frame_count;
+  SerializationInterface* serializer;
+  vector<LookupCache> key_lookups;  // we want this outside of the function
+                                    // in which they're used in order to
+                                    // minimize allocations.
+  Instructions instrs;              // ...
 
  public:
 
-  SPDY4HeadersCodecImpl(const FreqTable& sft) : frame_count(0) {
-    storage.SetRemoveValCB(this);
-    huff.Init(sft);
-    for (unsigned int i = 0;
-         i < sizeof(spdy4_default_dict) / sizeof(spdy4_default_dict[0]);
-         ++i) {
-      ExecuteKVSto(0,
-                   KVStoOp(&spdy4_default_dict[i][0],
-                           &spdy4_default_dict[i][1]));
-    }
-  }
+  SPDY4HeadersCodecImpl(const FreqTable& sft);
+  virtual ~SPDY4HeadersCodecImpl();
 
   virtual void RemoveValEntry(ValEntry* entry) {
     for(HeaderGroups::iterator hgs_i = header_groups.begin();
@@ -598,6 +622,8 @@ DEBUG_PRINT(
       if (key != ":path") {
         instrs->kvstos.push_back(KVStoOp(&key, &val));
       } else {
+        // we really want a clone that doesn't store the val
+        // but I have yet to make that up...
         instrs->erefs.push_back(ERefOp(&key, &val));
       }
     }
@@ -653,10 +679,7 @@ DEBUG_PRINT(
   //    gaps in the 'toggles' that need to be sent, and thus reduce bytes-on-wire.
   // 3) Renumber every referenced element when it is referenced.
   //    This is similar #2, but could be done with the current implementation.
-  vector<LookupCache> key_lookups;  // we want this outside of the function
-                                    // to minimize allocations.
-  Instructions instrs;              // As above, this is kept outside
-                                    // to help minimize allocations.
+
   void OutputCompleteHeaderFrame(OutputStream* os,
                                  StreamId stream_id,
                                  GroupId group_id,
@@ -782,7 +805,8 @@ DEBUG_PRINT(
       }
     }
 
-    //serializer->SerializeInstructions(os, &instrs, headers_end_flag);
+    serializer->SerializeInstructions(os, &instrs, &huff,
+                                      stream_id, this_ends_the_frame);
     FrameDone();
 #ifdef DEBUG
     cout << "headers.size(): " << headers.size()
@@ -976,14 +1000,22 @@ DEBUG_PRINT(
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-
 typedef SPDY4HeadersCodecImpl::Instructions Instructions;
 // In this serialization implementation, all data is serialized ignoring
 // byte offsets, inline, with mention of the opcode for each operation.
 // As noted in the 'Other serialization...' section below this class,
 // there are other (likely better) ways of doing this.
-class InlineSerialization : SPDY4HeadersCodecImpl::SerializationInterface {
-  public:
+class InlineSerialization :
+    public SPDY4HeadersCodecImpl::SerializationInterface
+{
+ private:
+  BitBucket bb;
+  OutputStream* os;
+  const Huffman* huff;
+ public:
+
+   InlineSerialization() : os(0), huff(0) {}
+   virtual ~InlineSerialization() {}
     // Order of serialization:
     //   1) toggles
     //   2) clone
@@ -1005,8 +1037,8 @@ class InlineSerialization : SPDY4HeadersCodecImpl::SerializationInterface {
   void PreProcessToggles(Instructions* instrs,
                          OutputToggles* ot,
                          OutputToggleRanges* otr) {
-    sort(instrs->toggle_ons.begin(), instrs->toggle_ons.begin());
-    sort(instrs->toggle_offs.begin(), instrs->toggle_offs.begin());
+    sort(instrs->toggle_ons.begin(), instrs->toggle_ons.end());
+    sort(instrs->toggle_offs.begin(), instrs->toggle_offs.end());
 
     Instructions::Toggles::iterator ons_it = instrs->toggle_ons.begin();
     Instructions::Toggles::iterator offs_it = instrs->toggle_offs.begin();
@@ -1048,55 +1080,70 @@ class InlineSerialization : SPDY4HeadersCodecImpl::SerializationInterface {
     }
   }
 
-  static void WriteLRUIdx(OutputStream* os, LRUIdx idx) {
-    os->WriteUint16(idx);
+  static void WriteLRUIdx(InlineSerialization* is, LRUIdx idx) {
+    is->os->WriteUint16(idx);
   }
 
-  static void WriteString(OutputStream* os, const string& str) {
-    os->WriteBytes(str.begin(), str.end());
-    os->WriteUint8(0);
+  static void WriteString(InlineSerialization* is,
+                          const string& str) {
+    //if (huff) {
+
+
+      is->huff->Encode(&is->bb, str, true);
+      is->os->WriteBytes(is->bb.BytesBegin(), is->bb.BytesEnd());
+      is->bb.Clear();
+    // } else {
+    //   os->WriteBytes(str.begin(), str.end());
+    //   os->WriteUint8(0);  // null.
+    // }
   }
 
-  static void WriteOpcode(OutputStream* os, uint8_t opcode) {
-    os->WriteUint8(opcode);
+  static void WriteOpcode(InlineSerialization* is,
+                         uint8_t opcode) {
+    is->os->WriteUint8(opcode);
   }
 
   struct LRUIdxWriter {
-    void Write(OutputStream* os, const LRUIdx& idx) {
-      WriteLRUIdx(os, idx);
+    void Write(InlineSerialization* is,
+               const LRUIdx& idx) {
+      WriteLRUIdx(is, idx);
     }
   };
 
   struct LRUIdxPairWriter {
-    void Write(OutputStream* os, const pair<LRUIdx, LRUIdx>& idx_pair) {
-      WriteLRUIdx(os, idx_pair.first);
-      WriteLRUIdx(os, idx_pair.second);
+    void Write(InlineSerialization* is,
+               const pair<LRUIdx, LRUIdx>& idx_pair) {
+      WriteLRUIdx(is, idx_pair.first);
+      WriteLRUIdx(is, idx_pair.second);
     }
   };
 
   struct CloneWriter {
-    void Write(OutputStream* os, const SPDY4HeadersCodecImpl::CloneOp& clone) {
-      WriteLRUIdx(os, clone.idx());
-      WriteString(os, clone.val());
+    void Write(InlineSerialization* is,
+               const SPDY4HeadersCodecImpl::CloneOp& clone) {
+      WriteLRUIdx(is, clone.idx());
+      WriteString(is, clone.val());
     }
   };
 
   struct KVStoWriter {
-    void Write(OutputStream* os, const SPDY4HeadersCodecImpl::KVStoOp& kvsto) {
-      WriteString(os, kvsto.key());
-      WriteString(os, kvsto.val());
+    void Write(InlineSerialization* is,
+               const SPDY4HeadersCodecImpl::KVStoOp& kvsto) {
+      WriteString(is, kvsto.key());
+      WriteString(is, kvsto.val());
     }
   };
 
   struct ERefWriter {
-    void Write(OutputStream* os, const SPDY4HeadersCodecImpl::ERefOp& eref) {
-      WriteString(os, eref.key());
-      WriteString(os, eref.val());
+    void Write(InlineSerialization* is,
+               const SPDY4HeadersCodecImpl::ERefOp& eref) {
+      WriteString(is, eref.key());
+      WriteString(is, eref.val());
     }
   };
 
   template <typename T, typename Opwriter>
-  void OutputOps(OutputStream* os, uint8_t opcode,
+  void OutputOps(InlineSerialization* is, uint8_t opcode,
                  const vector<T>& opvec, Opwriter opwriter) {
     if (!opvec.empty()) {
       unsigned int ops_idx = 0;
@@ -1110,37 +1157,37 @@ class InlineSerialization : SPDY4HeadersCodecImpl::SerializationInterface {
           os->WriteUint8((uint8_t)255);
         }
         for (; ops_idx < iteration_end; ++ops_idx) {
-          opwriter.Write(os, opvec[ops_idx]);
+          opwriter.Write(is, opvec[ops_idx]);
         }
       }
     }
   }
 
-  size_t SerializeInstructions(OutputStream* os,
-                               Instructions* instrs,
-                               StreamId stream_id,
-                               bool this_ends_the_frame) {
-    OutputStream los;
+  void SerializeInstructions(OutputStream* in_os,
+                             Instructions* instrs,
+                             const Huffman* in_huff,
+                             StreamId stream_id,
+                             bool this_ends_the_frame) {
+    huff = in_huff;
+    os = in_os;
     // for each instruction
     // serialize opcode
     // serialize arguments
     //uint32_t start_of_frame_pos = os->StreamPos();
+
     OutputToggles output_toggles;
     OutputToggleRanges output_toggle_ranges;
     PreProcessToggles(instrs, &output_toggles, &output_toggle_ranges);
 
     WriteControlFrameBoilerplate(os, 0, this_ends_the_frame, stream_id, 0x8U);
-    while (true) {
-      //uint32_t bytes_used = os->StreamPos() - start_of_frame_pos;
-
-      OutputOps(os, TOGGLE, output_toggles, LRUIdxWriter());
-      OutputOps(os, CLONE , instrs->clones,  CloneWriter());
-      OutputOps(os, KVSTO , instrs->kvstos,  KVStoWriter());
-      OutputOps(os, EREF  , instrs->erefs ,   ERefWriter());
+    {
+      OutputOps(this, TOGGLE, output_toggles, LRUIdxWriter());
+      OutputOps(this, CLONE , instrs->clones,  CloneWriter());
+      OutputOps(this, KVSTO , instrs->kvstos,  KVStoWriter());
+      OutputOps(this, EREF  , instrs->erefs ,   ERefWriter());
 
       //FixupFrameBoilerplate(os, start_of_frame_pos, bytes_used, new_flags_val);
     }
-    return 0;
   };
 
   void FixupFrameBoilerplate(OutputStream* os,
@@ -1172,8 +1219,26 @@ class InlineSerialization : SPDY4HeadersCodecImpl::SerializationInterface {
     }
     os->WriteUint32(0x8000U | stream_id);
   }
-
 };
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+SPDY4HeadersCodecImpl::SPDY4HeadersCodecImpl(const FreqTable& sft) :
+      frame_count(0), serializer(new InlineSerialization) {
+    storage.SetRemoveValCB(this);
+    huff.Init(sft);
+    for (unsigned int i = 0;
+         i < sizeof(spdy4_default_dict) / sizeof(spdy4_default_dict[0]);
+         ++i) {
+      ExecuteKVSto(0,
+                   KVStoOp(&spdy4_default_dict[i][0],
+                           &spdy4_default_dict[i][1]));
+    }
+  }
+SPDY4HeadersCodecImpl::~SPDY4HeadersCodecImpl() {
+  delete serializer;
+}
 
 // Other serializations/variations/ideas:
 //  1) fixed-width fields are all serialized together.
@@ -1208,6 +1273,10 @@ class InlineSerialization : SPDY4HeadersCodecImpl::SerializationInterface {
 
 SPDY4HeadersCodec::SPDY4HeadersCodec(const FreqTable& sft) {
   impl = new SPDY4HeadersCodecImpl(sft);
+}
+
+SPDY4HeadersCodec::~SPDY4HeadersCodec() {
+  delete impl;
 }
 
 size_t SPDY4HeadersCodec::CurrentStateSize() const {
