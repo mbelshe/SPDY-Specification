@@ -1,12 +1,12 @@
 CXX        = g++
 #CXX        = clang++
-DEBUGFLAGS = -DDEBUG -g _D_GLIBCXX_DEBUG
+DEBUGFLAGS = -DDEBUG -g -D_GLIBCXX_DEBUG
 OPTFLAGS   = -O3 -DNDEBUG
 WARN       = -Wall -Werror
 STD        = -std=c++0x
 CXXFLAGS   = $(DEBUG) $(OPT) $(WARN) $(STD)
 
-TARGETS    = bit_bucket_test huffman_test headers_sample
+TARGETS    = bit_bucket_test huffman_test spdy4_headers_sample
 
 SRCS       = *.cc
 OBJS       = $(SRCS:%.cc=%.o)
@@ -31,7 +31,7 @@ clean:
 .cc.o:
 	$(CXX) $(CXXFLAGS) $< -c -o $@
 
-headers_sample: headers_sample.o spdy4_headers_codec.o header_freq_tables.o
+spdy4_headers_sample: spdy4_headers_sample.o spdy4_headers_codec.o header_freq_tables.o
 	$(CXX) $(CXXFLAGS) $^ -o $@ -lrt
 
 bit_bucket_test: bit_bucket_test.o
