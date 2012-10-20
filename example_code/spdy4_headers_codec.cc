@@ -619,13 +619,13 @@ DEBUG_PRINT(
     } else if (lc.HasKey()) {
       instrs->clones.push_back(CloneOp(lc, &val));
     } else {
-      if (key != ":path") {
+      //if (key != ":path") {
         instrs->kvstos.push_back(KVStoOp(&key, &val));
-      } else {
-        // we really want a clone that doesn't store the val
-        // but I have yet to make that up...
-        instrs->erefs.push_back(ERefOp(&key, &val));
-      }
+      //} else {
+      //  // we really want a clone that doesn't store the val
+      //  // but I have yet to make that up...
+      //  instrs->erefs.push_back(ERefOp(&key, &val));
+      //}
     }
   }
 
@@ -1089,7 +1089,7 @@ class InlineSerialization :
     //if (huff) {
 
 
-      is->huff->Encode(&is->bb, str, true);
+      is->huff->Encode(&is->bb, str,true);
       is->os->WriteBytes(is->bb.BytesBegin(), is->bb.BytesEnd());
       is->bb.Clear();
     // } else {

@@ -32,7 +32,7 @@ clean:
 	$(CXX) $(CXXFLAGS) $< -c -o $@
 
 spdy4_headers_sample: spdy4_headers_sample.o spdy4_headers_codec.o header_freq_tables.o
-	$(CXX) $(CXXFLAGS) $^ -o $@ -lrt
+	$(CXX) $(CXXFLAGS) $^ -o $@ -lrt -lz
 
 bit_bucket_test: bit_bucket_test.o
 	$(CXX) $(CXXFLAGS) $^ -o $@
