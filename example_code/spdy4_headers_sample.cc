@@ -125,11 +125,16 @@ struct Stats {
     compressed_size(cs), elapsed_time(et), iterations(it) {}
 };
 
+static const int kCompressorLevel = 9;
+
+// 1 << (kCompressorWindowSizeInBits+ 2) bytes used
+static const int kCompressorWindowSizeInBits = 15;
+
+// 1 << (9+kCompressorMemLevel)          bytes used
+static const int kCompressorMemLevel = 8;
+
 #define SPDY3
 #ifdef SPDY3
-static const int kCompressorLevel = 9;
-static const int kCompressorWindowSizeInBits = 11;
-static const int kCompressorMemLevel = 1;
 
 class SPDY3Formatter {
   unique_ptr<z_stream> header_compressor_;
@@ -252,15 +257,16 @@ Stats DoSPDY3CoDec(double time_to_iterate,
   SimpleTimer timer;
   timer.Start();
   size_t iterations = 0;
+  vector<char> output;
   while (timer.ElapsedTime() < time_to_iterate) {
     ++iterations;
     for (size_t j = 0; j < frames.size(); ++j) {
-      vector<char> output;
       const HeaderFrame& request = frames[j];
       size_t prev_size = output.size();
       spdy3_formatter.FormatHeaders(&output, request);
       size_t framesize = output.size() - prev_size;
       compressed_size += framesize;
+      output.clear();
     }
   }
   timer.Stop();
@@ -277,14 +283,22 @@ Stats DoSPDY4CoDec(double time_to_iterate,
   const int stream_id = 1;
 
   SPDY4HeadersCodec req_in(FreqTables::request_freq_table);
+  size_t max_state_size = 1u << (kCompressorWindowSizeInBits + 2);
+  size_t max_vals = (1u << (kCompressorMemLevel + 9)) / (8*(3+3+2+3));
+  req_in.SetMaxStateSize(max_state_size);
+  req_in.SetMaxVals(max_vals);
+
+  cout << "\n\n";
+  cout <<  "Max state size: " << max_state_size << "\n";
+  cout <<  "Max max vals: " << max_vals << "\n";
 
   SimpleTimer timer;
   timer.Start();
   size_t iterations = 0;
+  OutputStream os;
   while (timer.ElapsedTime() < time_to_iterate) {
     ++iterations;
     for (unsigned int j = 0; j < frames.size(); ++j) {
-      OutputStream os;
       const HeaderFrame& request = frames[j];
 #ifdef DEBUG
       cout << "++++++++++++++++++++++\n";
@@ -308,6 +322,7 @@ Stats DoSPDY4CoDec(double time_to_iterate,
            << req_in.CurrentStateSize();
       cout << "\n";
 #endif
+      os.Clear();
     }
   }
   timer.Stop();
@@ -351,7 +366,7 @@ int main(int argc, char** argv) {
       request_header_bytes += requests[i][j].val.size();
     }
   }
-  const double time_to_iterate = 4.0;
+  const double time_to_iterate = 10.0;
 
 #ifdef SPDY3
   Stats spdy3_stats = DoSPDY3CoDec(time_to_iterate, requests);

@@ -182,7 +182,6 @@ class Storage {
     LRU::iterator lru_i;
     LRUIdx lru_idx;
     bool lru_i_valid;
-    uint64_t seq_num;
     ValEntry() : lru_idx(0), lru_i_valid(false) {}
 
     const string& key() const {
@@ -281,8 +280,7 @@ class Storage {
       return false;
     }
     DEBUG_PRINT(
-    cout << entry->seq_num
-         << " \"" << entry->key()
+    cout << " \"" << entry->key()
          << "\" \"" << entry->val()
          << "\" (" << entry->k_i->second.key_idx
          << "," << entry->lru_idx
@@ -346,7 +344,6 @@ class Storage {
 
     lc->k_i->second.refcnt++;
     ValEntry* entry = new ValEntry;
-    entry->seq_num = ++seq_num;
     MakeSpace(val.size(), 0);
     lc->k_i->second.refcnt--;
 
@@ -445,17 +442,14 @@ class Storage {
 
   void SetRemoveValCB(ValEntryRemovalInterface* vri) { remove_val_cb = vri; }
 
-  uint64_t seq_num;
-
   Storage() :
      state_size(0),
-     max_state_size(10*1024),
+     max_state_size(64*1024),
      num_vals(0),
      max_vals(1024),
      pin_it(lru.end()),
      pinned(false),
-     remove_val_cb(0),
-     seq_num(0)
+     remove_val_cb(0)
   {
     keymap.insert(make_pair("", KeyEntry(0)));
   }
@@ -526,11 +520,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
   struct ToggleOp {
     ValEntry* entry;
    public:
-    explicit ToggleOp(ValEntry* kv) : entry(kv) {
-DEBUG_PRINT(
-      cout << "ToggleOp(" << entry->seq_num << ")" <<"\n";
-      )
-    }
+    explicit ToggleOp(ValEntry* kv) : entry(kv) { }
     ToggleOp() : entry(0) {}
     LRUIdx idx() const { return entry->lru_idx; }
     bool operator<(const ToggleOp& ob_b) const {
@@ -977,8 +967,7 @@ DEBUG_PRINT(
   void ExecuteToggle(GroupId group_id, const ToggleOp& to) {
     ValEntry* entry = to.entry;
     DEBUG_PRINT(cout << "Executing Toggle: "
-                << "(" << entry->seq_num << ") "
-                << entry->lru_idx << " ";)
+                     << entry->lru_idx << " ";)
     if (!ToggleHeaderGroupEntry(group_id, entry)) {
       MoveToHeadOfLRU(entry);
       DEBUG_PRINT(cout << " new id: " << entry->lru_idx;)
@@ -995,10 +984,21 @@ DEBUG_PRINT(
   size_t CurrentStateSize() const {
     return storage.state_size;
   }
+
+  void SetMaxStateSize(size_t size) {
+    storage.max_state_size = size;
+  }
+
+  void SetMaxVals(size_t max_size) {
+    storage.max_vals = max_size;
+  }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+
+
+//#define BIT_ALIGNED
 
 typedef SPDY4HeadersCodecImpl::Instructions Instructions;
 // In this serialization implementation, all data is serialized ignoring
@@ -1009,8 +1009,7 @@ class InlineSerialization :
     public SPDY4HeadersCodecImpl::SerializationInterface
 {
  private:
-  BitBucket bb;
-  OutputStream* os;
+  BitBucket* os;
   const Huffman* huff;
  public:
 
@@ -1081,26 +1080,35 @@ class InlineSerialization :
   }
 
   static void WriteLRUIdx(InlineSerialization* is, LRUIdx idx) {
-    is->os->WriteUint16(idx);
+#ifdef BIT_ALIGNED
+    is->os->StoreBits16(idx);
+#else
+    is->os->StoreByteAlignedUint16(idx);
+#endif
   }
 
-  static void WriteString(InlineSerialization* is,
-                          const string& str) {
-    //if (huff) {
-
-
-      is->huff->Encode(&is->bb, str,true);
-      is->os->WriteBytes(is->bb.BytesBegin(), is->bb.BytesEnd());
-      is->bb.Clear();
-    // } else {
-    //   os->WriteBytes(str.begin(), str.end());
-    //   os->WriteUint8(0);  // null.
-    // }
+  static void WriteString(InlineSerialization* is, const string& str) {
+    if (is->huff) {
+      is->huff->Encode(is->os, str, true);
+    } else {
+#ifdef BIT_ALIGNED
+      is->os->StoreBytes(str.begin(), str.end());
+      is->os->StoreBits8(0);
+#else
+      is->os->StoreByteAligned(str.begin(), str.end());
+      is->os->StoreByteAlignedUint8(0);  // null.
+#endif
+    }
   }
 
   static void WriteOpcode(InlineSerialization* is,
                          uint8_t opcode) {
-    is->os->WriteUint8(opcode);
+#ifdef BIT_ALIGNED
+    is->os->StoreBits8(opcode);
+#else
+    is->os->StoreByteAlignedUint8(opcode);
+#endif
+
   }
 
   struct LRUIdxWriter {
@@ -1150,11 +1158,20 @@ class InlineSerialization :
       while (opvec.size() > ops_idx) {
         unsigned int ops_to_go = opvec.size() - ops_idx;
         unsigned int iteration_end = min(ops_to_go, 255u) + ops_idx;
-        os->WriteUint8(opcode);
+        WriteOpcode(this, opcode);
         if (ops_to_go <= 255) {
-          os->WriteUint8((uint8_t)ops_to_go);
+#ifdef BIT_ALIGNED
+          os->StoreBits8(ops_to_go);
+#else
+          os->StoreByteAlignedUint8((uint8_t)ops_to_go);
+#endif
+
         } else {
-          os->WriteUint8((uint8_t)255);
+#ifdef BIT_ALIGNED
+          os->StoreBits8(255u);
+#else
+          os->StoreByteAlignedUint8((uint8_t)255u);
+#endif
         }
         for (; ops_idx < iteration_end; ++ops_idx) {
           opwriter.Write(is, opvec[ops_idx]);
@@ -1197,9 +1214,9 @@ class InlineSerialization :
     uint32_t frame_size_field_pos = start_of_frame_pos;
     uint32_t flags_field_pos = (start_of_frame_pos +
                                 kFlagFieldOffsetFromFrameStart);
-    os->OverwriteUint16(frame_size_field_pos,
-                        static_cast<uint16_t>(frame_length));
-    os->OverwriteUint8(flags_field_pos, frame_flags);
+    os->GetByteAlignedUint16(frame_size_field_pos) = 
+                        static_cast<uint16_t>(frame_length);
+    os->GetByteAlignedUint8(flags_field_pos) = frame_flags;
   }
 
   void WriteControlFrameBoilerplate(OutputStream* os,
@@ -1207,17 +1224,28 @@ class InlineSerialization :
                                     uint8_t flags,
                                     StreamId stream_id,
                                     uint8_t type) {
-    os->WriteUint16(frame_len);
-    os->WriteUint8(flags);
+#ifdef BIT_ALIGNED
+    os->StoreBits16(frame_len);
+    os->StoreBits8(flags);
     WriteControlFrameStreamId(os, stream_id);
-    os->WriteUint8(type);
+    os->StoreBits8(type);
+#else
+    os->StoreByteAlignedUint16(frame_len);
+    os->StoreByteAlignedUint8(flags);
+    WriteControlFrameStreamId(os, stream_id);
+    os->StoreByteAlignedUint8(type);
+#endif
   }
 
   void WriteControlFrameStreamId(OutputStream* os, StreamId stream_id) {
     if (stream_id & 0x8000U) {
       abort(); // can't have that top-order bit set....
     }
-    os->WriteUint32(0x8000U | stream_id);
+#ifdef BIT_ALIGNED
+    os->StoreBits32(0x8000U | stream_id);
+#else
+    os->StoreByteAlignedUint32(0x8000U | stream_id);
+#endif
   }
 };
 
@@ -1292,3 +1320,10 @@ void SPDY4HeadersCodec::OutputCompleteHeaderFrame(OutputStream* os,
                                    headers, this_ends_the_frame);
 }
 
+void SPDY4HeadersCodec::SetMaxStateSize(size_t size) {
+  impl->SetMaxStateSize(size);
+}
+
+void SPDY4HeadersCodec::SetMaxVals(size_t size) {
+  impl->SetMaxStateSize(size);
+}
