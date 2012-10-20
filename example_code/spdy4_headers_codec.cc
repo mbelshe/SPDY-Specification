@@ -743,11 +743,8 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
       const string& key = hf_i->key;
       const string& val = hf_i->val;
       LookupCache lc = *key_lu_it;
-      //storage.FindOrAddKey(&lc, key);
 
-       // this is buggy.
       size_t crumb_end;
-
       if (key == "cookie" &&
           (crumb_end = val.find_first_of(';')) != string::npos) {
         size_t crumb_begin = 0;

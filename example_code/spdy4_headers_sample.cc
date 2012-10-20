@@ -21,6 +21,9 @@
 using std::unique_ptr;
 using std::vector;
 using std::memset;
+using std::fixed;
+using std::cout;
+using std::cerr;
 
 int ParseHarFiles(int n_files, char** files,
                    vector<HeaderFrame>* requests,
@@ -345,11 +348,13 @@ void PrintSummary(const string& protocol_name,
        << " for: " << iterations << "*" << header_count << " header frames"
        << " (" << (iterations * header_count) << " total header frames)"
        << " or " << (header_count * iterations) / secs << " headers/sec"
-       << " or " << (uncompressed_size * iterations) / secs << " bytes/sec"
+       << " or " << fixed << (uncompressed_size * iterations) / secs << " bytes/sec"
        << "\n";
-  cout << "Compression ratio: " << compression_ratio << "\n"
-       << "Uncompressed bytes: " << (uncompressed_size * iterations) << "\n"
-       << "  compressed bytes: " << total_compressed_size << "\n";
+  cout << "Compression ratio: " << compression_ratio << " = "
+       << "compressed bytes(" << total_compressed_size << ")"
+       << " / "
+       << "uncompressed_bytes(" << (uncompressed_size * iterations) << ")"
+       << "\n";
 }
 
 int main(int argc, char** argv) {
@@ -368,14 +373,16 @@ int main(int argc, char** argv) {
   }
   const double time_to_iterate = 10.0;
 
+  Stats spdy4_stats = DoSPDY4CoDec(time_to_iterate, requests);
+  PrintSummary("spdy4", spdy4_stats,
+               request_header_bytes, header_count);
+
 #ifdef SPDY3
   Stats spdy3_stats = DoSPDY3CoDec(time_to_iterate, requests);
   PrintSummary("spdy3", spdy3_stats,
                request_header_bytes, header_count);
 #endif
-  Stats spdy4_stats = DoSPDY4CoDec(time_to_iterate, requests);
-  PrintSummary("spdy4", spdy4_stats,
-               request_header_bytes, header_count);
+
 }
 
 
