@@ -329,7 +329,7 @@ class Storage {
     if (lc->k_i_valid == false) {
       lc->k_i = keymap.find(key);
       if (lc->k_i == keymap.end()) {
-        MakeSpace(key.size(), 1);
+        MakeSpace(key.size(), 0);
         lc->k_i = keymap.insert(make_pair(key,
                                           KeyEntry(key_ids.GetNext()))).first;
         state_size += key.size();
@@ -344,7 +344,7 @@ class Storage {
 
     lc->k_i->second.refcnt++;
     ValEntry* entry = new ValEntry;
-    MakeSpace(val.size(), 0);
+    MakeSpace(val.size(), 1);
     lc->k_i->second.refcnt--;
 
     lc->v_i = lc->k_i->second.valmap.insert(make_pair(val, entry));
@@ -429,6 +429,7 @@ class Storage {
            << "\n";
 #endif
       key_ids.DoneWithId(keyentry.key_idx);
+      state_size -= entry->k_i->first.size();
       keymap.erase(entry->k_i);
       entry->k_i = keymap.end();
     }
@@ -1286,8 +1287,11 @@ SPDY4HeadersCodecImpl::~SPDY4HeadersCodecImpl() {
 //  5) huffman-encoded strings use an EOF symbol is used to indicate the end of
 //     the string
 //  6) a bit-width or token-count is used to indicate the end of the string.
-//  7) var-int length fields instead of fixed-width length fields
-//  8) huffman-coding over the opcodes and fixed-width values.
+//  7) va
+//   r-int length fields instead of fixed-width length fields
+//    I done know what I want to type here.
+//  8) huffman-coding over the opcodes a
+//    nd fixed-width values.
 // this list is not exhaustive, but I'm exhausted, so I'll stop here. This should
 // be plenty to play around with.
 
@@ -1309,10 +1313,10 @@ size_t SPDY4HeadersCodec::CurrentStateSize() const {
 }
 
 void SPDY4HeadersCodec::OutputCompleteHeaderFrame(OutputStream* os,
-                                              StreamId stream_id,
-                                              GroupId group_id,
-                                              const HeaderFrame& headers,
-                                              bool this_ends_the_frame) {
+                                                  StreamId stream_id,
+                                                  GroupId group_id,
+                                                  const HeaderFrame& headers,
+                                                  bool this_ends_the_frame) {
   impl->OutputCompleteHeaderFrame(os, stream_id, group_id,
                                    headers, this_ends_the_frame);
 }
