@@ -3,7 +3,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta name="description" content="SPDY Protocol">
 <meta name="keywords" content="HTTP">
-<meta name="generator" content="xml2rfc v1.34 (http://xml.resource.org/)">
+<meta name="generator" content="xml2rfc v1.36 (http://xml.resource.org/)">
 <style type='text/css'><!--
         body {
                 font-family: verdana, charcoal, helvetica, arial, sans-serif;
@@ -144,9 +144,9 @@
 <table summary="layout" width="66%" border="0" cellpadding="0" cellspacing="0"><tr><td><table summary="layout" width="100%" border="0" cellpadding="2" cellspacing="1">
 <tr><td class="header">Network Working Group</td><td class="header">M. Belshe</td></tr>
 <tr><td class="header">Internet-Draft</td><td class="header">Twist</td></tr>
-<tr><td class="header">Expires: February 17, 2013</td><td class="header">R. Peon</td></tr>
+<tr><td class="header">Expires: February 2, 2013</td><td class="header">R. Peon</td></tr>
 <tr><td class="header">&nbsp;</td><td class="header">Google, Inc</td></tr>
-<tr><td class="header">&nbsp;</td><td class="header">August 16, 2012</td></tr>
+<tr><td class="header">&nbsp;</td><td class="header">August 2012</td></tr>
 </table></td></tr></table>
 <h1><br />SPDY Protocol<br />draft-mbelshe-httpbis-spdy-00</h1>
 
@@ -156,26 +156,20 @@
 </p>
 <h3>Status of this Memo</h3>
 <p>
-This Internet-Draft is submitted to IETF in full
+This Internet-Draft is submitted  in full
 conformance with the provisions of BCP&nbsp;78 and BCP&nbsp;79.</p>
 <p>
 Internet-Drafts are working documents of the Internet Engineering
-Task Force (IETF), its areas, and its working groups.
-Note that other groups may also distribute working documents as
-Internet-Drafts.</p>
+Task Force (IETF).  Note that other groups may also distribute
+working documents as Internet-Drafts.  The list of current
+Internet-Drafts is at http://datatracker.ietf.org/drafts/current/.</p>
 <p>
 Internet-Drafts are draft documents valid for a maximum of six months
 and may be updated, replaced, or obsoleted by other documents at any time.
 It is inappropriate to use Internet-Drafts as reference material or to cite
 them other than as &ldquo;work in progress.&rdquo;</p>
 <p>
-The list of current Internet-Drafts can be accessed at
-<a href='http://www.ietf.org/ietf/1id-abstracts.txt'>http://www.ietf.org/ietf/1id-abstracts.txt</a>.</p>
-<p>
-The list of Internet-Draft Shadow Directories can be accessed at
-<a href='http://www.ietf.org/shadow.html'>http://www.ietf.org/shadow.html</a>.</p>
-<p>
-This Internet-Draft will expire on February 17, 2013.</p>
+This Internet-Draft will expire on February 2, 2013.</p>
 
 <h3>Copyright Notice</h3>
 <p>
@@ -183,10 +177,14 @@ Copyright (c) 2012 IETF Trust and the persons identified as the
 document authors.  All rights reserved.</p>
 <p>
 This document is subject to BCP 78 and the IETF Trust's Legal
-Provisions Relating to IETF Documents in effect on the date of
-publication of this document (http://trustee.ietf.org/license-info).
-Please review these documents carefully, as they describe your
-rights and restrictions with respect to this document.</p>
+Provisions Relating to IETF Documents
+(http://trustee.ietf.org/license-info) in effect on the date of
+publication of this document.  Please review these documents
+carefully, as they describe your rights and restrictions with respect
+to this document. Code Components extracted from this document must
+include Simplified BSD License text as described in Section 4.e of
+the Trust Legal Provisions and are provided without warranty as
+described in the Simplified BSD License.</p>
 <a name="toc"></a><br /><hr />
 <h3>Table of Contents</h3>
 <p class="toc">
@@ -276,49 +274,65 @@ Server Push Transactions<br />
 Server implementation<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor21">3.3.2.</a>&nbsp;
 Client implementation<br />
-<a href="#anchor22">4.</a>&nbsp;
-Design Rationale and Notes<br />
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor23">4.1.</a>&nbsp;
-Separation of Framing Layer and Application Layer<br />
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor24">4.2.</a>&nbsp;
-Error handling - Framing Layer<br />
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor25">4.3.</a>&nbsp;
-One Connection Per Domain<br />
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor26">4.4.</a>&nbsp;
-Fixed vs Variable Length Fields<br />
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor27">4.5.</a>&nbsp;
-Compression Context(s)<br />
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor28">4.6.</a>&nbsp;
-Unidirectional streams<br />
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor29">4.7.</a>&nbsp;
-Data Compression<br />
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor30">4.8.</a>&nbsp;
-Server Push<br />
+<a href="#WebSocketLayer">4.</a>&nbsp;
+WebSocket Layering over SPDY<br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor22">4.1.</a>&nbsp;
+Connection Management<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor23">4.1.1.</a>&nbsp;
+Opening Handshake<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor26">4.1.2.</a>&nbsp;
+Closing Handshake<br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor29">4.2.</a>&nbsp;
+Bi-directional Communication<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor30">4.2.1.</a>&nbsp;
+Frame mapping<br />
 <a href="#anchor31">5.</a>&nbsp;
-Security Considerations<br />
+Design Rationale and Notes<br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor32">5.1.</a>&nbsp;
-Use of Same-origin constraints<br />
+Separation of Framing Layer and Application Layer<br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor33">5.2.</a>&nbsp;
-HTTP Headers and SPDY Headers<br />
+Error handling - Framing Layer<br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor34">5.3.</a>&nbsp;
-Cross-Protocol Attacks<br />
+One Connection Per Domain<br />
 &nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor35">5.4.</a>&nbsp;
+Fixed vs Variable Length Fields<br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor36">5.5.</a>&nbsp;
+Compression Context(s)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor37">5.6.</a>&nbsp;
+Unidirectional streams<br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor38">5.7.</a>&nbsp;
+Data Compression<br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor39">5.8.</a>&nbsp;
+Server Push<br />
+<a href="#anchor40">6.</a>&nbsp;
+Security Considerations<br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor41">6.1.</a>&nbsp;
+Use of Same-origin constraints<br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor42">6.2.</a>&nbsp;
+HTTP Headers and SPDY Headers<br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor43">6.3.</a>&nbsp;
+Cross-Protocol Attacks<br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor44">6.4.</a>&nbsp;
 Server Push Implicit Headers<br />
-<a href="#anchor36">6.</a>&nbsp;
+<a href="#anchor45">7.</a>&nbsp;
 Privacy Considerations<br />
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor37">6.1.</a>&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor46">7.1.</a>&nbsp;
 Long Lived Connections<br />
-&nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor38">6.2.</a>&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor47">7.2.</a>&nbsp;
 SETTINGS frame<br />
-<a href="#anchor39">7.</a>&nbsp;
+<a href="#anchor48">8.</a>&nbsp;
+Sub-protocol negotiation<br />
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#anchor49">8.1.</a>&nbsp;
+Supporting scheme negotiation using SETTINGS frame<br />
+<a href="#anchor50">9.</a>&nbsp;
 Incompatibilities with SPDY draft #3<br />
-<a href="#anchor40">8.</a>&nbsp;
+<a href="#anchor51">10.</a>&nbsp;
 Requirements Notation<br />
-<a href="#anchor41">9.</a>&nbsp;
+<a href="#anchor52">11.</a>&nbsp;
 Acknowledgements<br />
-<a href="#rfc.references1">10.</a>&nbsp;
+<a href="#rfc.references1">12.</a>&nbsp;
 Normative References<br />
-<a href="#anchor43">Appendix&nbsp;A.</a>&nbsp;
+<a href="#anchor54">Appendix&nbsp;A.</a>&nbsp;
 Changes<br />
 <a href="#rfc.authors">&#167;</a>&nbsp;
 Authors' Addresses<br />
@@ -335,7 +349,7 @@ Overview</h3>
 <p>SPDY adds a framing layer for multiplexing multiple, concurrent streams across a single TCP connection (or any reliable transport stream).  The framing layer is optimized for HTTP-like request-response streams, such that applications which run over HTTP today can work over SPDY with little or no change on behalf of the web application writer.
 </p>
 <p>The SPDY session offers four improvements over HTTP:
-</p>
+          </p>
 <blockquote class="text">
 <p>Multiplexed requests: There is no limit to the number of requests that can be issued concurrently over a single SPDY connection.
 </p>
@@ -346,7 +360,7 @@ Overview</h3>
 <p>Server pushed streams:  Server Push enables content to be pushed from servers to clients without a request.
 </p>
 </blockquote><p>
-
+        
 </p>
 <p>SPDY attempts to preserve the existing semantics of HTTP. All features such as cookies, ETags, Vary headers, Content-Encoding negotiations, etc work as they do with HTTP; SPDY only replaces the way the data is written to the network.
 </p>
@@ -363,7 +377,7 @@ Document Organization</h3>
 Definitions</h3>
 
 <p>
-</p>
+            </p>
 <blockquote class="text">
 <p>client: The endpoint initiating the SPDY session.
 </p>
@@ -384,7 +398,7 @@ Definitions</h3>
 <p>stream error: An error on an individual SPDY stream.
 </p>
 </blockquote><p>
-
+          
 </p>
 <a name="FramingLayer"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
@@ -407,7 +421,7 @@ Framing</h3>
 
 <p>Once the connection is established, clients and servers exchange framed messages. There are two types of frames: <a class='info' href='#ControlFrames'>control frames<span> (</span><span class='info'>Control frames</span><span>)</span></a> and <a class='info' href='#DataFrames'>data frames<span> (</span><span class='info'>Data frames</span><span>)</span></a>. 
 </p>
-<p>The first bit of any frame indicates whether a frame is a control frame or data frame. Control frames carry a frame type, flags, and a length. Data frames contain the stream ID, flags, and the length for the payload carried after the common header. The simple header is designed to make reading and writing of frames easy.
+<p>Both types of frames carry a common set of headers: length, flags, and frame type. Flag definitions vary between control and data frames. The simple header is designed to make reading and writing of frames easy.
 </p>
 <p>All integer values, including length, and type, are in network byte order.  SPDY does not enforce alignment of types in dynamically sized frames.
 </p>
@@ -417,7 +431,7 @@ Framing</h3>
 Notational Conventions for Framing</h3>
 
 <p> In SPDY, since everything is defined to be in network byte-order, the most significant bit of any field is the "leftmost" in any diagram.
-</p>
+              </p>
 <blockquote class="text">
 <p> "+" denotes the boundary of a byte (synonomous with octet in this document)
 </p>
@@ -442,51 +456,51 @@ Notational Conventions for Framing</h3>
 <p> The numbers above the boxes indicate the byte-offset from the start of that frame or section, as appropriate
 </p>
 </blockquote><p>
-
+            
 </p>
 <p> As an example:
-</p>
+              </p>
 <div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-     0         1         2       3
-+--|------+--|------+--------+--------+
-|10|[PRI]0xEE|XXXXXX| Len(16)         |
-+--|------+--|------+--------+--------+
+                  0         1         2       3
+                  +--|------+--|------+--------+--------+
+                  |10|[PRI]0xEE|XXXXXX| Len(16)         |
+                  +--|------+--|------+--------+--------+
 </pre></div><p>
 
-This describes a frame which starts with 1 as the MSB, a 0 in the second most significant bit, followed by 0b11101110 (or 0xEE) as the "PRI" field, followed by 6 reserved bits, which will have all be zeroed, followed by a Len field which is 16 bits long.
-In other words, first two bytes would be: 0b10111011 0b10000000, followed by the Len field.
-
+              This describes a frame which starts with 1 as the MSB, a 0 in the second most significant bit, followed by 0b11101110 (or 0xEE) as the "PRI" field, followed by 6 reserved bits, which will have all be zeroed, followed by a Len field which is 16 bits long.
+              In other words, first two bytes would be: 0b10111011 0b10000000, followed by the Len field.
+            
 </p>
 <p>
-Another example.  In this case, a single byte is represented with the most significant bit a 0, the second most significant bit a 1, the next bit the 'K' field, the next bit the 'L' field, and the next 4 bits are reserved and must be zeros. The frame description continues, describing that an indeterminate (presumably defined elsewhere) amount of data follows and ends on a byte boundary.
-</p>
+              Another example.  In this case, a single byte is represented with the most significant bit a 0, the second most significant bit a 1, the next bit the 'K' field, the next bit the 'L' field, and the next 4 bits are reserved and must be zeros. The frame description continues, describing that an indeterminate (presumably defined elsewhere) amount of data follows and ends on a byte boundary.
+              </p>
 <div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-      0
-+--|-|-|----+
-|01|K|L|XXXX|  -&gt;
-+--|-|-|----+
+                  0
+                  +--|-|-|----+
+                  |01|K|L|XXXX|  -&gt;
+                  +--|-|-|----+
 
-   1..N
-+========+
-|  data  |
-+========+
+                  1..N
+                  +========+
+                  |  data  |
+                  +========+
 </pre></div><p>
 
-
+            
 </p>
 <a name="ControlFrames"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
 <a name="rfc.section.2.2.2"></a><h3>2.2.2.&nbsp;
 Control frames</h3>
 <div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-     0        1        2        3         4        5        6        7
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
-| Length(16)      |Flags(8)|1| Num-of-Entries-or-Stream-ID-or-ID|Type(8) | -&gt;
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
-   8..N
-+========+
-|  Data  |
-+========+
+                0        1        2        3         4        5        6        7
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
+                | Length(16)      |Flags(8)|1| Num-of-Entries-or-Stream-ID-or-ID|Type(8) | -&gt;
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
+                8..N
+                +========+
+                |  Data  |
+                +========+
 </pre></div>
 <p>Control bit: The 'C' bit is a single bit indicating if this is a control message. For control frames this value is always 1.
 </p>
@@ -499,43 +513,43 @@ Control frames</h3>
 <p>Data: data associated with this control frame. The format and length of this data is controlled by the control frame type.
 </p>
 <p>Control frame processing requirements:
-</p>
+              </p>
 <blockquote class="text">
 <p>Note that full length control frames (16kb) can be large for implementations running on resource-limited hardware.  In such cases, implementations MAY limit the maximum length frame supported.  However, all implementations MUST be able to receive control frames of at least 8192 octets in length.
 </p>
 </blockquote><p>
-
+            
 </p>
 <a name="DataFrames"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
 <a name="rfc.section.2.2.3"></a><h3>2.2.3.&nbsp;
 Data frames</h3>
 <div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-     0        1        2        3         4        5        6      7..N
-+--------+--------+--------+-|-------+--------+--------+--------+========+
-| Length(16)      |Flags(8)|0| Stream ID (31)                   |  Data  |
-+--------+--------+--------+-|-------+--------+--------+--------+========+
+                0        1        2        3         4        5        6      7..N
+                +--------+--------+--------+-|-------+--------+--------+--------+========+
+                | Length(16)      |Flags(8)|0| Stream ID (31)                   |  Data  |
+                +--------+--------+--------+-|-------+--------+--------+--------+========+
 </pre></div>
 <p>Control bit: For data frames this value is always 0.
 </p>
 <p>Stream-ID: A 31-bit value identifying the stream.
 </p>
 <p>Flags: Flags related to this frame. Valid flags are:
-</p>
+              </p>
 <blockquote class="text">
 <p>0x01 = FLAG_FIN - signifies that this frame represents the last frame to be transmitted on this stream.  See <a class='info' href='#StreamClose'>Stream Close<span> (</span><span class='info'>Stream close</span><span>)</span></a> below.
 </p>
 <p>0x02 = MSG_DONE - signifies that this frame represents the last frame of a message. This is relevant for layering of message-based protocols on top of SPDY.
 </p>
 </blockquote><p>
-
+            
 </p>
 <p>Length: An unsigned 16-bit value representing the number of bytes after the length field. The total size of a data frame is 8 bytes + length. It is valid to have a zero-length data frame.
 </p>
 <p>Data: The variable-length data payload; the length was defined in the length field.
 </p>
 <p>Data frame processing requirements:
-</p>
+              </p>
 <blockquote class="text">
 <p>If an endpoint receives a data frame for a stream-id which is not open and the endpoint has not sent a <a class='info' href='#GOAWAY'>GOAWAY<span> (</span><span class='info'>GOAWAY</span><span>)</span></a> frame, it MUST issue a <a class='info' href='#StreamErrorHandler'>stream error<span> (</span><span class='info'>Stream Error Handling</span><span>)</span></a> with the error code INVALID_STREAM for the stream-id.
 </p>
@@ -544,7 +558,7 @@ Data frames</h3>
 <p>Implementors note: If an endpoint receives multiple data frames for invalid stream-ids, it MAY close the session.
 </p>
 </blockquote><p>
-
+            
 </p>
 <a name="anchor5"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
@@ -552,7 +566,7 @@ Data frames</h3>
 Streams</h3>
 
 <p>Streams are independent sequences of bi-directional data divided into frames with several properties:
-</p>
+            </p>
 <blockquote class="text">
 <p>Streams may be created by either the client or server.
 </p>
@@ -563,7 +577,7 @@ Streams</h3>
 <p>Streams may be cancelled.
 </p>
 </blockquote><p>
-
+          
 </p>
 <a name="StreamFrames"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
@@ -571,7 +585,7 @@ Streams</h3>
 Stream frames</h3>
 
 <p>SPDY defines 3 control frames to manage the lifecycle of a stream:
-    </p>
+              </p>
 <blockquote class="text">
 <p>SYN_STREAM - Open a new stream
 </p>
@@ -580,7 +594,7 @@ Stream frames</h3>
 <p>RST_STREAM - Close a stream
 </p>
 </blockquote><p>
-
+            
 </p>
 <a name="StreamCreation"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
@@ -649,7 +663,7 @@ Stream half-close</h3>
 Stream close</h3>
 
 <p>There are 3 ways that streams can be terminated:
-</p>
+              </p>
 <blockquote class="text">
 <p>Normal termination: Normal stream termination occurs when both sender and recipient have half-closed the stream by sending a FLAG_FIN.
 </p>
@@ -658,7 +672,7 @@ Stream close</h3>
 <p>TCP connection teardown: If the TCP connection is torn down while un-closed streams exist, then the endpoint must assume that the stream was abnormally interrupted and may be incomplete.
 </p>
 </blockquote><p>
-
+            
 </p>
 <p>If an endpoint receives a data frame after the stream is closed, it must send a RST_STREAM to the sender with the status PROTOCOL_ERROR.
 </p>
@@ -755,23 +769,23 @@ SYN_STREAM</h3>
 
 <p>The SYN_STREAM control frame allows the sender to asynchronously create a stream between the endpoints.  See <a class='info' href='#StreamCreation'>Stream Creation<span> (</span><span class='info'>Stream creation</span><span>)</span></a>
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-     0        1        2        3         4        5        6        7
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
-| Length(16)      |Flags(8)|1| Stream Id(31)                    |    0x1 | -&gt;
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
+                0        1        2        3         4        5        6        7
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
+                | Length(16)      |Flags(8)|1| Stream Id(31)                    |    0x1 | -&gt;
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
 
-     8        9,10,11..N
-+---|-----+=========================+
-|Pri|XXXXX| Name/Value Header Block |
-+---|-----+=========================+
+                8        9,10,11..N
+                +---|-----+=========================+
+                |Pri|XXXXX| Name/Value Header Block |
+                +---|-----+=========================+
 </pre></div>
 <p>Flags: Flags related to this frame. Valid flags are:
-</p>
+              </p>
 <blockquote class="text">
 <p>0x01 = FLAG_FIN - marks this frame as the last frame to be transmitted on this stream and puts the sender in the <a class='info' href='#StreamHalfClose'>half-closed<span> (</span><span class='info'>Stream half-close</span><span>)</span></a> state.
 </p>
 </blockquote><p>
-
+            
 </p>
 <p>Length: The length is the number of bytes which follow the length field in the frame.  For SYN_STREAM frames, this is 6 bytes plus the length of the Name/Value Header Block.
 </p>
@@ -794,23 +808,23 @@ SYN_REPLY</h3>
 
 <p>SYN_REPLY indicates the acceptance of a stream creation by the recipient of a SYN_STREAM frame.
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-     0        1        2        3         4        5        6        7
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
-| Length(16)      |Flags(8)|1| Stream Id(31)                    |    0x2 | -&gt;
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
+                0        1        2        3         4        5        6        7
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
+                | Length(16)      |Flags(8)|1| Stream Id(31)                    |    0x2 | -&gt;
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
 
-      8,9,10..N
-+=========================+
-| Name/Value Header Block |
-+=========================+
+                8,9,10..N
+                +=========================+
+                | Name/Value Header Block |
+                +=========================+
 </pre></div>
 <p>Flags: Flags related to this frame. Valid flags are:
-</p>
+              </p>
 <blockquote class="text">
 <p>0x01 = FLAG_FIN - marks this frame as the last frame to be transmitted on this stream and puts the sender in the <a class='info' href='#StreamHalfClose'>half-closed<span> (</span><span class='info'>Stream half-close</span><span>)</span></a> state.
 </p>
 </blockquote><p>
-
+            
 </p>
 <p>Length: The length is the number of bytes which follow the length field in the frame.  For SYN_REPLY frames, this is 4 bytes plus the length of the compressed Name/Value block.
 </p>
@@ -829,15 +843,15 @@ RST_STREAM</h3>
 
 <p>The RST_STREAM frame allows for abnormal termination of a stream.  When sent by the creator of a stream, it indicates the creator wishes to cancel the stream.  When sent by the recipient of a stream, it indicates an error or that the recipient did not want to accept the stream, so the stream should be closed.
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-     0        1        2        3         4        5        6        7
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
-| Length(16)      |Flags(8)|1| Stream Id(31)                    |    0x3 | -&gt;
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
+                0        1        2        3         4        5        6        7
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
+                | Length(16)      |Flags(8)|1| Stream Id(31)                    |    0x3 | -&gt;
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
 
-     8        9        10       11
-+--------+--------+--------+--------+
-| Status-Code(32)                   |
-+--------+--------+--------+--------+
+                8        9        10       11
+                +--------+--------+--------+--------+
+                | Status-Code(32)                   |
+                +--------+--------+--------+--------+
 </pre></div>
 <p>Flags: Flags related to this frame. RST_STREAM does not define any flags.  This value must be 0.
 </p>
@@ -846,7 +860,7 @@ RST_STREAM</h3>
 <p>Stream-ID: The 31-bit identifier for this stream.
 </p>
 <p>Status code: (32 bits) An indicator for why the stream is being terminated.The following status codes are defined:
-</p>
+              </p>
 <blockquote class="text">
 <p>1 - PROTOCOL_ERROR. This is a generic error, and should only be used if a more specific error is not available.
 </p>
@@ -873,7 +887,7 @@ RST_STREAM</h3>
 <p>Note:  0 is not a valid status code for a RST_STREAM.
 </p>
 </blockquote><p>
-
+            
 </p>
 <p>After receiving a RST_STREAM on a stream, the recipient must not send additional frames for that stream, and the stream moves into the closed state.
 </p>
@@ -886,15 +900,15 @@ SETTINGS</h3>
 </p>
 <p>Persistence of SETTINGS ID/Value pairs is done on a per origin/IP pair (the "origin" is the set of scheme, host, and port from the URI.  See <a class='info' href='#RFC6454'>[RFC6454]<span> (</span><span class='info'>Barth, A., &ldquo;The Web Origin Concept,&rdquo; December&nbsp;2011.</span><span>)</span></a>).  That is, when a client connects to a server, and the server persists settings within the client, the client SHOULD return the persisted settings on future connections to the same origin AND IP address and TCP port. Clients MUST NOT request servers to use the persistence features of the SETTINGS frames, and servers MUST ignore persistence related flags sent by a client.
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-     0        1        2        3         4        5        6        7
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
-| Length(16)      |Flags(8)|1| Number-of-Entries(31)            |    0x4 | -&gt;
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
+                0        1        2        3         4        5        6        7
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
+                | Length(16)      |Flags(8)|1| Number-of-Entries(31)            |    0x4 | -&gt;
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
 
-     8..n
-+================+
-| ID/Value-Pairs |
-+================+
+                8..n
+                +================+
+                | ID/Value-Pairs |
+                +================+
 </pre></div>
 <p>Control bit: The control bit is always 1 for this message.
 </p>
@@ -907,28 +921,28 @@ SETTINGS</h3>
 <p>Number of entries: A 32-bit value representing the number of ID/value pairs in this message. 
 </p>
 <p>Each ID/value pair is as follows:
-          </p>
+              </p>
 <div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-     0        1        2        3        4        5        6        7
-+--------+--------+--------+--------+--------+--------+--------+--------+
-|Flags(8)| ID(24)                   | Value(32)                         |
-+--------+--------+--------+--------+--------+--------+--------+--------+
+                  0        1        2        3        4        5        6        7
+                  +--------+--------+--------+--------+--------+--------+--------+--------+
+                  |Flags(8)| ID(24)                   | Value(32)                         |
+                  +--------+--------+--------+--------+--------+--------+--------+--------+
 </pre></div><p>
 
-
+            
 </p>
 <p>Flags: An 8 bit value.  Defined Flags:
-  </p>
+              </p>
 <blockquote class="text">
 <p>FLAG_SETTINGS_PERSIST_VALUE (0x1):   When set, the sender of this SETTINGS frame is requesting that the recipient persist the ID/Value and return it in future SETTINGS frames sent from the sender to this recipient.  Because persistence is only implemented on the client, this flag is only sent by the server.
 </p>
 <p>FLAG_SETTINGS_PERSISTED (0x2):  When set, the sender is notifying the recipient that this ID/Value pair was previously sent to the sender by the recipient with the FLAG_SETTINGS_PERSIST_VALUE, and the sender is returning it.  Because persistence is only implemented on the client, this flag is only sent by the client.
 </p>
 </blockquote><p>
-
+            
 </p>
 <p>ID: 24-bits in network byte order.  Defined IDs:
-  </p>
+              </p>
 <blockquote class="text">
 <p>1 - SETTINGS_UPLOAD_BANDWIDTH allows the sender to send its expected upload bandwidth on this channel. This number is an estimate. The value should be the integral number of kilobytes per second that the sender predicts as an expected maximum upload channel capacity.
 </p>
@@ -946,8 +960,20 @@ SETTINGS</h3>
 </p>
 <p>8 - SETTINGS_CLIENT_CERTIFICATE_VECTOR_SIZE allows the server to inform the client if the new size of the client certificate vector.
 </p>
+<p>9 - SETTINGS_SUPPORTING_SCHEMES allows the sender to inform the remote endpoint supporting overlayering protocol schemes. The corresponding value must be a 32-bit value, and which contains flags as follows:
+</p>
+<blockquote class="text">
+<p>bit 0: http
+</p>
+<p>bit 1: https
+</p>
+<p>bit 2: ws
+</p>
+<p>bit 3: wss
+</p>
+</blockquote>
 </blockquote><p>
-
+            
 </p>
 <p>Value: A 32-bit value.
 </p>
@@ -962,10 +988,10 @@ PING</h3>
 
 <p>The PING control frame is a mechanism for measuring a minimal round-trip time from the sender.  It can be sent from the client or the server.  Recipients of a PING frame should send an identical frame to the sender as soon as possible (if there is other pending data waiting to be sent, PING should take highest priority).  Each ping sent by a sender should use a unique ID.
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-     0        1        2        3         4        5        6        7
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
-| Length(16)      |XXXXXXXX|1| ID(31)                           |    0x6 | -&gt;
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
+                0        1        2        3         4        5        6        7
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
+                | Length(16)      |XXXXXXXX|1| ID(31)                           |    0x6 | -&gt;
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
 
 </pre></div>
 <p>Control bit: The control bit is always 1 for this message.
@@ -979,7 +1005,7 @@ PING</h3>
 <p>Note: If a sender uses all possible PING ids (e.g. has sent all 2^31 possible IDs), it can wrap and start re-using IDs.
 </p>
 <p>If a server receives an even numbered PING which it did not initiate, it must ignore the PING.
-If a client receives an odd numbered PING which it did not initiate, it must ignore the PING.
+              If a client receives an odd numbered PING which it did not initiate, it must ignore the PING.
 </p>
 <a name="GOAWAY"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
@@ -994,15 +1020,15 @@ GOAWAY</h3>
 </p>
 <p>After sending a GOAWAY message, the sender must ignore all SYN_STREAM frames for new streams.
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-     0        1        2        3         4        5        6        7
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
-| Length(16)      |Flags(8)|1|  Last-Good-Stream-ID(31)         |     0x7| -&gt;
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
+                0        1        2        3         4        5        6        7
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
+                | Length(16)      |Flags(8)|1|  Last-Good-Stream-ID(31)         |     0x7| -&gt;
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
 
-     8        9        10       11
-+--------+--------+--------+--------+
-|          Status-Code(32)          |
-+--------+--------+--------+--------+
+                8        9        10       11
+                +--------+--------+--------+--------+
+                |          Status-Code(32)          |
+                +--------+--------+--------+--------+
 </pre></div>
 <p>Control bit: The control bit is always 1 for this message.
 </p>
@@ -1013,7 +1039,7 @@ GOAWAY</h3>
 <p>Last-good-stream-Id: The last stream id which was replied to (with either a SYN_REPLY or RST_STREAM) by the sender of the GOAWAY message.  If no streams were replied to, this value MUST be 0.
 </p>
 <p>Status: The reason for closing the session.
-</p>
+              </p>
 <blockquote class="text">
 <p>0 - OK. This is a normal session teardown.
 </p>
@@ -1022,7 +1048,7 @@ GOAWAY</h3>
 <p>11 - INTERNAL_ERROR.  This is a generic error which can be used when the implementation has internally failed, not due to anything in the protocol.
 </p>
 </blockquote><p>
-
+            
 </p>
 <a name="HEADERS"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
@@ -1035,23 +1061,25 @@ HEADERS</h3>
 </p>
 <p>Here is the format of a headers frame and headers block:
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-     0        1        2        3         4        5        6        7
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
-| Length(16)      |Flags(8)|1| Stream-ID(31)                    |     0x8| -&gt;
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
+                0        1        2        3         4        5        6        7
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
+                | Length(16)      |Flags(8)|1| Stream-ID(31)                    |     0x8| -&gt;
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
 
-     8,9,10..N
-+=========================+
-| Name/Value Header Block |
-+=========================+
+                8,9,10..N
+                +=========================+
+                | Name/Value Header Block |
+                +=========================+
 </pre></div>
 <p>Flags: Flags related to this frame. Valid flags are:
-</p>
+              </p>
 <blockquote class="text">
 <p>0x01 = FLAG_FIN - marks this frame as the last frame to be transmitted on this stream and puts the sender in the <a class='info' href='#StreamHalfClose'>half-closed<span> (</span><span class='info'>Stream half-close</span><span>)</span></a> state.
 </p>
+<p>0x02 = FLAG_HEADER_END - marks this frame as the end of the current header. Multiple HEADERS frames may be involved in constructing a single header, if it is sufficiently large.
+</p>
 </blockquote><p>
-
+            
 </p>
 <p>Length: An unsigned 24 bit value representing the number of bytes after the length field. The minimum length of the length field is 7 (when the number of name value pairs is 0).
 </p>
@@ -1068,15 +1096,15 @@ WINDOW_UPDATE</h3>
 </p>
 <p>Flow control in SPDY is implemented by a data transfer window kept by the sender of each stream. The data transfer window is a simple uint32 that indicates how many bytes of data the sender can transmit. After a stream is created, but before any data frames have been transmitted, the sender begins with the initial window size. This window size is a measure of the buffering capability of the recipient. The sender must not send a data frame with data length greater than the transfer window size. After sending each data frame, the sender decrements its transfer window size by the amount of data transmitted. When the window size becomes less than or equal to 0, the sender must pause transmitting data frames. At the other end of the stream, the recipient sends a WINDOW_UPDATE control back to notify the sender that it has consumed some data and freed up buffer space to receive more data.
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-     0        1        2        3         4        5        6        7
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
-| Length(16)      |Flags(8)|1| Stream-ID(31)                    |     0x9| -&gt;
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
+                0        1        2        3         4        5        6        7
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
+                | Length(16)      |Flags(8)|1| Stream-ID(31)                    |     0x9| -&gt;
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
 
-     8        9        10       11
-+--------+--------+--------+--------+
-|Delta-Window-Size                  |
-+--------+--------+--------+--------+
+                8        9        10       11
+                +--------+--------+--------+--------+
+                |Delta-Window-Size                  |
+                +--------+--------+--------+--------+
 
 </pre></div>
 <p>Control bit: The control bit is always 1 for this message.
@@ -1094,14 +1122,14 @@ WINDOW_UPDATE</h3>
 <p>The window size as kept by the sender must never exceed 2^31 (although it can become negative in one special case). If a sender receives a WINDOW_UPDATE that causes the its window size to exceed this limit, it must send RST_STREAM with status code FLOW_CONTROL_ERROR to terminate the stream.
 </p>
 <p>When a SPDY connection is first established, the default initial window size for all streams is 64KB. An endpoint can use the SETTINGS control frame to adjust the initial window size for the connection. That is, its peer can start out using the 64KB default initial window size when sending data frames before receiving the SETTINGS. Because SETTINGS  is asynchronous, there may be a race condition if the recipient wants to decrease the initial window size, but its peer immediately sends 64KB on the creation of a new connection, before waiting for the SETTINGS to arrive. This is one case where the window size kept by the sender will become negative. Once the sender detects this condition, it must stop sending data frames and wait for the recipient to catch up. The recipient has two choices:
-</p>
+              </p>
 <blockquote class="text">
 <p>immediately send RST_STREAM with FLOW_CONTROL_ERROR status code.
 </p>
 <p>allow the head of line blocking (as there is only one stream for the session and the amount of data in flight is bounded by the default initial window size), and send WINDOW_UPDATE as it consumes data.
 </p>
 </blockquote><p>
-
+            
 </p>
 <p>In the case of option 2, both sides must compute the window size based on the initial window size in the SETTINGS. For example, if the recipient sets the initial window size to be 16KB, and the sender sends 64KB immediately on connection establishment, the sender will discover its window size is -48KB on receipt of the SETTINGS. As the recipient consumes the first 16KB, it must send a WINDOW_UPDATE of 16KB back to the sender. This interaction continues until the sender's window size becomes positive again, and it can resume transmitting data frames.
 </p>
@@ -1120,20 +1148,20 @@ CREDENTIAL</h3>
 </p>
 <p>TLS renegotiation with client authentication is incompatible with SPDY given the multiplexed nature of SPDY.  Specifically, imagine that the client has 2 requests outstanding to the server for two different pages (in different tabs).  When the renegotiation + client certificate request comes in, the browser is unable to determine which resource triggered the client certificate request, in order to prompt the user accordingly.
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-     0        1        2        3         4        5        6        7
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
-| Length(16)      |Flags(8)|1| Num-of-Entries-or-Stream-ID-or-ID|     0xa| -&gt;
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
+                0        1        2        3         4        5        6        7
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
+                | Length(16)      |Flags(8)|1| Num-of-Entries-or-Stream-ID-or-ID|     0xa| -&gt;
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
 
-     8        9        10       11        12
-+--------+--------+--------+--------+========+
-| Slot(16)        |Proof Length(16) | Proof  | -&gt;
-+--------+--------+--------+--------+========+
+                8        9        10       11        12
+                +--------+--------+--------+--------+========+
+                | Slot(16)        |Proof Length(16) | Proof  | -&gt;
+                +--------+--------+--------+--------+========+
 
-/--Repeated to frame end--\
-+--------+--------+========+
-| Cert Length(16) | Cert   |
-+--------+--------+========+
+                /--Repeated to frame end--\
+                +--------+--------+========+
+                | Cert Length(16) | Cert   |
+                +--------+--------+========+
 
 </pre></div>
 <p>Slot: The index in the server's client certificate vector where this certificate should be stored.  If there is already a certificate stored at this index, it will be overwritten.  The index is one based, not zero based; zero is an invalid slot index.
@@ -1152,28 +1180,28 @@ CREDENTIAL</h3>
 PUSH_PROMISE</h3>
 
 <p>The PUSH_PROMISE control frame allows the sender to signal a promise to create a stream and serve the referenced resource. Minimal data allowing the receiver to understand which resource(s) are to be pushed are to be included.
-          </p>
+              </p>
 <div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-     0        1        2        3         4        5        6        7
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
-| Length(16)      |Flags(8)|1| Associated-To-Stream-ID(31)      |     0xb| -&gt;
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
+                  0        1        2        3         4        5        6        7
+                  +--------+--------+--------+-|-------+--------+--------+--------+--------+
+                  | Length(16)      |Flags(8)|1| Associated-To-Stream-ID(31)      |     0xb| -&gt;
+                  +--------+--------+--------+-|-------+--------+--------+--------+--------+
 
-     8        9        10       11       12,13,14..N
-+-|-------+--------+--------+--------+=========================+
-|X| Promised-Stream-Id(31)           | Name/Value Header Block |
-+-|-------+--------+--------+--------+=========================+
+                  8        9        10       11       12,13,14..N
+                  +-|-------+--------+--------+--------+=========================+
+                  |X| Promised-Stream-Id(31)           | Name/Value Header Block |
+                  +-|-------+--------+--------+--------+=========================+
 </pre></div><p>
 
-
+            
 </p>
 <p>Flags: Flags related to this frame. Valid flags are:
-</p>
+              </p>
 <blockquote class="text">
 <p>0x01 = FLAG_FIN - marks this frame as the last frame to be transmitted on this stream and puts the sender in the <a class='info' href='#StreamHalfClose'>half-closed<span> (</span><span class='info'>Stream half-close</span><span>)</span></a> state.
 </p>
 </blockquote><p>
-
+            
 </p>
 <p>Length: The length is the number of bytes which follow the length field in the frame.  For PUSH_PROMISE frames, this is 10 bytes plus the length of the compressed Name/Value block.
 </p>
@@ -1193,193 +1221,128 @@ PUSH_PROMISE</h3>
 Name/Value Header Block</h3>
 
 <p>A Name/Value Header Block augments the streams or group of streams identified by the <a class='info' href='#SYN_STREAM'>SYN_STREAM<span> (</span><span class='info'>SYN_STREAM</span><span>)</span></a>, <a class='info' href='#HEADERS'>HEADERS<span> (</span><span class='info'>HEADERS</span><span>)</span></a>, or <a class='info' href='#SYN_REPLY'>SYN_REPLY<span> (</span><span class='info'>SYN_REPLY</span><span>)</span></a> frame stream with additional metadata.
-This metadata is assumed to be layered: All streams of a particular group have all of a group's headers, which are then overridden by stream headers.
- For HTTP layers, this metadata is interpreted as headers. It may be optionally sent on an existing stream at any time.   Specific application of the headers in this frame is application-dependent.  The name/value header block within this frame is compressed.
-</p>
-<p>It is expected that this scheme will achieve similar compression to the algorithm available in previous versions of SPDY for most requests, though the first request may be larger.
+            
 </p>
 <p>
-Two levels of state are persisted between requests:
+              At the group level, a map of token-index to key-pair is maintained for each defined group. There is no persistent mapping from stream-id to header-group, instead each HeaderBlock includes reference to the HeaderGroup that will be used in this particular set of metadata.
+            
 </p>
-<blockquote class="text">
-<p>Connection level headers
-</p>
-<p>Group      level headers
-</p>
-</blockquote><p>
-
-</p>
-<p>
-At the connection level, a single hash-map of token-index to key-pair is maintained. Data in the connection-level hashmap applies to every stream on the connection.
-At the group level, a hash-map of token-index to key-pair is maintained for each defined group. Data in a group-level hashmap applies only to streams that have been assigned to that group.
-The assignment of a grouping is decided by the stream initiator, and is subject to constraints as defined in SETTINGS.
-
-</p>
-<p>These constraints are:
-</p>
+<p>The HeaderBlock compressor (described later) is subject to the following constraints:
+              </p>
 <blockquote class="text">
 <p>TotalHeaderStorageSize :  default(16k)
 </p>
 <p>MaxHeaderGroups: default(1)
 </p>
-<p>MaxEntriesInTable: default(64)
+<p>MaxValEntries: default(64)
 </p>
 </blockquote><p>
-
+            
 </p>
-<p> It is expected that either party will set these to larger values immediately upon connection establishment.
+<p> It is expected that either party will set these to larger values immediately upon connection establishment using the SETTINGS frame.
 </p>
-<p> The token-indexes for any hash-map are not required to be contiguous; the hash-map may be sparse.
-</p>
-<p>A token-index in one table has no meaning to the other; The address space for each is separate.
-</p>
-<p> Each request may also include key,value pairs which are not stored.
-</p>
-<p> The set of headers for any individual stream is the union of these, with the group headers overriding the connection headers, and any individually provided stream headers overriding both the group and connection headers.
-</p>
-<p> Thus, a stream which is part of group 'G' on connection 'C' will have headers as computed with the following pseudo-code:
+<p> A stream with a HeaderBlock which declares that it is using HeaderGroup 'G' would use the following algorithm to interpret its meta-data.
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-def compute_headers(stream):
-  headers = {}
-  for {key, value} in connection_headers[C]:
-    headers[key] = value
-  for {key, value} in stream_group_headers[G]:
-    headers[key] = value
-  for {key, value} in headers_frame:
-    headers[key] = value
-  return headers
+                def compute_headers(stream):
+                headers = {}
+                for index in stream_group[G]:
+                headers[lru_lookup[index].key] = lru_lookup[index].val)
+                for {key, value} in ephemereal_headers_from_HeaderBlock:
+                headers[key] = value
+                return headers
 </pre></div>
 <p>A smart implementation will be able to interpret a headers frame without reconstructing the headers, and thus be able to represent and interpret headers with less memory and CPU.
 </p>
 <p>The Name/Value Header Block is found in the SYN_STREAM, SYN_REPLY
-and HEADERS control frames, and shares a common format:
+              and HEADERS control frames, and shares a common format:
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-     0        1        2     3..N
-+--------+--------+--------+=====+
-| HG(8)  | Num-Ops(16)     | Ops |
-+--------+--------+--------+=====+
+                0        1        2    3..N        N+1..K
+                +--------+--------+--------+=====+     +=====+
+                | HG(8)  | next-lru-seq-num| Ops | ... | Ops |
+                +--------+--------+--------+=====+     +=====+
 </pre></div>
+<p>Ops are of the form:
+              </p>
+<div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
+                  +--------+--------+========+
+                  | OpCode | NumOps | Op Args|
+                  +--------+--------+========+
+</pre></div><p>
+
+            
+</p>
 <p>HG: (Header Group) An 8 bit unsigned integer specifying the header group for this set of headers.
 </p>
-<p>Num-Ops: A 16 bit unsigned integer specifying the number of operations in this header block. 
-</p>
-<p>Ops: A number of operations, as defined by the Num-Ops field. Operations will be detailed below.
+<p>Ops: A number of operations. Operations will be detailed below.
 </p>
 <p>
-All Name/Value Ops share a common flag byte defined like so:
+              The Opcode field indicates the type of operation.
 
-</p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-+--|-|-|----+
-|OP|K|L|XXXX|
-+--|-|-|----+
-</pre></div>
-<p>
-</p>
+              </p>
 <blockquote class="text">
-<p>OP - Opcode field. One of 0x0, 0x1, or 0x2.
+<p>0x0 (reserved) -- this is not used and is reserved in case a token-based delimiter is required in the future.
 </p>
-<p> K - IsKey field. One of 0x0 or 0x1. Indicates whether or not we're addressing a key or value.
+<p>0x1 (Toggle) indicates that the data which follows will be an lru-index. That lru-index, if present in the current header-group will be removed from the header group. If it is not present in the current header group, it will be added to the current header group. This opcode thus affects what parts of the data stored in the LRU are interpreted as being visible in the current set of headers for whatever frame includes the HeaderBlock
 </p>
-<p> L - Level field. One of 0x0 or 0x1. Indicates for certain operations which level of headers table is being modified.
+<p>0x1 (Clone) indicates that the data which follows will be a key-index and a string literal. The key-index is used to refer to a pre-existing key, and thus the operation results in the storing of the pre-existing key and the new value. The key-value will be appended to the LRU, and the index in the LRU added to the current header group.
 </p>
-<p> X   Reserved
+<p>0x2 (KVSto) indicates that the data which follows will be two string literals. The first such string represents a new key to be stored, and the second such string represents a value. As with Clone, the key-value will be stored in the LRU with a new index, and that index will be added to the current header group.
+</p>
+<p>0x2 (Eref)  indicates that the data which follows will be two string literals. The first such string represents key, and the second string represents a value. Unlike KVSto, the Eref does not modify the compressor state-- it only specified a key-value which will be interpreted as being part of the meta-data for the frame which includes the HeaderBlock.
 </p>
 </blockquote><p>
+            
+</p>
+<p> String are always encoded as a single bit, followed by data. If that bit is '0', then what follows is 7-bit us-ascii, null-terminated. If that bit is '1', then it is huffman encoded using a canonical huffman-code and ends with an 'eof' character (which is not part of the string). If the last bit of the EOF is not immediately before the byte boundary, the remaining bits of that byte are padded with zero. Strings in a request are encoded with a different huffman-encoder than strings in a response, as the frequency of occurance in these differ by quite a bit.
+              </p>
+<div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
+                  A string is either:
+                  +-|============================|====================|--------+
+                  |1| huffman-encoded-characters | huffman-eof-symbol |pad-bits|
+                  +-|============================|====================|--------+
 
+                  or
+
+                  +-|-------+========+--------+
+                  |0|  7 bit-ascii   |00000000|
+                  +-|-------+========+--------+
+</pre></div><p>
+
+
+            
 </p>
 <p>
-The Opcode field indicates the type of operation.
-
-  0x0 indicates that the data will not be stored, and two string literals will follow
-      The Level and Key fields are ignored in this case.
-  0x1 indicates the data which follows should be stored into the specified table entry.
-      The table entry is found by examining the Level field, and selecting the table appropriate, then examining the IsKey field, and selecting either the key or value entry.
-  0x2 indicates that the specified table entry should me modified by truncating the tail of the current entry to the length specified and then appending the provided string.
-      Arguably this operation renders 0x1 redundant, but it would take up more bytes and so we leave in 0x1 for now.
-
+              The NumOps field encodes the number of operations that follow. The exact count is 1+numops. Since the field-width is 8 bits, a maximum of 256 ops can be represented. If there are more ops than this, simply specify the opcode and numOps again until all required operations have been presented.
+            
 </p>
 <p>
-The Level field encodes the headers overlay-level being selected by the current frame.
-Valid Level fields are 0x0, and 0x1.
+              Detail of an operation with an opcode of 0x1:
 
-  0x0 is for the current stream group
-  0x1 is for the connection
-
-The IsKey field indicates whether the following string value represents a key or value
-  0x0 indicates the stored string is for a value
-  0x1 indicates the stored string is for a key
-
-</p>
-<p>
-Detail of an operation with an opcode of 0x0:
-
-</p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-     0        1        2       4..k     k+1       k+2     k+3..n
-+--|------+--------+--------+========+--------+--------+========+
-|00|XXXXXX| Key Len(16)     | String | Value Len(16)   | String |
-+--|------+--------+--------+========+--------+--------+========+
-</pre></div>
-<p>
-Detail of an operation with an opcode of 0x1:
-
-An operation with an Opcode field of 0x1 indicates that the field encodes a replacement to a key or value field of a line in the headers table designated by the L field.
-
-If the 'K' (IsKey) field is 0x0, the subsequent string length and string represents a value.
-If the 'K' (IsKey) field is 0x1, the subsequent string length and string represent a key.
-If the 'L' (Level) field is 0x0, the header table for the stream group is modified.
-If the 'L' (Level) field ix 0x1, the header table for the connection is modified.
-
-</p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-      0         1        2        3       4..n
-+--|-|-|----+--------+--------+--------+========+
-|01|K|L|XXXX|Index(8)| String Len(16)  | String |
-+--|-|-|----+--------+--------+--------+========+
-</pre></div>
-<p>
-If the token-index refers to an index that is already in use, the string transmitted here replaces it.
+              </p>
+<div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
+                  0        1
+                  +--------+--------+
+                  |00000001| NumOps |
+                  +--------+--------+
 
 
-Keys must always be stored before the associated value is stored. If a value is stored before the key, the recipient MUST issue a session error (Section 2.4.1) with the status code PROTOCOL_ERROR.
+                  repeated NumOps times
+                  ______/ \______
+                  /               \
 
-If 'K' field is 0x0 and the specified header table does not yet have a key associated with that token-index, the recipient MUST issue a session error (Section 2.4.1) with the status code PROTOCOL_ERROR.
-
-If String Length field is zero, this indicates that the line at the referenced token-index should be removed from the specified table.
-
-
-The same entry in any table should be modified at most once in any HEADERS block. If an entry is modified more than once in a HEADERS block, the recipient MUST issue a session error (Section 2.4.1) with the status code PROTOCOL_ERROR.
-
-
-An operation with an Op field of 0x2 indicates that the field encodes a truncate-and-append to the pre-existing table value. If no value exists, it should instead be inserted into the table at the specified position.
-If a value is being set, and no key has been set, the recipient MUST issue a session error (Section 2.4.2) with the status code PROTOCOL_ERROR.
-
-</p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-      0         1        2        3        4        5      6..n
-+--|-|-|----+--------+--------+--------+--------+--------+========+
-|10|K|L|XXXX| Truncate To(16) |Index(8)| String Len (16) | String |
-+--|-|-|----+--------+--------+--------+--------+--------+========+
+                  +--------+--------+
+                  | LRU idx(16)     |
+                  +--------+--------+
 
 
+                  Where NumOps = value-of-NumOps-field + 1
+</pre></div><p>
 
-</pre></div>
-<p>Number of Name/Value pairs: The number of repeating name/value pairs following this field.
-</p>
-<p>List of Name/Value pairs:
-</p>
-<blockquote class="text">
-<p>Length of Name: a 32-bit value containing the number of octets in the name field.  Note that in practice, this length must not exceed 2^24, as that is the maximum size of a SPDY frame.
-</p>
-<p>Name: 0 or more octets, 8-bit sequences of data, excluding 0.
-</p>
-<p>Length of Value: a 32-bit value containing the number of octets in the value field.  Note that in practice, this length must not exceed 2^24, as that is the maximum size of a SPDY frame.
-</p>
-<p>Value: 0 or more octets, 8-bit sequences of data, excluding 0.
-</p>
-</blockquote><p>
-
+            
 </p>
 <p>Each header name must have at least one value.  Header names are encoded using the <a class='info' href='#ASCII'>US-ASCII character set<span> (</span><span class='info'>, &ldquo;US-ASCII. Coded Character Set - 7-Bit American Standard Code for Information Interchange. Standard ANSI X3.4-1986, ANSI, 1986.,&rdquo; .</span><span>)</span></a> [ASCII] and must be all lower case.  The length of each name must be greater than zero.  A recipient of a zero-length name MUST issue a <a class='info' href='#StreamErrorHandler'>stream error<span> (</span><span class='info'>Stream Error Handling</span><span>)</span></a> with the status code PROTOCOL_ERROR for the stream-id.
 </p>
-<p>Duplicate header names are not allowed.  To send two identically named headers, send a header with two values, where the values are separated by a single NUL (0) byte.  A header value can either be empty (e.g. the length is zero) or it can contain multiple, NUL-separated values, each with length greater than zero.  The value never starts nor ends with a NUL character.  Recipients of illegal value fields MUST issue a <a class='info' href='#StreamErrorHandler'>stream error<span> (</span><span class='info'>Stream Error Handling</span><span>)</span></a> with the status code PROTOCOL_ERROR for the stream-id.
+<p>Duplicate header names are allowed, but discouraged, except when encoding a cookie or set-cookie.
 </p>
 <a name="Compression"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
@@ -1390,304 +1353,112 @@ Compression</h3>
 </p>
 <p>For each HEADERS compression instance, the initial state is initialized using the following <a class='info' href='#UDELCOMPRESSION'>dictionary<span> (</span><span class='info'>Yang, F., Amer, P., and J. Leighton, &ldquo;A Methodology to Derive SPDY’s Initial Dictionary for Zlib Compression,&rdquo; .</span><span>)</span></a> [UDELCOMPRESSION]:
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-const unsigned char SPDY_dictionary_txt[] = {
-	0x00, 0x00, 0x00, 0x07, 0x6f, 0x70, 0x74, 0x69,   \\ - - - - o p t i
-	0x6f, 0x6e, 0x73, 0x00, 0x00, 0x00, 0x04, 0x68,   \\ o n s - - - - h
-	0x65, 0x61, 0x64, 0x00, 0x00, 0x00, 0x04, 0x70,   \\ e a d - - - - p
-	0x6f, 0x73, 0x74, 0x00, 0x00, 0x00, 0x03, 0x70,   \\ o s t - - - - p
-	0x75, 0x74, 0x00, 0x00, 0x00, 0x06, 0x64, 0x65,   \\ u t - - - - d e
-	0x6c, 0x65, 0x74, 0x65, 0x00, 0x00, 0x00, 0x05,   \\ l e t e - - - -
-	0x74, 0x72, 0x61, 0x63, 0x65, 0x00, 0x00, 0x00,   \\ t r a c e - - -
-	0x06, 0x61, 0x63, 0x63, 0x65, 0x70, 0x74, 0x00,   \\ - a c c e p t -
-	0x00, 0x00, 0x0e, 0x61, 0x63, 0x63, 0x65, 0x70,   \\ - - - a c c e p
-	0x74, 0x2d, 0x63, 0x68, 0x61, 0x72, 0x73, 0x65,   \\ t - c h a r s e
-	0x74, 0x00, 0x00, 0x00, 0x0f, 0x61, 0x63, 0x63,   \\ t - - - - a c c
-	0x65, 0x70, 0x74, 0x2d, 0x65, 0x6e, 0x63, 0x6f,   \\ e p t - e n c o
-	0x64, 0x69, 0x6e, 0x67, 0x00, 0x00, 0x00, 0x0f,   \\ d i n g - - - -
-	0x61, 0x63, 0x63, 0x65, 0x70, 0x74, 0x2d, 0x6c,   \\ a c c e p t - l
-	0x61, 0x6e, 0x67, 0x75, 0x61, 0x67, 0x65, 0x00,   \\ a n g u a g e -
-	0x00, 0x00, 0x0d, 0x61, 0x63, 0x63, 0x65, 0x70,   \\ - - - a c c e p
-	0x74, 0x2d, 0x72, 0x61, 0x6e, 0x67, 0x65, 0x73,   \\ t - r a n g e s
-	0x00, 0x00, 0x00, 0x03, 0x61, 0x67, 0x65, 0x00,   \\ - - - - a g e -
-	0x00, 0x00, 0x05, 0x61, 0x6c, 0x6c, 0x6f, 0x77,   \\ - - - a l l o w
-	0x00, 0x00, 0x00, 0x0d, 0x61, 0x75, 0x74, 0x68,   \\ - - - - a u t h
-	0x6f, 0x72, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f,   \\ o r i z a t i o
-	0x6e, 0x00, 0x00, 0x00, 0x0d, 0x63, 0x61, 0x63,   \\ n - - - - c a c
-	0x68, 0x65, 0x2d, 0x63, 0x6f, 0x6e, 0x74, 0x72,   \\ h e - c o n t r
-	0x6f, 0x6c, 0x00, 0x00, 0x00, 0x0a, 0x63, 0x6f,   \\ o l - - - - c o
-	0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e,   \\ n n e c t i o n
-	0x00, 0x00, 0x00, 0x0c, 0x63, 0x6f, 0x6e, 0x74,   \\ - - - - c o n t
-	0x65, 0x6e, 0x74, 0x2d, 0x62, 0x61, 0x73, 0x65,   \\ e n t - b a s e
-	0x00, 0x00, 0x00, 0x10, 0x63, 0x6f, 0x6e, 0x74,   \\ - - - - c o n t
-	0x65, 0x6e, 0x74, 0x2d, 0x65, 0x6e, 0x63, 0x6f,   \\ e n t - e n c o
-	0x64, 0x69, 0x6e, 0x67, 0x00, 0x00, 0x00, 0x10,   \\ d i n g - - - -
-	0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d,   \\ c o n t e n t -
-	0x6c, 0x61, 0x6e, 0x67, 0x75, 0x61, 0x67, 0x65,   \\ l a n g u a g e
-	0x00, 0x00, 0x00, 0x0e, 0x63, 0x6f, 0x6e, 0x74,   \\ - - - - c o n t
-	0x65, 0x6e, 0x74, 0x2d, 0x6c, 0x65, 0x6e, 0x67,   \\ e n t - l e n g
-	0x74, 0x68, 0x00, 0x00, 0x00, 0x10, 0x63, 0x6f,   \\ t h - - - - c o
-	0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x6c, 0x6f,   \\ n t e n t - l o
-	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x00, 0x00,   \\ c a t i o n - -
-	0x00, 0x0b, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e,   \\ - - c o n t e n
-	0x74, 0x2d, 0x6d, 0x64, 0x35, 0x00, 0x00, 0x00,   \\ t - m d 5 - - -
-	0x0d, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74,   \\ - c o n t e n t
-	0x2d, 0x72, 0x61, 0x6e, 0x67, 0x65, 0x00, 0x00,   \\ - r a n g e - -
-	0x00, 0x0c, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e,   \\ - - c o n t e n
-	0x74, 0x2d, 0x74, 0x79, 0x70, 0x65, 0x00, 0x00,   \\ t - t y p e - -
-	0x00, 0x04, 0x64, 0x61, 0x74, 0x65, 0x00, 0x00,   \\ - - d a t e - -
-	0x00, 0x04, 0x65, 0x74, 0x61, 0x67, 0x00, 0x00,   \\ - - e t a g - -
-	0x00, 0x06, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74,   \\ - - e x p e c t
-	0x00, 0x00, 0x00, 0x07, 0x65, 0x78, 0x70, 0x69,   \\ - - - - e x p i
-	0x72, 0x65, 0x73, 0x00, 0x00, 0x00, 0x04, 0x66,   \\ r e s - - - - f
-	0x72, 0x6f, 0x6d, 0x00, 0x00, 0x00, 0x04, 0x68,   \\ r o m - - - - h
-	0x6f, 0x73, 0x74, 0x00, 0x00, 0x00, 0x08, 0x69,   \\ o s t - - - - i
-	0x66, 0x2d, 0x6d, 0x61, 0x74, 0x63, 0x68, 0x00,   \\ f - m a t c h -
-	0x00, 0x00, 0x11, 0x69, 0x66, 0x2d, 0x6d, 0x6f,   \\ - - - i f - m o
-	0x64, 0x69, 0x66, 0x69, 0x65, 0x64, 0x2d, 0x73,   \\ d i f i e d - s
-	0x69, 0x6e, 0x63, 0x65, 0x00, 0x00, 0x00, 0x0d,   \\ i n c e - - - -
-	0x69, 0x66, 0x2d, 0x6e, 0x6f, 0x6e, 0x65, 0x2d,   \\ i f - n o n e -
-	0x6d, 0x61, 0x74, 0x63, 0x68, 0x00, 0x00, 0x00,   \\ m a t c h - - -
-	0x08, 0x69, 0x66, 0x2d, 0x72, 0x61, 0x6e, 0x67,   \\ - i f - r a n g
-	0x65, 0x00, 0x00, 0x00, 0x13, 0x69, 0x66, 0x2d,   \\ e - - - - i f -
-	0x75, 0x6e, 0x6d, 0x6f, 0x64, 0x69, 0x66, 0x69,   \\ u n m o d i f i
-	0x65, 0x64, 0x2d, 0x73, 0x69, 0x6e, 0x63, 0x65,   \\ e d - s i n c e
-	0x00, 0x00, 0x00, 0x0d, 0x6c, 0x61, 0x73, 0x74,   \\ - - - - l a s t
-	0x2d, 0x6d, 0x6f, 0x64, 0x69, 0x66, 0x69, 0x65,   \\ - m o d i f i e
-	0x64, 0x00, 0x00, 0x00, 0x08, 0x6c, 0x6f, 0x63,   \\ d - - - - l o c
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00,   \\ a t i o n - - -
-	0x0c, 0x6d, 0x61, 0x78, 0x2d, 0x66, 0x6f, 0x72,   \\ - m a x - f o r
-	0x77, 0x61, 0x72, 0x64, 0x73, 0x00, 0x00, 0x00,   \\ w a r d s - - -
-	0x06, 0x70, 0x72, 0x61, 0x67, 0x6d, 0x61, 0x00,   \\ - p r a g m a -
-	0x00, 0x00, 0x12, 0x70, 0x72, 0x6f, 0x78, 0x79,   \\ - - - p r o x y
-	0x2d, 0x61, 0x75, 0x74, 0x68, 0x65, 0x6e, 0x74,   \\ - a u t h e n t
-	0x69, 0x63, 0x61, 0x74, 0x65, 0x00, 0x00, 0x00,   \\ i c a t e - - -
-	0x13, 0x70, 0x72, 0x6f, 0x78, 0x79, 0x2d, 0x61,   \\ - p r o x y - a
-	0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x7a, 0x61,   \\ u t h o r i z a
-	0x74, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00, 0x05,   \\ t i o n - - - -
-	0x72, 0x61, 0x6e, 0x67, 0x65, 0x00, 0x00, 0x00,   \\ r a n g e - - -
-	0x07, 0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x72,   \\ - r e f e r e r
-	0x00, 0x00, 0x00, 0x0b, 0x72, 0x65, 0x74, 0x72,   \\ - - - - r e t r
-	0x79, 0x2d, 0x61, 0x66, 0x74, 0x65, 0x72, 0x00,   \\ y - a f t e r -
-	0x00, 0x00, 0x06, 0x73, 0x65, 0x72, 0x76, 0x65,   \\ - - - s e r v e
-	0x72, 0x00, 0x00, 0x00, 0x02, 0x74, 0x65, 0x00,   \\ r - - - - t e -
-	0x00, 0x00, 0x07, 0x74, 0x72, 0x61, 0x69, 0x6c,   \\ - - - t r a i l
-	0x65, 0x72, 0x00, 0x00, 0x00, 0x11, 0x74, 0x72,   \\ e r - - - - t r
-	0x61, 0x6e, 0x73, 0x66, 0x65, 0x72, 0x2d, 0x65,   \\ a n s f e r - e
-	0x6e, 0x63, 0x6f, 0x64, 0x69, 0x6e, 0x67, 0x00,   \\ n c o d i n g -
-	0x00, 0x00, 0x07, 0x75, 0x70, 0x67, 0x72, 0x61,   \\ - - - u p g r a
-	0x64, 0x65, 0x00, 0x00, 0x00, 0x0a, 0x75, 0x73,   \\ d e - - - - u s
-	0x65, 0x72, 0x2d, 0x61, 0x67, 0x65, 0x6e, 0x74,   \\ e r - a g e n t
-	0x00, 0x00, 0x00, 0x04, 0x76, 0x61, 0x72, 0x79,   \\ - - - - v a r y
-	0x00, 0x00, 0x00, 0x03, 0x76, 0x69, 0x61, 0x00,   \\ - - - - v i a -
-	0x00, 0x00, 0x07, 0x77, 0x61, 0x72, 0x6e, 0x69,   \\ - - - w a r n i
-	0x6e, 0x67, 0x00, 0x00, 0x00, 0x10, 0x77, 0x77,   \\ n g - - - - w w
-	0x77, 0x2d, 0x61, 0x75, 0x74, 0x68, 0x65, 0x6e,   \\ w - a u t h e n
-	0x74, 0x69, 0x63, 0x61, 0x74, 0x65, 0x00, 0x00,   \\ t i c a t e - -
-	0x00, 0x06, 0x6d, 0x65, 0x74, 0x68, 0x6f, 0x64,   \\ - - m e t h o d
-	0x00, 0x00, 0x00, 0x03, 0x67, 0x65, 0x74, 0x00,   \\ - - - - g e t -
-	0x00, 0x00, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75,   \\ - - - s t a t u
-	0x73, 0x00, 0x00, 0x00, 0x06, 0x32, 0x30, 0x30,   \\ s - - - - 2 0 0
-	0x20, 0x4f, 0x4b, 0x00, 0x00, 0x00, 0x07, 0x76,   \\ - O K - - - - v
-	0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x00,   \\ e r s i o n - -
-	0x00, 0x08, 0x48, 0x54, 0x54, 0x50, 0x2f, 0x31,   \\ - - H T T P - 1
-	0x2e, 0x31, 0x00, 0x00, 0x00, 0x03, 0x75, 0x72,   \\ - 1 - - - - u r
-	0x6c, 0x00, 0x00, 0x00, 0x06, 0x70, 0x75, 0x62,   \\ l - - - - p u b
-	0x6c, 0x69, 0x63, 0x00, 0x00, 0x00, 0x0a, 0x73,   \\ l i c - - - - s
-	0x65, 0x74, 0x2d, 0x63, 0x6f, 0x6f, 0x6b, 0x69,   \\ e t - c o o k i
-	0x65, 0x00, 0x00, 0x00, 0x0a, 0x6b, 0x65, 0x65,   \\ e - - - - k e e
-	0x70, 0x2d, 0x61, 0x6c, 0x69, 0x76, 0x65, 0x00,   \\ p - a l i v e -
-	0x00, 0x00, 0x06, 0x6f, 0x72, 0x69, 0x67, 0x69,   \\ - - - o r i g i
-	0x6e, 0x31, 0x30, 0x30, 0x31, 0x30, 0x31, 0x32,   \\ n 1 0 0 1 0 1 2
-	0x30, 0x31, 0x32, 0x30, 0x32, 0x32, 0x30, 0x35,   \\ 0 1 2 0 2 2 0 5
-	0x32, 0x30, 0x36, 0x33, 0x30, 0x30, 0x33, 0x30,   \\ 2 0 6 3 0 0 3 0
-	0x32, 0x33, 0x30, 0x33, 0x33, 0x30, 0x34, 0x33,   \\ 2 3 0 3 3 0 4 3
-	0x30, 0x35, 0x33, 0x30, 0x36, 0x33, 0x30, 0x37,   \\ 0 5 3 0 6 3 0 7
-	0x34, 0x30, 0x32, 0x34, 0x30, 0x35, 0x34, 0x30,   \\ 4 0 2 4 0 5 4 0
-	0x36, 0x34, 0x30, 0x37, 0x34, 0x30, 0x38, 0x34,   \\ 6 4 0 7 4 0 8 4
-	0x30, 0x39, 0x34, 0x31, 0x30, 0x34, 0x31, 0x31,   \\ 0 9 4 1 0 4 1 1
-	0x34, 0x31, 0x32, 0x34, 0x31, 0x33, 0x34, 0x31,   \\ 4 1 2 4 1 3 4 1
-	0x34, 0x34, 0x31, 0x35, 0x34, 0x31, 0x36, 0x34,   \\ 4 4 1 5 4 1 6 4
-	0x31, 0x37, 0x35, 0x30, 0x32, 0x35, 0x30, 0x34,   \\ 1 7 5 0 2 5 0 4
-	0x35, 0x30, 0x35, 0x32, 0x30, 0x33, 0x20, 0x4e,   \\ 5 0 5 2 0 3 - N
-	0x6f, 0x6e, 0x2d, 0x41, 0x75, 0x74, 0x68, 0x6f,   \\ o n - A u t h o
-	0x72, 0x69, 0x74, 0x61, 0x74, 0x69, 0x76, 0x65,   \\ r i t a t i v e
-	0x20, 0x49, 0x6e, 0x66, 0x6f, 0x72, 0x6d, 0x61,   \\ - I n f o r m a
-	0x74, 0x69, 0x6f, 0x6e, 0x32, 0x30, 0x34, 0x20,   \\ t i o n 2 0 4 -
-	0x4e, 0x6f, 0x20, 0x43, 0x6f, 0x6e, 0x74, 0x65,   \\ N o - C o n t e
-	0x6e, 0x74, 0x33, 0x30, 0x31, 0x20, 0x4d, 0x6f,   \\ n t 3 0 1 - M o
-	0x76, 0x65, 0x64, 0x20, 0x50, 0x65, 0x72, 0x6d,   \\ v e d - P e r m
-	0x61, 0x6e, 0x65, 0x6e, 0x74, 0x6c, 0x79, 0x34,   \\ a n e n t l y 4
-	0x30, 0x30, 0x20, 0x42, 0x61, 0x64, 0x20, 0x52,   \\ 0 0 - B a d - R
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x34, 0x30,   \\ e q u e s t 4 0
-	0x31, 0x20, 0x55, 0x6e, 0x61, 0x75, 0x74, 0x68,   \\ 1 - U n a u t h
-	0x6f, 0x72, 0x69, 0x7a, 0x65, 0x64, 0x34, 0x30,   \\ o r i z e d 4 0
-	0x33, 0x20, 0x46, 0x6f, 0x72, 0x62, 0x69, 0x64,   \\ 3 - F o r b i d
-	0x64, 0x65, 0x6e, 0x34, 0x30, 0x34, 0x20, 0x4e,   \\ d e n 4 0 4 - N
-	0x6f, 0x74, 0x20, 0x46, 0x6f, 0x75, 0x6e, 0x64,   \\ o t - F o u n d
-	0x35, 0x30, 0x30, 0x20, 0x49, 0x6e, 0x74, 0x65,   \\ 5 0 0 - I n t e
-	0x72, 0x6e, 0x61, 0x6c, 0x20, 0x53, 0x65, 0x72,   \\ r n a l - S e r
-	0x76, 0x65, 0x72, 0x20, 0x45, 0x72, 0x72, 0x6f,   \\ v e r - E r r o
-	0x72, 0x35, 0x30, 0x31, 0x20, 0x4e, 0x6f, 0x74,   \\ r 5 0 1 - N o t
-	0x20, 0x49, 0x6d, 0x70, 0x6c, 0x65, 0x6d, 0x65,   \\ - I m p l e m e
-	0x6e, 0x74, 0x65, 0x64, 0x35, 0x30, 0x33, 0x20,   \\ n t e d 5 0 3 -
-	0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x20,   \\ S e r v i c e -
-	0x55, 0x6e, 0x61, 0x76, 0x61, 0x69, 0x6c, 0x61,   \\ U n a v a i l a
-	0x62, 0x6c, 0x65, 0x4a, 0x61, 0x6e, 0x20, 0x46,   \\ b l e J a n - F
-	0x65, 0x62, 0x20, 0x4d, 0x61, 0x72, 0x20, 0x41,   \\ e b - M a r - A
-	0x70, 0x72, 0x20, 0x4d, 0x61, 0x79, 0x20, 0x4a,   \\ p r - M a y - J
-	0x75, 0x6e, 0x20, 0x4a, 0x75, 0x6c, 0x20, 0x41,   \\ u n - J u l - A
-	0x75, 0x67, 0x20, 0x53, 0x65, 0x70, 0x74, 0x20,   \\ u g - S e p t -
-	0x4f, 0x63, 0x74, 0x20, 0x4e, 0x6f, 0x76, 0x20,   \\ O c t - N o v -
-	0x44, 0x65, 0x63, 0x20, 0x30, 0x30, 0x3a, 0x30,   \\ D e c - 0 0 - 0
-	0x30, 0x3a, 0x30, 0x30, 0x20, 0x4d, 0x6f, 0x6e,   \\ 0 - 0 0 - M o n
-	0x2c, 0x20, 0x54, 0x75, 0x65, 0x2c, 0x20, 0x57,   \\ - - T u e - - W
-	0x65, 0x64, 0x2c, 0x20, 0x54, 0x68, 0x75, 0x2c,   \\ e d - - T h u -
-	0x20, 0x46, 0x72, 0x69, 0x2c, 0x20, 0x53, 0x61,   \\ - F r i - - S a
-	0x74, 0x2c, 0x20, 0x53, 0x75, 0x6e, 0x2c, 0x20,   \\ t - - S u n - -
-	0x47, 0x4d, 0x54, 0x63, 0x68, 0x75, 0x6e, 0x6b,   \\ G M T c h u n k
-	0x65, 0x64, 0x2c, 0x74, 0x65, 0x78, 0x74, 0x2f,   \\ e d - t e x t -
-	0x68, 0x74, 0x6d, 0x6c, 0x2c, 0x69, 0x6d, 0x61,   \\ h t m l - i m a
-	0x67, 0x65, 0x2f, 0x70, 0x6e, 0x67, 0x2c, 0x69,   \\ g e - p n g - i
-	0x6d, 0x61, 0x67, 0x65, 0x2f, 0x6a, 0x70, 0x67,   \\ m a g e - j p g
-	0x2c, 0x69, 0x6d, 0x61, 0x67, 0x65, 0x2f, 0x67,   \\ - i m a g e - g
-	0x69, 0x66, 0x2c, 0x61, 0x70, 0x70, 0x6c, 0x69,   \\ i f - a p p l i
-	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x78,   \\ c a t i o n - x
-	0x6d, 0x6c, 0x2c, 0x61, 0x70, 0x70, 0x6c, 0x69,   \\ m l - a p p l i
-	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x78,   \\ c a t i o n - x
-	0x68, 0x74, 0x6d, 0x6c, 0x2b, 0x78, 0x6d, 0x6c,   \\ h t m l - x m l
-	0x2c, 0x74, 0x65, 0x78, 0x74, 0x2f, 0x70, 0x6c,   \\ - t e x t - p l
-	0x61, 0x69, 0x6e, 0x2c, 0x74, 0x65, 0x78, 0x74,   \\ a i n - t e x t
-	0x2f, 0x6a, 0x61, 0x76, 0x61, 0x73, 0x63, 0x72,   \\ - j a v a s c r
-	0x69, 0x70, 0x74, 0x2c, 0x70, 0x75, 0x62, 0x6c,   \\ i p t - p u b l
-	0x69, 0x63, 0x70, 0x72, 0x69, 0x76, 0x61, 0x74,   \\ i c p r i v a t
-	0x65, 0x6d, 0x61, 0x78, 0x2d, 0x61, 0x67, 0x65,   \\ e m a x - a g e
-	0x3d, 0x67, 0x7a, 0x69, 0x70, 0x2c, 0x64, 0x65,   \\ - g z i p - d e
-	0x66, 0x6c, 0x61, 0x74, 0x65, 0x2c, 0x73, 0x64,   \\ f l a t e - s d
-	0x63, 0x68, 0x63, 0x68, 0x61, 0x72, 0x73, 0x65,   \\ c h c h a r s e
-	0x74, 0x3d, 0x75, 0x74, 0x66, 0x2d, 0x38, 0x63,   \\ t - u t f - 8 c
-	0x68, 0x61, 0x72, 0x73, 0x65, 0x74, 0x3d, 0x69,   \\ h a r s e t - i
-	0x73, 0x6f, 0x2d, 0x38, 0x38, 0x35, 0x39, 0x2d,   \\ s o - 8 8 5 9 -
-	0x31, 0x2c, 0x75, 0x74, 0x66, 0x2d, 0x2c, 0x2a,   \\ 1 - u t f - - -
-	0x2c, 0x65, 0x6e, 0x71, 0x3d, 0x30, 0x2e          \\ - e n q - 0 -
-};
-</pre></div>
-<p>The entire contents of the name/value header block is compressed using zlib.  There is a single zlib stream for all name value pairs in one direction on a connection.   SPDY uses a SYNC_FLUSH between each compressed frame.
-</p>
-<p>Implementation notes: the compression engine can be tuned to favor speed or size. Optimizing for size increases memory use and CPU consumption.  Because header blocks are generally small, implementors may want to reduce the window-size of the compression engine from the default 15bits (a 32KB window) to more like 11bits (a 2KB window).  The exact setting is chosen by the compressor, the decompressor will work with any setting.
-</p>
-<a name="HeaderBlockExample"></a><br /><hr />
-<table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
-<a name="rfc.section.2.6.11.2"></a><h3>2.6.11.2.&nbsp;
-Header Block Example</h3>
+                  Request 1 (for index.html):
+                  SYN_STREAM 1, stream-group (G)=0
+                  Header-block:
+                  Store(0x1): level(C),index(0),k: ":method"
+                  Store(0x1): level(C),index(0),v: "GET"
+                  Store(0x1): level(C),index(1),k: ":version"
+                  Store(0x1): level(C),index(1),v: "HTTP/1.1"
+                  Store(0x1): level(C),index(2),k: "user-agent"
+                  Store(0x1): level(C),index(2),v: "blah blah browser version blah blah"
+                  Store(0x1): level(C),index(3),k: "accept-encoding"
+                  Store(0x1): level(C),index(3),v: "sdch, bzip, compress"
+                  Store(0x1): level(G),index(0),k: ":host"
+                  Store(0x1): level(G),index(0),v: "www.foo.com"
+                  Store(0x1): level(G),index(1),k: "cookie"
+                  Store(0x1): level(G),index(1),v: "SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJHBLA"
+                  Store(0x1): level(G),index(2),k: ":path"
+                  Store(0x1): level(G),index(2),v: "/index.html"
+                  Store(0x1): level(G),index(3),k: "date"
+                  Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:43 2012"
 
-<p> This example only expresses what the client-side would send and how the other side would interpret it. Since the protocol is symmetric, this is true for any sender of a headers-block and any receiver of a headers block, and so is equivalent for both sides of the connection.
-</p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-Request 1 (for index.html):
-SYN_STREAM 1, stream-group (G)=0
-  Header-block:
-  Store(0x1): level(C),index(0),k: ":method"
-  Store(0x1): level(C),index(0),v: "GET"
-  Store(0x1): level(C),index(1),k: ":version"
-  Store(0x1): level(C),index(1),v: "HTTP/1.1"
-  Store(0x1): level(C),index(2),k: "user-agent"
-  Store(0x1): level(C),index(2),v: "blah blah browser version blah blah"
-  Store(0x1): level(C),index(3),k: "accept-encoding"
-  Store(0x1): level(C),index(3),v: "sdch, bzip, compress"
-  Store(0x1): level(G),index(0),k: ":host"
-  Store(0x1): level(G),index(0),v: "www.foo.com"
-  Store(0x1): level(G),index(1),k: "cookie"
-  Store(0x1): level(G),index(1),v: "SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJHBLA"
-  Store(0x1): level(G),index(2),k: ":path"
-  Store(0x1): level(G),index(2),v: "/index.html"
-  Store(0x1): level(G),index(3),k: "date"
-  Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:43 2012"
+                  At this point the connection headers table looks like this:
+                  0: ":method", "GET"
+                  1: ":version", "HTTP/1.1"
+                  2: "user-agent", "blah blah browser version blah blah"
+                  3: "accept-encoding", "sdch, bzip, compress"
 
-At this point the connection headers table looks like this:
-  0: ":method", "GET"
-  1: ":version", "HTTP/1.1"
-  2: "user-agent", "blah blah browser version blah blah"
-  3: "accept-encoding", "sdch, bzip, compress"
+                  The stream-group table for group zero looks like this:
+                  0: ":host", "www.foo.com"
+                  1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;BLAJHBLA"
+                  2: ":path", "/index.html"
+                  3: "date", "Wed Jul 18 11:50:43 2012"
 
-The stream-group table for group zero looks like this:
-  0: ":host", "www.foo.com"
-  1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;BLAJHBLA"
-  2: ":path", "/index.html"
-  3: "date", "Wed Jul 18 11:50:43 2012"
-
-Request 1 (on stream 1) would look like the following if forwarded on HTTP/1.1:
-  GET /index.html HTTP/1.1
-  host: www.foo.com
-  date: Wed Jul 18 11:50:43 2012
-  cookie: SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJHBLA
-  user-agent: blah blah browser version blah blah
-  accept-encoding: sdch, bzip, compress
+                  Request 1 (on stream 1) would look like the following if forwarded on HTTP/1.1:
+                  GET /index.html HTTP/1.1
+                  host: www.foo.com
+                  date: Wed Jul 18 11:50:43 2012
+                  cookie: SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJHBLA
+                  user-agent: blah blah browser version blah blah
+                  accept-encoding: sdch, bzip, compress
 
 
-Request 2 (for index.js):
-SYN_STREAM 3, stream-group (G)=0
-  Header-block:
-  Store(0x1): level(G),index(2),v: "/index.js"
-  Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:44 2012"
+                  Request 2 (for index.js):
+                  SYN_STREAM 3, stream-group (G)=0
+                  Header-block:
+                  Store(0x1): level(G),index(2),v: "/index.js"
+                  Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:44 2012"
 
-At this point the connection headers table is unchanged:
-  0: ":method", "GET"
-  1: ":version", "HTTP/1.1"
-  2: "user-agent", "blah blah browser version blah blah"
-  3: "accept-encoding", "sdch, bzip, compress"
+                  At this point the connection headers table is unchanged:
+                  0: ":method", "GET"
+                  1: ":version", "HTTP/1.1"
+                  2: "user-agent", "blah blah browser version blah blah"
+                  3: "accept-encoding", "sdch, bzip, compress"
 
-The stream-group table for group zero looks like this:
-  0: ":host", "www.foo.com"
-  1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;BLAJHBLA"
-  2: ":path", "/index.js"
-  3: "date", "Wed Jul 18 11:50:44 2012"
-Both the path and the date have changed.
+                  The stream-group table for group zero looks like this:
+                  0: ":host", "www.foo.com"
+                  1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;BLAJHBLA"
+                  2: ":path", "/index.js"
+                  3: "date", "Wed Jul 18 11:50:44 2012"
+                  Both the path and the date have changed.
 
-Request 2 (on stream 3) would look like the following if forwarded on HTTP/1.1:
-  GET /index.js HTTP/1.1
-  host: www.foo.com
-  date: Wed Jul 18 11:50:44 2012
-  cookie: SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJHBLA
-  user-agent: blah blah browser version blah blah
-  accept-encoding: sdch, bzip, compress
+                  Request 2 (on stream 3) would look like the following if forwarded on HTTP/1.1:
+                  GET /index.js HTTP/1.1
+                  host: www.foo.com
+                  date: Wed Jul 18 11:50:44 2012
+                  cookie: SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJHBLA
+                  user-agent: blah blah browser version blah blah
+                  accept-encoding: sdch, bzip, compress
 
 
-Request 3 (for index.css):
-SYN_STREAM 5, stream-group (G)=0
-  Header-block:
-  Store(0x1): level(G),index(2),v: "/index.css"
-  Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:44 PDT 2012"
+                  Request 3 (for index.css):
+                  SYN_STREAM 5, stream-group (G)=0
+                  Header-block:
+                  Store(0x1): level(G),index(2),v: "/index.css"
+                  Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:44 PDT 2012"
 
-Connection level-headers are implied.
-Stream-group level headers are implied.
+                  Connection level-headers are implied.
+                  Stream-group level headers are implied.
 
-For this example, using TaCo (truncate and concatenate) wasn't useful.
-If the user, however, changes the cookie on the next request...
+                  For this example, using TaCo (truncate and concatenate) wasn't useful.
+                  If the user, however, changes the cookie on the next request...
 
-Request 3 (for somepage.html):
-SYN_STREAM 5, stream-group (G)=0
-  Header-block:
-  Store(0x1): level(G),index(2),v: "/somepage.html"
-  TaCo(0x1): level(G),index(1),v,TruncTo(40),"FOOBLA"
+                  Request 3 (for somepage.html):
+                  SYN_STREAM 5, stream-group (G)=0
+                  Header-block:
+                  Store(0x1): level(G),index(2),v: "/somepage.html"
+                  TaCo(0x1): level(G),index(1),v,TruncTo(40),"FOOBLA"
 
-At this point the connection headers table remains unchanged.
-  0: ":method", "GET"
-  1: ":version", "HTTP/1.1"
-  2: "user-agent", "blah blah browser version blah blah"
-  3: "accept-encoding", "sdch, bzip, compress"
+                  At this point the connection headers table remains unchanged.
+                  0: ":method", "GET"
+                  1: ":version", "HTTP/1.1"
+                  2: "user-agent", "blah blah browser version blah blah"
+                  3: "accept-encoding", "sdch, bzip, compress"
 
-The stream-group table for group zero looks like this:
-  0: ":host", "www.foo.com"
-  1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;FOOBLA"
-  2: ":path", "/somepate.html"
-Both the path and the date have changed.
+                  The stream-group table for group zero looks like this:
+                  0: ":host", "www.foo.com"
+                  1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;FOOBLA"
+                  2: ":path", "/somepate.html"
+                  Both the path and the date have changed.
 
-Request 3 (on stream 5) would look like the following if forwarded on HTTP/1.1:
-  GET /somepage.html HTTP/1.1
-  host: www.foo.com
-  date: Wed Jul 18 11:50:44 2012
-  cookie: SOMELONGSTRINGTHATISMOSTLYOPAQUE;FOOBLA
-  user-agent: blah blah browser version blah blah
-  accept-encoding: sdch, bzip, compress
+                  Request 3 (on stream 5) would look like the following if forwarded on HTTP/1.1:
+                  GET /somepage.html HTTP/1.1
+                  host: www.foo.com
+                  date: Wed Jul 18 11:50:44 2012
+                  cookie: SOMELONGSTRINGTHATISMOSTLYOPAQUE;FOOBLA
+                  user-agent: blah blah browser version blah blah
+                  accept-encoding: sdch, bzip, compress
 
 </pre></div>
 <a name="HTTPLayer"></a><br /><hr />
@@ -1734,10 +1505,10 @@ Request</h3>
 <p>The client initiates a request by sending a SYN_STREAM frame.  For requests which do not contain a body, the SYN_STREAM frame MUST set the FLAG_FIN, indicating that the client intends to send no further data on this stream.  For requests which do contain a body, the SYN_STREAM will not contain the FLAG_FIN, and the body will follow the SYN_STREAM in a series of DATA frames. The last DATA frame will set the FLAG_FIN to indicate the end of the body.
 </p>
 <p>The SYN_STREAM Name/Value section will contain all of the HTTP headers which are associated with an HTTP request. The header block in SPDY is mostly unchanged from today's HTTP header block, with the following differences:
-</p>
+              </p>
 <blockquote class="text">
 <p>The first line of the request is unfolded into name/value pairs like other HTTP headers and MUST be present:
-</p>
+                  </p>
 <blockquote class="text">
 <p>":method" - the HTTP method for this request (e.g. "GET", "POST", "HEAD", etc)
 </p>
@@ -1746,10 +1517,10 @@ Request</h3>
 <p>":version" - the HTTP version of this request (e.g. "HTTP/1.1")
 </p>
 </blockquote>
-
+                
 
 <p>In addition, the following two name/value pairs must also be present in every request:
-</p>
+                  </p>
 <blockquote class="text">
 <p>":host" - the hostport (See <a class='info' href='#RFC1738'>RFC1738<span> (</span><span class='info'>Berners-Lee, T., Masinter, L., and M. McCahill, &ldquo;Uniform Resource Locators (URL),&rdquo; December&nbsp;1994.</span><span>)</span></a> [RFC1738]) portion of the URL for this request (e.g. "www.google.com:1234"). This header is the same as the HTTP 'Host' header. 
 </p>
@@ -1766,15 +1537,15 @@ Request</h3>
 <p>If a server receives a request where the sum of the data frame payload lengths does not equal the size of the Content-Length header, the server MUST return a 400 (Bad Request) error.
 </p>
 <p>POST-specific changes:
-</p>
+                  </p>
 <blockquote class="text">
 <p>Although POSTs are inherently chunked, POST requests SHOULD also be accompanied by a Content-Length header.  There are two reasons for this:  First, it assists with upload progress meters for an improved user experience.  But second, we know from early versions of SPDY that failure to send a content length header is incompatible with many existing HTTP server implementations.  Existing user-agents do not omit the Content-Length header, and server implementations have come to depend upon this.
 </p>
 </blockquote>
-
+                
 
 </blockquote><p>
-
+            
 </p>
 <p>The user-agent is free to prioritize requests as it sees fit. If the user-agent cannot make progress without receiving a resource, it should attempt to raise the priority of that resource. Resources such as images, SHOULD generally use the lowest priority.
 </p>
@@ -1788,17 +1559,17 @@ Response</h3>
 <p>The server responds to a client request with a SYN_REPLY frame. Symmetric to the client's upload stream, server will send data after the SYN_REPLY frame via a series of DATA frames, and the last data frame will contain the FLAG_FIN to indicate successful end-of-stream.  If a response (like a 202 or 204 response) contains no body, the SYN_REPLY frame may contain the FLAG_FIN flag to indicate no further data will be sent on the stream.
 </p>
 <p>
-</p>
+              </p>
 <blockquote class="text">
 <p>The response status line is unfolded into name/value pairs like other HTTP headers and must be present:
-</p>
+                  </p>
 <blockquote class="text">
 <p>":status" - The HTTP response status code (e.g. "200" or "200 OK")
 </p>
 <p>":version" - The HTTP response version (e.g. "HTTP/1.1")
 </p>
 </blockquote>
-
+                
 
 <p>All header names must be lowercase.
 </p>
@@ -1809,7 +1580,7 @@ Response</h3>
 <p>If a client receives a response where the sum of the data frame payload lengths does not equal the size of the Content-Length header, the client MUST ignore the content length header.
 </p>
 </blockquote><p>
-
+            
 </p>
 <p>If a client receives a SYN_REPLY without a status or without a version header, the client must reply with a RST_STREAM frame indicating a PROTOCOL ERROR.
 </p>
@@ -1837,14 +1608,14 @@ Stateful Authentication</h3>
 <p>Unfortunately, the stateful authentication mechanisms were implemented and defined in a such a way that directly violates RFC2617 - they do not include a "realm" as part of the request.  This is problematic in SPDY because it makes it impossible for a client to disambiguate two concurrent server authentication challenges.
 </p>
 <p>To deal with this case, SPDY servers using Stateful Authentication MUST implement one of two changes:
-</p>
+                </p>
 <blockquote class="text">
 <p>Servers can add a "realm=&lt;desired realm&gt;" header so that the two authentication requests can be disambiguated and run concurrently.  Unfortunately, given how these mechanisms work, this is probably not practical.
 </p>
 <p>Upon sending the first stateful challenge response, the server MUST buffer and defer all further frames which are not part of completing the challenge until the challenge has completed.  Completing the authentication challenge may take multiple round trips.  Once the client receives a "401 Authenticate" response for a stateful authentication type, it MUST stop sending new requests to the server until the authentication has completed by receiving a non-401 response on at least one stream.
 </p>
 </blockquote><p>
-
+              
 </p>
 <a name="anchor19"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
@@ -1886,7 +1657,7 @@ Server implementation</h3>
 Client implementation</h3>
 
 <p>When fetching a resource the client has 3 possibilities:
-</p>
+              </p>
 <blockquote class="text">
 <p>the resource is not being pushed
 </p>
@@ -1895,12 +1666,12 @@ Client implementation</h3>
 <p>the resource is being pushed, and the data has started to arrive
 </p>
 </blockquote><p>
-
+            
 </p>
 <p>When a SYN_STREAM and HEADERS frame which contains an Associated-To-Stream-ID is received, the client must not issue GET requests for the resource in the pushed stream, and instead wait for the pushed stream to arrive.  
 </p>
 <p>If a client receives a server push stream with stream-id 0, it
- MUST issue a <a class='info' href='#SessionErrorHandler'>session error<span> (</span><span class='info'>Session Error Handling</span><span>)</span></a> with the status code PROTOCOL_ERROR.
+              MUST issue a <a class='info' href='#SessionErrorHandler'>session error<span> (</span><span class='info'>Session Error Handling</span><span>)</span></a> with the status code PROTOCOL_ERROR.
 </p>
 <p>When a client receives a SYN_STREAM from the server without a the ':host', ':scheme', and ':path' headers in the Name/Value section, it MUST reply with a RST_STREAM with error code HTTP_PROTOCOL_ERROR.
 </p>
@@ -1912,25 +1683,161 @@ Client implementation</h3>
 </p>
 <p>If the server sends a HEADERS frame after sending a data frame for the same stream, the client MAY ignore the HEADERS frame.  Ignoring the HEADERS frame after a data frame prevents handling of HTTP's trailing headers (http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.40).
 </p>
-<a name="anchor22"></a><br /><hr />
+<a name="WebSocketLayer"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
 <a name="rfc.section.4"></a><h3>4.&nbsp;
+WebSocket Layering over SPDY</h3>
+
+<p>With this layering, a client and sever can share one connection for both of HTTP requests and WebSockets.
+</p>
+<a name="anchor22"></a><br /><hr />
+<table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
+<a name="rfc.section.4.1"></a><h3>4.1.&nbsp;
+Connection Management</h3>
+
+<a name="anchor23"></a><br /><hr />
+<table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
+<a name="rfc.section.4.1.1"></a><h3>4.1.1.&nbsp;
+Opening Handshake</h3>
+
+<a name="anchor24"></a><br /><hr />
+<table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
+<a name="rfc.section.4.1.1.1"></a><h3>4.1.1.1.&nbsp;
+Handshake Request</h3>
+
+<p>The client initiates an opening handshake by sending a SYN_STREAM frame. The SYN_STREAM frame MUST NOT set the FLAG_FIN because WebSocket intends to establish a bi-directional communication port and to send arbitrary data after success in opening handshake.
+</p>
+<p>The SYN_STREAM Name/Value section will contain all of the following headers which are associated with <a class='info' href='#RFC6455'>The WebSocket protocol<span> (</span><span class='info'>Fette, I. and A. Melnikov, &ldquo;The WebSocket Protocol,&rdquo; December&nbsp;2011.</span><span>)</span></a> [RFC6455] opening handshake. Upgrade, Connection, Sec-WebSocket-Key, and Sec-WebSocket-Version headers MUST NOT be included because we do not have to take care of protocol upgrading or verification over HTTP.
+</p>
+<p>The following name/value pairs MUST be present in every request:
+</p>
+<blockquote class="text">
+<p>“:path” - /resource name/ as used in the “Client Requirements” section of the WebSocket protocol specification. (See <a class='info' href='#RFC6455'>RFC6455<span> (</span><span class='info'>Fette, I. and A. Melnikov, &ldquo;The WebSocket Protocol,&rdquo; December&nbsp;2011.</span><span>)</span></a> [RFC6455])
+</p>
+<p>“:host” - /host:port/ (e.g. “www.google.com:1234”) as used in the “Client Requirements” section of the WebSocket protocol specification. (See <a class='info' href='#RFC6455'>RFC6455<span> (</span><span class='info'>Fette, I. and A. Melnikov, &ldquo;The WebSocket Protocol,&rdquo; December&nbsp;2011.</span><span>)</span></a> [RFC6455])
+</p>
+<p>“:version” - the WebSocket protocol version of this request. (MUST be “WebSocket/8”, “WebSocket/13”, or so. The number MUST be matched with the Sec-WebSocket-Version header. See <a class='info' href='#RFC6455'>RFC6455<span> (</span><span class='info'>Fette, I. and A. Melnikov, &ldquo;The WebSocket Protocol,&rdquo; December&nbsp;2011.</span><span>)</span></a> [RFC6455])
+</p>
+<p>“:scheme” - the scheme portion of the URI. (MUST be “ws” or “wss”. See also /secure/ flag in <a class='info' href='#RFC6455'>RFC6455<span> (</span><span class='info'>Fette, I. and A. Melnikov, &ldquo;The WebSocket Protocol,&rdquo; December&nbsp;2011.</span><span>)</span></a> [RFC6455])
+</p>
+<p>“:origin” - /origin/ as used in the “Client Requirements” section of the WebSocket protocol specification. (See <a class='info' href='#RFC6455'>RFC6455<span> (</span><span class='info'>Fette, I. and A. Melnikov, &ldquo;The WebSocket Protocol,&rdquo; December&nbsp;2011.</span><span>)</span></a> [RFC6455])
+</p>
+</blockquote>
+<p>In addition, the following OPTIONAL name/value pairs MAY be present:
+</p>
+<blockquote class="text">
+<p>“:sec-websocket-protocol” - the Sec-WebSocket-Protocol header (See <a class='info' href='#RFC6455'>RFC6455<span> (</span><span class='info'>Fette, I. and A. Melnikov, &ldquo;The WebSocket Protocol,&rdquo; December&nbsp;2011.</span><span>)</span></a> [RFC6455])
+</p>
+<p>“:sec-websocket-extensions” - the Sec-WebSocket-Extensions header (See <a class='info' href='#RFC6455'>RFC6455<span> (</span><span class='info'>Fette, I. and A. Melnikov, &ldquo;The WebSocket Protocol,&rdquo; December&nbsp;2011.</span><span>)</span></a> [RFC6455])
+</p>
+</blockquote>
+<p>Also, other HTTP compatible header name/value pairs MAY be present. All header keys MUST be lowercase.
+</p>
+<a name="anchor25"></a><br /><hr />
+<table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
+<a name="rfc.section.4.1.1.2"></a><h3>4.1.1.2.&nbsp;
+Handshake Response</h3>
+
+<p>The server responds to a client request with a SYN_REPLY frame. If the server intends to allow the client connection, SYN_REPLY frame MUST NOT set the FLAG_FIN and MUST have “:status” containing “101”. But, an unsuccessful response MUST set the FLAG_FIN and MUST have “:status” containing non-”101” code. The server MAY fail the opening handshake because of an unexpected header value or a missing mandatory header name.
+</p>
+<p>The client MAY send some data to the server before receiving the successful response. The server MUST ignore this data when opening handshake fails. After sending successful response, the server can send arbitrary data frames at any time.
+</p>
+<p>The response status line is unfolded into name/value pairs like other WebSocket headers and MUST be present:
+</p>
+<blockquote class="text">
+<p>“:status” - The WebSocket or fallback HTTP response status code (e.g. “101” or “101 Switching Protocols”. See <a class='info' href='#RFC6455'>RFC6455<span> (</span><span class='info'>Fette, I. and A. Melnikov, &ldquo;The WebSocket Protocol,&rdquo; December&nbsp;2011.</span><span>)</span></a> [RFC6455])
+</p>
+</blockquote>
+<p>In addition, the following OPTIONAL name/value pairs MAY be present:
+</p>
+<blockquote class="text">
+<p>“:sec-websocket-protocol” - the Sec-WebSocket-Protocol header (See <a class='info' href='#RFC6455'>RFC6455<span> (</span><span class='info'>Fette, I. and A. Melnikov, &ldquo;The WebSocket Protocol,&rdquo; December&nbsp;2011.</span><span>)</span></a> [RFC6455])
+</p>
+<p>“:sec-websocket-extensions” - the Sec-WebSocket-Extensions header (See <a class='info' href='#RFC6455'>RFC6455<span> (</span><span class='info'>Fette, I. and A. Melnikov, &ldquo;The WebSocket Protocol,&rdquo; December&nbsp;2011.</span><span>)</span></a> [RFC6455])
+</p>
+</blockquote>
+<p>Also, other HTTP compatible header name/value pairs MAY be present. All header names MUST be lowercase. The successful server response MUST have “:status” containing “101”.
+</p>
+<p>If the handshake fails, the client MUST send a SPDY data frame with empty data field to avoid abnormal SPDY session termination. The SPDY data frame MUST set the FLAG_FIN to indicate the client intends to send no further data on this stream.
+</p>
+<a name="anchor26"></a><br /><hr />
+<table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
+<a name="rfc.section.4.1.2"></a><h3>4.1.2.&nbsp;
+Closing Handshake</h3>
+
+<a name="anchor27"></a><br /><hr />
+<table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
+<a name="rfc.section.4.1.2.1"></a><h3>4.1.2.1.&nbsp;
+Normal Termination</h3>
+
+<p>In normal termination, WebSocket connection close frame <a class='info' href='#RFC6455'>RFC6455<span> (</span><span class='info'>Fette, I. and A. Melnikov, &ldquo;The WebSocket Protocol,&rdquo; December&nbsp;2011.</span><span>)</span></a> [RFC6455] will be sent as a SPDY data frame with FLAG_FIN set. The closing handshake is based on WebSocket protocol specification. Both of a server and a client will initiate it then the other end MUST respond it by connection close frame with FLAG_FIN set.
+</p>
+<a name="anchor28"></a><br /><hr />
+<table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
+<a name="rfc.section.4.1.2.2"></a><h3>4.1.2.2.&nbsp;
+Abnormal Termination and CloseEvent Handling</h3>
+
+<p>In abnormal termination, RST_STREAM SHOULD be handled as connection close frame. It means that JavaScript API provides CloseEvent (See, <a class='info' href='#WEBSOCKETAPI'>The WebSocket API<span> (</span><span class='info'>Hickson, I., &ldquo;The WebSocket API,&rdquo; .</span><span>)</span></a> [WEBSOCKETAPI]) when a client receives RST_STREAM. Its code field SHOULD be 1006 (Abnormal Closure). The GOAWAY control frame with non-zero status code SHOULD be also handled in the same way. The status code of RST_STREAM and GOAWAY frames SHOULD be encoded to UTF-8 string with its frame type for its reason field. (e.g. “SPDY/3 RST_STREAM (5)” or “SPDY/3 GOAWAY (1)”)
+</p>
+<p>If a server works as protocol bridge to the WebSocket protocol, it MAY send a close frame which contains the above status code and the above reason to a backend WebSocket server.
+</p>
+<a name="anchor29"></a><br /><hr />
+<table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
+<a name="rfc.section.4.2"></a><h3>4.2.&nbsp;
+Bi-directional Communication</h3>
+
+<p>After the opening handshake, the client and the server can send arbitrary WebSocket control and data frames. Continuation frame, text frame, binary frame, connection close frame, ping frame, and pong frame are valid WebSocket frames. These WebSocket frames are mapped into each SPDY HEADERS frame and DATA frames as follow.
+</p>
+<a name="anchor30"></a><br /><hr />
+<table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
+<a name="rfc.section.4.2.1"></a><h3>4.2.1.&nbsp;
+Frame mapping</h3>
+
+<p>One WebSocket frame is mapped into one proceeding SPDY HEADERS frame and following plural SPDY data frames. The SPDY HEADERS frame must contain WebSocket frame fields and following SPDY data frames contain payload data. These data frames are free to be reframed.
+</p>
+<p>This plan doesn’t care about overheads. But HEADERS frame are compressed by shared dictionary with other SYN_STREAM, SYN_REPLY, and other HEADERS in the same SPDY connection. Optimistically, it reduces framing overheads.
+</p>
+<p>The following name/value pairs MUST be present in SPDY HEADERS frames:
+</p>
+<blockquote class="text">
+<p>“:opcode” - The WebSocket frame opcode (See <a class='info' href='#RFC6455'>RFC6455<span> (</span><span class='info'>Fette, I. and A. Melnikov, &ldquo;The WebSocket Protocol,&rdquo; December&nbsp;2011.</span><span>)</span></a> [RFC6455])
+</p>
+<p>“:length” - The WebSocket frame payload length in decimal (See <a class='info' href='#RFC6455'>RFC6455<span> (</span><span class='info'>Fette, I. and A. Melnikov, &ldquo;The WebSocket Protocol,&rdquo; December&nbsp;2011.</span><span>)</span></a> [RFC6455])
+</p>
+<p>“:fin” - The WebSocket frame fin (See <a class='info' href='#RFC6455'>RFC6455<span> (</span><span class='info'>Fette, I. and A. Melnikov, &ldquo;The WebSocket Protocol,&rdquo; December&nbsp;2011.</span><span>)</span></a> [RFC6455])
+</p>
+</blockquote>
+<p>In addition, the following OPTIONAL name/value pairs MAY be present:
+</p>
+<blockquote class="text">
+<p>“:rsv1” - The WebSocket frame rsv1
+</p>
+<p>“:rsv2” - The WebSocket frame rsv2
+</p>
+<p>“:rsv3” - The WebSocket frame rsv3 (See <a class='info' href='#RFC6455'>RFC6455<span> (</span><span class='info'>Fette, I. and A. Melnikov, &ldquo;The WebSocket Protocol,&rdquo; December&nbsp;2011.</span><span>)</span></a> [RFC6455]). These values must contain “0” or “1”. When a key doesn’t exist, the value is considered to be “0”. Thus, ony enabled bits may appear here.
+</p>
+<p>“:masking-key” - The WebSocket frame masking-key (See <a class='info' href='#RFC6455'>RFC6455<span> (</span><span class='info'>Fette, I. and A. Melnikov, &ldquo;The WebSocket Protocol,&rdquo; December&nbsp;2011.</span><span>)</span></a> [RFC6455]) in hexadecimal (e.g. “deadbeaf”). When this key/value exist, the WebSocket frame mask (See <a class='info' href='#RFC6455'>RFC6455<span> (</span><span class='info'>Fette, I. and A. Melnikov, &ldquo;The WebSocket Protocol,&rdquo; December&nbsp;2011.</span><span>)</span></a> [RFC6455]) is considered to be 1 and following payload data MUST be masked(See <a class='info' href='#RFC6455'>RFC6455<span> (</span><span class='info'>Fette, I. and A. Melnikov, &ldquo;The WebSocket Protocol,&rdquo; December&nbsp;2011.</span><span>)</span></a> [RFC6455]), otherwise the WebSocket frame mask is considered to be 0.
+</p>
+</blockquote>
+<a name="anchor31"></a><br /><hr />
+<table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
+<a name="rfc.section.5"></a><h3>5.&nbsp;
 Design Rationale and Notes</h3>
 
 <p>Authors' notes:  The notes in this section have no bearing on the SPDY protocol as specified within this document, and none of these notes should be considered authoritative about how the protocol works.  However, these notes may prove useful in future debates about how to resolve protocol ambiguities or how to evolve the protocol going forward.  They may be removed before the final draft.
 </p>
-<a name="anchor23"></a><br /><hr />
+<a name="anchor32"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
-<a name="rfc.section.4.1"></a><h3>4.1.&nbsp;
+<a name="rfc.section.5.1"></a><h3>5.1.&nbsp;
 Separation of Framing Layer and Application Layer</h3>
 
 <p>Readers may note that this specification sometimes blends the <a class='info' href='#FramingLayer'>framing layer<span> (</span><span class='info'>SPDY Framing Layer</span><span>)</span></a> with requirements of a specific application - <a class='info' href='#HTTPLayer'>HTTP<span> (</span><span class='info'>HTTP Layering over SPDY</span><span>)</span></a>.  This is reflected in the request/response nature of the streams, the definition of the HEADERS and compression contexts which are very similar to HTTP, and other areas as well.
 </p>
 <p>This blending is intentional - the primary goal of this protocol is to create a low-latency protocol for use with HTTP.  Isolating the two layers is convenient for description of the protocol and how it relates to existing HTTP implementations.  However, the ability to reuse the SPDY framing layer is a non goal.
 </p>
-<a name="anchor24"></a><br /><hr />
+<a name="anchor33"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
-<a name="rfc.section.4.2"></a><h3>4.2.&nbsp;
+<a name="rfc.section.5.2"></a><h3>5.2.&nbsp;
 Error handling - Framing Layer</h3>
 
 <p>Error handling at the SPDY layer splits errors into two groups:  Those that affect an individual SPDY stream, and those that do not.
@@ -1939,9 +1846,9 @@ Error handling - Framing Layer</h3>
 </p>
 <p>For errors occuring outside of a single stream context, SPDY assumes the entire session is hosed.  In this case, the endpoint detecting the error should initiate a connection close.
 </p>
-<a name="anchor25"></a><br /><hr />
+<a name="anchor34"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
-<a name="rfc.section.4.3"></a><h3>4.3.&nbsp;
+<a name="rfc.section.5.3"></a><h3>5.3.&nbsp;
 One Connection Per Domain</h3>
 
 <p>SPDY attempts to use fewer connections than other protocols have traditionally used.  The rationale for this behavior is because it is very difficult to provide a consistent level of service (e.g. TCP slow-start), prioritization, or optimal compression when the client is connecting to the server through multiple channels.
@@ -1950,95 +1857,95 @@ One Connection Per Domain</h3>
 </p>
 <p>The use of multiple connections is not without benefit, however.  Because SPDY multiplexes multiple, independent streams onto a single stream, it creates a potential for head-of-line blocking problems at the transport level.  In tests so far, the negative effects of head-of-line blocking (especially in the presence of packet loss) is outweighed by the benefits of compression and prioritization.
 </p>
-<a name="anchor26"></a><br /><hr />
+<a name="anchor35"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
-<a name="rfc.section.4.4"></a><h3>4.4.&nbsp;
+<a name="rfc.section.5.4"></a><h3>5.4.&nbsp;
 Fixed vs Variable Length Fields</h3>
 
 <p>SPDY favors use of fixed length 32bit fields in cases where smaller, variable length encodings could have been used.  To some, this seems like a tragic waste of bandwidth.  SPDY choses the simple encoding for speed and simplicity.
 </p>
 <p>The goal of SPDY is to reduce latency on the network.  The overhead of SPDY frames is generally quite low.  Each data frame is only an 8 byte overhead for a 1452 byte payload (~0.6%).  At the time of this writing, bandwidth is already plentiful, and there is a strong trend indicating that bandwidth will continue to increase.  With an average worldwide bandwidth of 1Mbps, and assuming that a variable length encoding could reduce the overhead by 50%, the latency saved by using a variable length encoding would be less than 100 nanoseconds.  More interesting are the effects when the larger encodings force a packet boundary, in which case a round-trip could be induced.  However, by addressing other aspects of SPDY and TCP interactions, we believe this is completely mitigated.
 </p>
-<a name="anchor27"></a><br /><hr />
+<a name="anchor36"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
-<a name="rfc.section.4.5"></a><h3>4.5.&nbsp;
+<a name="rfc.section.5.5"></a><h3>5.5.&nbsp;
 Compression Context(s)</h3>
 
 <p>When isolating the compression contexts used for communicating with multiple origins, we had a few choices to make.  We could have maintained a map (or list) of compression contexts usable for each origin.  The basic case is easy - each HEADERS frame would need to identify the context to use for that frame.  However, compression contexts are not cheap, so the lifecycle of each context would need to be bounded.  For proxy servers, where we could churn through many contexts, this would be a concern.  We considered using a static set of contexts, say 16 of them, which would bound the memory use.  We also considered dynamic contexts, which could be created on the fly, and would need to be subsequently destroyed.  All of these are complicated, and ultimately we decided that such a mechanism creates too many problems to solve.
 </p>
 <p>Alternatively, we've chosen the simple approach, which is to simply provide a flag for resetting the compression context.  For the common case (no proxy), this fine because most requests are to the same origin and we never need to reset the context.  For cases where we are using two different origins over a single SPDY session, we simply reset the compression state between each transition.
 </p>
-<a name="anchor28"></a><br /><hr />
+<a name="anchor37"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
-<a name="rfc.section.4.6"></a><h3>4.6.&nbsp;
+<a name="rfc.section.5.6"></a><h3>5.6.&nbsp;
 Unidirectional streams</h3>
 
 <p>Besides providing a clear endpoint for unidirectional streams, Associated-To-Stream-ID also avoids the recipient of pushed streams from needing to send a set of empty frames (e.g. the SYN_STREAM w/ FLAG_FIN) to signal that it doesn't wish to send data on the stream.
 </p>
-<a name="anchor29"></a><br /><hr />
+<a name="anchor38"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
-<a name="rfc.section.4.7"></a><h3>4.7.&nbsp;
+<a name="rfc.section.5.7"></a><h3>5.7.&nbsp;
 Data Compression</h3>
 
 <p>Generic compression of data portion of the streams (as opposed to compression of the headers) without knowing the content of the stream is redundant.  There is no value in compressing a stream which is already compressed.  Because of this, SPDY initially allowed data compression to be optional.  We included it because study of existing websites shows that many sites are not using compression as they should, and users suffer because of it.  We wanted a mechanism where, at the SPDY layer, site administrators could simply force compression - it is better to compress twice than to not compress.
 </p>
 <p>Overall, however, with this feature being optional and sometimes redundant, it was unclear if it was useful at all.  We removed it from the specification.
 </p>
-<a name="anchor30"></a><br /><hr />
+<a name="anchor39"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
-<a name="rfc.section.4.8"></a><h3>4.8.&nbsp;
+<a name="rfc.section.5.8"></a><h3>5.8.&nbsp;
 Server Push</h3>
 
 <p>A subtle but important point is that server push streams must be declared before the associated stream is closed.  The reason for this is so that proxies have a lifetime for which they can discard information about previous streams.  If a pushed stream could associate itself with an already-closed stream, then endpoints would not have a specific lifecycle for when they could disavow knowledge of the streams which went before.
 </p>
-<a name="anchor31"></a><br /><hr />
+<a name="anchor40"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
-<a name="rfc.section.5"></a><h3>5.&nbsp;
+<a name="rfc.section.6"></a><h3>6.&nbsp;
 Security Considerations</h3>
 
-<a name="anchor32"></a><br /><hr />
+<a name="anchor41"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
-<a name="rfc.section.5.1"></a><h3>5.1.&nbsp;
+<a name="rfc.section.6.1"></a><h3>6.1.&nbsp;
 Use of Same-origin constraints</h3>
 
 <p>This specification uses the <a class='info' href='#RFC6454'>same-origin policy<span> (</span><span class='info'>Barth, A., &ldquo;The Web Origin Concept,&rdquo; December&nbsp;2011.</span><span>)</span></a> [RFC6454] in all cases where verification of content is required.
 </p>
-<a name="anchor33"></a><br /><hr />
+<a name="anchor42"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
-<a name="rfc.section.5.2"></a><h3>5.2.&nbsp;
+<a name="rfc.section.6.2"></a><h3>6.2.&nbsp;
 HTTP Headers and SPDY Headers</h3>
 
 <p>At the application level, HTTP uses name/value pairs in its headers.  Because SPDY merges the existing HTTP headers with SPDY headers, there is a possibility that some HTTP applications already use a particular header name.  To avoid any conflicts, all headers introduced for layering HTTP over SPDY are prefixed with ":".  ":" is not a valid sequence in HTTP header naming, preventing any possible conflict.
 </p>
-<a name="anchor34"></a><br /><hr />
+<a name="anchor43"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
-<a name="rfc.section.5.3"></a><h3>5.3.&nbsp;
+<a name="rfc.section.6.3"></a><h3>6.3.&nbsp;
 Cross-Protocol Attacks</h3>
 
 <p>By utilizing TLS, we believe that SPDY introduces no new cross-protocol attacks.  TLS encrypts the contents of all transmission (except the handshake itself), making it difficult for attackers to control the data which could be used in a cross-protocol attack.
 </p>
-<a name="anchor35"></a><br /><hr />
+<a name="anchor44"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
-<a name="rfc.section.5.4"></a><h3>5.4.&nbsp;
+<a name="rfc.section.6.4"></a><h3>6.4.&nbsp;
 Server Push Implicit Headers</h3>
 
 <p>Pushed resources do not have an associated request.  In order for existing HTTP cache control validations (such as the Vary header) to work, however, all cached resources must have a set of request headers.  For this reason, browsers MUST be careful to inherit request headers from the associated stream for the push.  This includes the 'Cookie' header.
 </p>
-<a name="anchor36"></a><br /><hr />
+<a name="anchor45"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
-<a name="rfc.section.6"></a><h3>6.&nbsp;
+<a name="rfc.section.7"></a><h3>7.&nbsp;
 Privacy Considerations</h3>
 
-<a name="anchor37"></a><br /><hr />
+<a name="anchor46"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
-<a name="rfc.section.6.1"></a><h3>6.1.&nbsp;
+<a name="rfc.section.7.1"></a><h3>7.1.&nbsp;
 Long Lived Connections</h3>
 
 <p>SPDY aims to keep connections open longer between clients and servers in order to reduce the latency when a user makes a request.  The maintenance of these connections over time could be used to expose private information.  For example, a user using a browser hours after the previous user stopped using that browser may be able to learn about what the previous user was doing.  This is a problem with HTTP in its current form as well, however the short lived connections make it less of a risk.
 </p>
-<a name="anchor38"></a><br /><hr />
+<a name="anchor47"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
-<a name="rfc.section.6.2"></a><h3>6.2.&nbsp;
+<a name="rfc.section.7.2"></a><h3>7.2.&nbsp;
 SETTINGS frame</h3>
 
 <p>The SPDY SETTINGS frame allows servers to store out-of-band transmitted information about the communication between client and server on the client.  Although this is intended only to be used to reduce latency, renegade servers could use it as a mechanism to store identifying information about the client in future requests.
@@ -2049,14 +1956,26 @@ SETTINGS frame</h3>
 </p>
 <p>TODO: Put range maximums on each type of setting to limit inappropriate uses.
 </p>
-<a name="anchor39"></a><br /><hr />
+<a name="anchor48"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
-<a name="rfc.section.7"></a><h3>7.&nbsp;
+<a name="rfc.section.8"></a><h3>8.&nbsp;
+Sub-protocol negotiation</h3>
+
+<a name="anchor49"></a><br /><hr />
+<table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
+<a name="rfc.section.8.1"></a><h3>8.1.&nbsp;
+Supporting scheme negotiation using SETTINGS frame</h3>
+
+<p>By default, a client can send SYN_STREAM frames on http and https schemes, but if it want to send them on other schemes, it MUST wait for a server sending SETTINGS frame which specify declaring schemes. Thus, a server SHOULD send a SETTINGS frame as soon as possible whether it supports other schemes or not.
+</p>
+<a name="anchor50"></a><br /><hr />
+<table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
+<a name="rfc.section.9"></a><h3>9.&nbsp;
 Incompatibilities with SPDY draft #3</h3>
 
 <p>
-Here is a list of the major changes between this draft #3 and this draft
-</p>
+          Here is a list of the major changes between this draft #3 and this draft
+          </p>
 <blockquote class="text">
 <p>DONE: Different, more precise, notation style used to describe all frames.
 </p>
@@ -2072,13 +1991,15 @@ Here is a list of the major changes between this draft #3 and this draft
 </p>
 <p>ONGOING: Significant modifications to how headers are transported. This involved changes to all frames incorporating HEADER blocks, and changes to the HEADER blocks themselves.
 </p>
-<p>ONGOING: Different header compression technique which uses less CPU for proxies and which should result in higher compression
+<p>ONGOING: Different header compression technique which uses less CPU for proxies and which should result in competitive compression
 </p>
 <p>TODO: Addition of end-of-header-section delimiter flag in any frame which has a header block
 </p>
 <p>ONGOING: Definition of cert-data push
 </p>
 <p>ONGOING: Definition of name-resolution push
+</p>
+<p>ONGOING: Redefining prioritization
 </p>
 <p>TODO: Modification of flow-control; allow two-levels of flow control so as to allow greater stream concurrency safely
 </p>
@@ -2091,35 +2012,35 @@ Here is a list of the major changes between this draft #3 and this draft
 <p>TODO: Session-error status code added for UNRECOGNIZED_SCHEME for new streams. This triggers when the recipient doesn't know how to handle a stream of that type.
 </p>
 </blockquote><p>
-      
+        
 </p>
-<a name="anchor40"></a><br /><hr />
+<a name="anchor51"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
-<a name="rfc.section.8"></a><h3>8.&nbsp;
+<a name="rfc.section.10"></a><h3>10.&nbsp;
 Requirements Notation</h3>
 
 <p>
-        The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
-        "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
-        document are to be interpreted as described in <a class='info' href='#RFC2119'>RFC 2119<span> (</span><span class='info'>Bradner, S., &ldquo;Key words for use in RFCs to Indicate Requirement Levels,&rdquo; March&nbsp;1997.</span><span>)</span></a> [RFC2119].
-      
+          The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+          "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
+          document are to be interpreted as described in <a class='info' href='#RFC2119'>RFC 2119<span> (</span><span class='info'>Bradner, S., &ldquo;Key words for use in RFCs to Indicate Requirement Levels,&rdquo; March&nbsp;1997.</span><span>)</span></a> [RFC2119].
+        
 </p>
-<a name="anchor41"></a><br /><hr />
+<a name="anchor52"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
-<a name="rfc.section.9"></a><h3>9.&nbsp;
+<a name="rfc.section.11"></a><h3>11.&nbsp;
 Acknowledgements</h3>
 
 <p>
-        Many individuals have contributed to the design and evolution of SPDY:
-        Adam Langley, Wan-Teh Chang, Jim Morrison, Mark Nottingham, Alyssa Wilk,
-        Costin Manolache, William Chan, Vitaliy Lvin, Joe Chan, Adam Barth,
-        Ryan Hamilton, Gavin Peters, Kent Alstad, Kevin Lindsay, Paul Amer,
-        Fan Yang, Jonathan Leighton, Alex Strom
-      
+          Many individuals have contributed to the design and evolution of SPDY:
+          Adam Langley, Wan-Teh Chang, Jim Morrison, Mark Nottingham, Alyssa Wilk,
+          Costin Manolache, William Chan, Vitaliy Lvin, Joe Chan, Adam Barth,
+          Ryan Hamilton, Gavin Peters, Kent Alstad, Kevin Lindsay, Paul Amer,
+          Fan Yang, Jonathan Leighton, Alex Strom
+        
 </p>
 <a name="rfc.references1"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
-<h3>10.&nbsp;Normative References</h3>
+<h3>12.&nbsp;Normative References</h3>
 <table width="99%" border="0">
 <tr><td class="author-text" valign="top"><a name="RFC0793">[RFC0793]</a></td>
 <td class="author-text">Postel, J., &ldquo;<a href="http://tools.ietf.org/html/rfc793">Transmission Control Protocol</a>,&rdquo; STD&nbsp;7, RFC&nbsp;793, September&nbsp;1981 (<a href="http://www.rfc-editor.org/rfc/rfc793.txt">TXT</a>).</td></tr>
@@ -2145,15 +2066,19 @@ Acknowledgements</h3>
 <td class="author-text">Dierks, T. and E. Rescorla, &ldquo;<a href="http://tools.ietf.org/html/rfc5246">The Transport Layer Security (TLS) Protocol Version 1.2</a>,&rdquo; RFC&nbsp;5246, August&nbsp;2008 (<a href="http://www.rfc-editor.org/rfc/rfc5246.txt">TXT</a>).</td></tr>
 <tr><td class="author-text" valign="top"><a name="RFC6454">[RFC6454]</a></td>
 <td class="author-text">Barth, A., &ldquo;<a href="http://tools.ietf.org/html/rfc6454">The Web Origin Concept</a>,&rdquo; RFC&nbsp;6454, December&nbsp;2011 (<a href="http://www.rfc-editor.org/rfc/rfc6454.txt">TXT</a>).</td></tr>
+<tr><td class="author-text" valign="top"><a name="RFC6455">[RFC6455]</a></td>
+<td class="author-text">Fette, I. and A. Melnikov, &ldquo;<a href="http://tools.ietf.org/html/rfc6455">The WebSocket Protocol</a>,&rdquo; RFC&nbsp;6455, December&nbsp;2011 (<a href="http://www.rfc-editor.org/rfc/rfc6455.txt">TXT</a>).</td></tr>
 <tr><td class="author-text" valign="top"><a name="TLSNPN">[TLSNPN]</a></td>
 <td class="author-text">Langley, A., &ldquo;<a href="http://tools.ietf.org/html/draft-agl-tls-nextprotoneg-01">TLS Next Protocol Negotiation</a>.&rdquo;</td></tr>
 <tr><td class="author-text" valign="top"><a name="ASCII">[ASCII]</a></td>
 <td class="author-text">&ldquo;US-ASCII. Coded Character Set - 7-Bit American Standard Code for Information Interchange. Standard ANSI X3.4-1986, ANSI, 1986..&rdquo;</td></tr>
 <tr><td class="author-text" valign="top"><a name="UDELCOMPRESSION">[UDELCOMPRESSION]</a></td>
 <td class="author-text">Yang, F., Amer, P., and J. Leighton, &ldquo;<a href="http://www.eecis.udel.edu/~amer/PEL/poc/pdf/SPDY-Fan.pdf">A Methodology to Derive SPDY’s Initial Dictionary for Zlib Compression</a>.&rdquo;</td></tr>
+<tr><td class="author-text" valign="top"><a name="WEBSOCKETAPI">[WEBSOCKETAPI]</a></td>
+<td class="author-text">Hickson, I., &ldquo;<a href="http://www.w3.org/TR/websockets/">The WebSocket API</a>.&rdquo;</td></tr>
 </table>
 
-<a name="anchor43"></a><br /><hr />
+<a name="anchor54"></a><br /><hr />
 <table summary="layout" cellpadding="0" cellspacing="2" class="TOCbug" align="right"><tr><td class="TOCbug"><a href="#toc">&nbsp;TOC&nbsp;</a></td></tr></table>
 <a name="rfc.section.A"></a><h3>Appendix A.&nbsp;
 Changes</h3>
