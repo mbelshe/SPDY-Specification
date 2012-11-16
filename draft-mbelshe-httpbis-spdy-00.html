@@ -1256,7 +1256,7 @@ Name/Value Header Block</h3>
 <p>The Name/Value Header Block is found in the SYN_STREAM, SYN_REPLY
               and HEADERS control frames, and shares a common format:
 </p><div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-                0        1        2    3..N        N+1..K
+                0        1        2          3..N       N+1..K
                 +--------+--------+--------+=====+     +=====+
                 | HG(8)  | next-lru-seq-num| Ops | ... | Ops |
                 +--------+--------+--------+=====+     +=====+
@@ -1264,9 +1264,9 @@ Name/Value Header Block</h3>
 <p>Ops are of the form:
               </p>
 <div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
-                  +--------+--------+========+
-                  | OpCode | NumOps | Op Args|
-                  +--------+--------+========+
+                  +--------+--------+=========+
+                  | OpCode | NumOps | Op Args |
+                  +--------+--------+=========+
 </pre></div><p>
 
             
@@ -1277,7 +1277,6 @@ Name/Value Header Block</h3>
 </p>
 <p>
               The Opcode field indicates the type of operation.
-
               </p>
 <blockquote class="text">
 <p>0x0 (reserved) -- this is not used and is reserved in case a token-based delimiter is required in the future.
@@ -1308,15 +1307,14 @@ Name/Value Header Block</h3>
                   +-|-------+========+--------+
 </pre></div><p>
 
-
             
 </p>
 <p>
-              The NumOps field encodes the number of operations that follow. The exact count is 1+numops. Since the field-width is 8 bits, a maximum of 256 ops can be represented. If there are more ops than this, simply specify the opcode and numOps again until all required operations have been presented.
+              The NumOps field encodes one minus the number of operations that follow. Since the field-width is 8 bits, a maximum of 256 ops can be represented. If more than 256 operations are required, simply repeat doing this until all operations have been encoded. It is expected that this will be extremely rare.
             
 </p>
 <p>
-              Detail of an operation with an opcode of 0x1:
+              Detail of an operation with an opcode of 0x1 (Toggle):
 
               </p>
 <div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
@@ -1327,15 +1325,78 @@ Name/Value Header Block</h3>
 
 
                   repeated NumOps times
-                  ______/ \______
-                  /               \
+                    ______/ \______
+                   /               \
 
                   +--------+--------+
                   | LRU idx(16)     |
                   +--------+--------+
+</pre></div><p>
+
+            
+</p>
+<p>
+              Detail of an operation with an opcode of 0x2 (Clone):
+
+              </p>
+<div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
+                  0        1
+                  +--------+--------+
+                  |00000010| NumOps |
+                  +--------+--------+
 
 
-                  Where NumOps = value-of-NumOps-field + 1
+                     repeated NumOps times
+                    ___________/\___________
+                   /                        \
+
+                  +--------+--------+========+
+                  | Key idx(16)     | String |
+                  +--------+--------+========+
+</pre></div><p>
+
+            
+</p>
+<p>
+              Detail of an operation with an opcode of 0x3 (KVSto):
+
+              </p>
+<div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
+                  0        1
+                  +--------+--------+
+                  |00000011| NumOps |
+                  +--------+--------+
+
+
+                  repeated NumOps times
+                    _______/\______
+                   /               \
+
+                  +========+========+
+                  | String | String |
+                  +========+========+
+</pre></div><p>
+
+            
+</p>
+<p>
+              Detail of an operation with an opcode of 0x4 (Eref):
+
+              </p>
+<div style='display: table; width: 0; margin-left: 3em; margin-right: auto'><pre>
+                  0        1
+                  +--------+--------+
+                  |00000100| NumOps |
+                  +--------+--------+
+
+
+                  repeated NumOps times
+                    _______/\______
+                   /               \
+
+                  +========+========+
+                  | String | String |
+                  +========+========+
 </pre></div><p>
 
             

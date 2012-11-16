@@ -3,9 +3,9 @@
 
 Network Working Group                                          M. Belshe
 Internet-Draft                                                     Twist
-Expires: February 17, 2013                                       R. Peon
+Expires: February 2, 2013                                        R. Peon
                                                              Google, Inc
-                                                         August 16, 2012
+                                                             August 2012
 
 
                              SPDY Protocol
@@ -24,48 +24,43 @@ Abstract
 
 Status of this Memo
 
-   This Internet-Draft is submitted to IETF in full conformance with the
+   This Internet-Draft is submitted in full conformance with the
    provisions of BCP 78 and BCP 79.
 
    Internet-Drafts are working documents of the Internet Engineering
-   Task Force (IETF), its areas, and its working groups.  Note that
-   other groups may also distribute working documents as Internet-
-   Drafts.
+   Task Force (IETF).  Note that other groups may also distribute
+   working documents as Internet-Drafts.  The list of current Internet-
+   Drafts is at http://datatracker.ietf.org/drafts/current/.
 
    Internet-Drafts are draft documents valid for a maximum of six months
    and may be updated, replaced, or obsoleted by other documents at any
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   The list of current Internet-Drafts can be accessed at
-   http://www.ietf.org/ietf/1id-abstracts.txt.
-
-   The list of Internet-Draft Shadow Directories can be accessed at
-   http://www.ietf.org/shadow.html.
-
-   This Internet-Draft will expire on February 17, 2013.
+   This Internet-Draft will expire on February 2, 2013.
 
 Copyright Notice
 
    Copyright (c) 2012 IETF Trust and the persons identified as the
    document authors.  All rights reserved.
 
-
-
-Belshe & Peon           Expires February 17, 2013               [Page 1]
-
-Internet-Draft                    SPDY                       August 2012
-
-
    This document is subject to BCP 78 and the IETF Trust's Legal
    Provisions Relating to IETF Documents
    (http://trustee.ietf.org/license-info) in effect on the date of
    publication of this document.  Please review these documents
    carefully, as they describe your rights and restrictions with respect
+
+
+
+Belshe & Peon           Expires February 2, 2013                [Page 1]
+
+Internet-Draft                    SPDY                       August 2012
+
+
    to this document.  Code Components extracted from this document must
    include Simplified BSD License text as described in Section 4.e of
    the Trust Legal Provisions and are provided without warranty as
-   described in the BSD License.
+   described in the Simplified BSD License.
 
 
 Table of Contents
@@ -96,54 +91,62 @@ Table of Contents
        2.6.2.  SYN_REPLY  . . . . . . . . . . . . . . . . . . . . . . 15
        2.6.3.  RST_STREAM . . . . . . . . . . . . . . . . . . . . . . 16
        2.6.4.  SETTINGS . . . . . . . . . . . . . . . . . . . . . . . 18
-       2.6.5.  PING . . . . . . . . . . . . . . . . . . . . . . . . . 20
+       2.6.5.  PING . . . . . . . . . . . . . . . . . . . . . . . . . 21
        2.6.6.  GOAWAY . . . . . . . . . . . . . . . . . . . . . . . . 21
-       2.6.7.  HEADERS  . . . . . . . . . . . . . . . . . . . . . . . 22
+       2.6.7.  HEADERS  . . . . . . . . . . . . . . . . . . . . . . . 23
        2.6.8.  WINDOW_UPDATE  . . . . . . . . . . . . . . . . . . . . 23
-       2.6.9.  CREDENTIAL . . . . . . . . . . . . . . . . . . . . . . 25
-       2.6.10. PUSH_PROMISE . . . . . . . . . . . . . . . . . . . . . 27
-       2.6.11. Name/Value Header Block  . . . . . . . . . . . . . . . 28
-   3.  HTTP Layering over SPDY  . . . . . . . . . . . . . . . . . . . 40
-     3.1.  Connection Management  . . . . . . . . . . . . . . . . . . 40
+       2.6.9.  CREDENTIAL . . . . . . . . . . . . . . . . . . . . . . 26
+       2.6.10. PUSH_PROMISE . . . . . . . . . . . . . . . . . . . . . 28
+       2.6.11. Name/Value Header Block  . . . . . . . . . . . . . . . 29
+   3.  HTTP Layering over SPDY  . . . . . . . . . . . . . . . . . . . 36
+     3.1.  Connection Management  . . . . . . . . . . . . . . . . . . 36
+       3.1.1.  Use of GOAWAY  . . . . . . . . . . . . . . . . . . . . 36
+     3.2.  HTTP Request/Response  . . . . . . . . . . . . . . . . . . 37
+       3.2.1.  Request  . . . . . . . . . . . . . . . . . . . . . . . 37
+       3.2.2.  Response . . . . . . . . . . . . . . . . . . . . . . . 38
+       3.2.3.  Authentication . . . . . . . . . . . . . . . . . . . . 39
 
 
 
-Belshe & Peon           Expires February 17, 2013               [Page 2]
+Belshe & Peon           Expires February 2, 2013                [Page 2]
 
 Internet-Draft                    SPDY                       August 2012
 
 
-       3.1.1.  Use of GOAWAY  . . . . . . . . . . . . . . . . . . . . 40
-     3.2.  HTTP Request/Response  . . . . . . . . . . . . . . . . . . 41
-       3.2.1.  Request  . . . . . . . . . . . . . . . . . . . . . . . 41
-       3.2.2.  Response . . . . . . . . . . . . . . . . . . . . . . . 42
-       3.2.3.  Authentication . . . . . . . . . . . . . . . . . . . . 43
-     3.3.  Server Push Transactions . . . . . . . . . . . . . . . . . 44
-       3.3.1.  Server implementation  . . . . . . . . . . . . . . . . 45
-       3.3.2.  Client implementation  . . . . . . . . . . . . . . . . 46
-   4.  Design Rationale and Notes . . . . . . . . . . . . . . . . . . 48
-     4.1.  Separation of Framing Layer and Application Layer  . . . . 48
-     4.2.  Error handling - Framing Layer . . . . . . . . . . . . . . 48
-     4.3.  One Connection Per Domain  . . . . . . . . . . . . . . . . 48
-     4.4.  Fixed vs Variable Length Fields  . . . . . . . . . . . . . 49
-     4.5.  Compression Context(s) . . . . . . . . . . . . . . . . . . 49
-     4.6.  Unidirectional streams . . . . . . . . . . . . . . . . . . 50
-     4.7.  Data Compression . . . . . . . . . . . . . . . . . . . . . 50
-     4.8.  Server Push  . . . . . . . . . . . . . . . . . . . . . . . 50
-   5.  Security Considerations  . . . . . . . . . . . . . . . . . . . 51
-     5.1.  Use of Same-origin constraints . . . . . . . . . . . . . . 51
-     5.2.  HTTP Headers and SPDY Headers  . . . . . . . . . . . . . . 51
-     5.3.  Cross-Protocol Attacks . . . . . . . . . . . . . . . . . . 51
-     5.4.  Server Push Implicit Headers . . . . . . . . . . . . . . . 51
-   6.  Privacy Considerations . . . . . . . . . . . . . . . . . . . . 52
-     6.1.  Long Lived Connections . . . . . . . . . . . . . . . . . . 52
-     6.2.  SETTINGS frame . . . . . . . . . . . . . . . . . . . . . . 52
-   7.  Incompatibilities with SPDY draft #3 . . . . . . . . . . . . . 53
-   8.  Requirements Notation  . . . . . . . . . . . . . . . . . . . . 55
-   9.  Acknowledgements . . . . . . . . . . . . . . . . . . . . . . . 56
-   10. Normative References . . . . . . . . . . . . . . . . . . . . . 57
-   Appendix A.  Changes . . . . . . . . . . . . . . . . . . . . . . . 59
-   Authors' Addresses . . . . . . . . . . . . . . . . . . . . . . . . 60
+     3.3.  Server Push Transactions . . . . . . . . . . . . . . . . . 40
+       3.3.1.  Server implementation  . . . . . . . . . . . . . . . . 41
+       3.3.2.  Client implementation  . . . . . . . . . . . . . . . . 42
+   4.  WebSocket Layering over SPDY . . . . . . . . . . . . . . . . . 44
+     4.1.  Connection Management  . . . . . . . . . . . . . . . . . . 44
+       4.1.1.  Opening Handshake  . . . . . . . . . . . . . . . . . . 44
+       4.1.2.  Closing Handshake  . . . . . . . . . . . . . . . . . . 45
+     4.2.  Bi-directional Communication . . . . . . . . . . . . . . . 46
+       4.2.1.  Frame mapping  . . . . . . . . . . . . . . . . . . . . 46
+   5.  Design Rationale and Notes . . . . . . . . . . . . . . . . . . 48
+     5.1.  Separation of Framing Layer and Application Layer  . . . . 48
+     5.2.  Error handling - Framing Layer . . . . . . . . . . . . . . 48
+     5.3.  One Connection Per Domain  . . . . . . . . . . . . . . . . 48
+     5.4.  Fixed vs Variable Length Fields  . . . . . . . . . . . . . 49
+     5.5.  Compression Context(s) . . . . . . . . . . . . . . . . . . 49
+     5.6.  Unidirectional streams . . . . . . . . . . . . . . . . . . 50
+     5.7.  Data Compression . . . . . . . . . . . . . . . . . . . . . 50
+     5.8.  Server Push  . . . . . . . . . . . . . . . . . . . . . . . 50
+   6.  Security Considerations  . . . . . . . . . . . . . . . . . . . 51
+     6.1.  Use of Same-origin constraints . . . . . . . . . . . . . . 51
+     6.2.  HTTP Headers and SPDY Headers  . . . . . . . . . . . . . . 51
+     6.3.  Cross-Protocol Attacks . . . . . . . . . . . . . . . . . . 51
+     6.4.  Server Push Implicit Headers . . . . . . . . . . . . . . . 51
+   7.  Privacy Considerations . . . . . . . . . . . . . . . . . . . . 52
+     7.1.  Long Lived Connections . . . . . . . . . . . . . . . . . . 52
+     7.2.  SETTINGS frame . . . . . . . . . . . . . . . . . . . . . . 52
+   8.  Sub-protocol negotiation . . . . . . . . . . . . . . . . . . . 53
+     8.1.  Supporting scheme negotiation using SETTINGS frame . . . . 53
+   9.  Incompatibilities with SPDY draft #3 . . . . . . . . . . . . . 54
+   10. Requirements Notation  . . . . . . . . . . . . . . . . . . . . 56
+   11. Acknowledgements . . . . . . . . . . . . . . . . . . . . . . . 57
+   12. Normative References . . . . . . . . . . . . . . . . . . . . . 58
+   Appendix A.  Changes . . . . . . . . . . . . . . . . . . . . . . . 60
+   Authors' Addresses . . . . . . . . . . . . . . . . . . . . . . . . 61
 
 
 
@@ -161,10 +164,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-
-
-
-Belshe & Peon           Expires February 17, 2013               [Page 3]
+Belshe & Peon           Expires February 2, 2013                [Page 3]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -220,7 +220,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013               [Page 4]
+Belshe & Peon           Expires February 2, 2013                [Page 4]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -276,7 +276,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013               [Page 5]
+Belshe & Peon           Expires February 2, 2013                [Page 5]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -306,11 +306,10 @@ Internet-Draft                    SPDY                       August 2012
    framed messages.  There are two types of frames: control frames
    (Section 2.2.2) and data frames (Section 2.2.3).
 
-   The first bit of any frame indicates whether a frame is a control
-   frame or data frame.  Control frames carry a frame type, flags, and a
-   length.  Data frames contain the stream ID, flags, and the length for
-   the payload carried after the common header.  The simple header is
-   designed to make reading and writing of frames easy.
+   Both types of frames carry a common set of headers: length, flags,
+   and frame type.  Flag definitions vary between control and data
+   frames.  The simple header is designed to make reading and writing of
+   frames easy.
 
    All integer values, including length, and type, are in network byte
    order.  SPDY does not enforce alignment of types in dynamically sized
@@ -332,7 +331,8 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013               [Page 6]
+
+Belshe & Peon           Expires February 2, 2013                [Page 6]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -359,10 +359,10 @@ Internet-Draft                    SPDY                       August 2012
 
    As an example:
 
-        0         1         2       3
-   +--|------+--|------+--------+--------+
-   |10|[PRI]0xEE|XXXXXX| Len(16)         |
-   +--|------+--|------+--------+--------+
+                     0         1         2       3
+                     +--|------+--|------+--------+--------+
+                     |10|[PRI]0xEE|XXXXXX| Len(16)         |
+                     +--|------+--|------+--------+--------+
 
    This describes a frame which starts with 1 as the MSB, a 0 in the
    second most significant bit, followed by 0b11101110 (or 0xEE) as the
@@ -388,31 +388,31 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013               [Page 7]
+Belshe & Peon           Expires February 2, 2013                [Page 7]
 
 Internet-Draft                    SPDY                       August 2012
 
 
-         0
-   +--|-|-|----+
-   |01|K|L|XXXX|  ->
-   +--|-|-|----+
+                     0
+                     +--|-|-|----+
+                     |01|K|L|XXXX|  ->
+                     +--|-|-|----+
 
-      1..N
-   +========+
-   |  data  |
-   +========+
+                     1..N
+                     +========+
+                     |  data  |
+                     +========+
 
 2.2.2.  Control frames
 
-     0        1        2        3         4        5        6        7
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
-| Length(16)      |Flags(8)|1| Num-of-Entries-or-Stream-ID-or-ID|Type(8) | ->
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
-   8..N
-+========+
-|  Data  |
-+========+
+                0        1        2        3         4        5        6        7
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
+                | Length(16)      |Flags(8)|1| Num-of-Entries-or-Stream-ID-or-ID|Type(8) | ->
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
+                8..N
+                +========+
+                |  Data  |
+                +========+
 
    Control bit: The 'C' bit is a single bit indicating if this is a
    control message.  For control frames this value is always 1.
@@ -444,17 +444,17 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013               [Page 8]
+Belshe & Peon           Expires February 2, 2013                [Page 8]
 
 Internet-Draft                    SPDY                       August 2012
 
 
 2.2.3.  Data frames
 
-     0        1        2        3         4        5        6      7..N
-+--------+--------+--------+-|-------+--------+--------+--------+========+
-| Length(16)      |Flags(8)|0| Stream ID (31)                   |  Data  |
-+--------+--------+--------+-|-------+--------+--------+--------+========+
+                0        1        2        3         4        5        6      7..N
+                +--------+--------+--------+-|-------+--------+--------+--------+========+
+                | Length(16)      |Flags(8)|0| Stream ID (31)                   |  Data  |
+                +--------+--------+--------+-|-------+--------+--------+--------+========+
 
    Control bit: For data frames this value is always 0.
 
@@ -500,7 +500,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013               [Page 9]
+Belshe & Peon           Expires February 2, 2013                [Page 9]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -556,7 +556,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 10]
+Belshe & Peon           Expires February 2, 2013               [Page 10]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -612,7 +612,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 11]
+Belshe & Peon           Expires February 2, 2013               [Page 11]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -668,7 +668,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 12]
+Belshe & Peon           Expires February 2, 2013               [Page 12]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -724,7 +724,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 13]
+Belshe & Peon           Expires February 2, 2013               [Page 13]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -764,15 +764,15 @@ Internet-Draft                    SPDY                       August 2012
    create a stream between the endpoints.  See Stream Creation
    (Section 2.3.2)
 
-     0        1        2        3         4        5        6        7
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
-| Length(16)      |Flags(8)|1| Stream Id(31)                    |    0x1 | ->
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
+                0        1        2        3         4        5        6        7
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
+                | Length(16)      |Flags(8)|1| Stream Id(31)                    |    0x1 | ->
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
 
-     8        9,10,11..N
-+---|-----+=========================+
-|Pri|XXXXX| Name/Value Header Block |
-+---|-----+=========================+
+                8        9,10,11..N
+                +---|-----+=========================+
+                |Pri|XXXXX| Name/Value Header Block |
+                +---|-----+=========================+
 
    Flags: Flags related to this frame.  Valid flags are:
 
@@ -780,7 +780,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 14]
+Belshe & Peon           Expires February 2, 2013               [Page 14]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -817,15 +817,15 @@ Internet-Draft                    SPDY                       August 2012
    SYN_REPLY indicates the acceptance of a stream creation by the
    recipient of a SYN_STREAM frame.
 
-     0        1        2        3         4        5        6        7
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
-| Length(16)      |Flags(8)|1| Stream Id(31)                    |    0x2 | ->
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
+                0        1        2        3         4        5        6        7
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
+                | Length(16)      |Flags(8)|1| Stream Id(31)                    |    0x2 | ->
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
 
-      8,9,10..N
-+=========================+
-| Name/Value Header Block |
-+=========================+
+                8,9,10..N
+                +=========================+
+                | Name/Value Header Block |
+                +=========================+
 
    Flags: Flags related to this frame.  Valid flags are:
 
@@ -836,7 +836,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 15]
+Belshe & Peon           Expires February 2, 2013               [Page 15]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -867,15 +867,15 @@ Internet-Draft                    SPDY                       August 2012
    indicates an error or that the recipient did not want to accept the
    stream, so the stream should be closed.
 
-     0        1        2        3         4        5        6        7
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
-| Length(16)      |Flags(8)|1| Stream Id(31)                    |    0x3 | ->
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
+                0        1        2        3         4        5        6        7
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
+                | Length(16)      |Flags(8)|1| Stream Id(31)                    |    0x3 | ->
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
 
-     8        9        10       11
-+--------+--------+--------+--------+
-| Status-Code(32)                   |
-+--------+--------+--------+--------+
+                8        9        10       11
+                +--------+--------+--------+--------+
+                | Status-Code(32)                   |
+                +--------+--------+--------+--------+
 
    Flags: Flags related to this frame.  RST_STREAM does not define any
    flags.  This value must be 0.
@@ -892,7 +892,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 16]
+Belshe & Peon           Expires February 2, 2013               [Page 16]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -948,7 +948,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 17]
+Belshe & Peon           Expires February 2, 2013               [Page 17]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -972,15 +972,15 @@ Internet-Draft                    SPDY                       August 2012
    persistence features of the SETTINGS frames, and servers MUST ignore
    persistence related flags sent by a client.
 
-     0        1        2        3         4        5        6        7
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
-| Length(16)      |Flags(8)|1| Number-of-Entries(31)            |    0x4 | ->
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
+                0        1        2        3         4        5        6        7
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
+                | Length(16)      |Flags(8)|1| Number-of-Entries(31)            |    0x4 | ->
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
 
-     8..n
-+================+
-| ID/Value-Pairs |
-+================+
+                8..n
+                +================+
+                | ID/Value-Pairs |
+                +================+
 
    Control bit: The control bit is always 1 for this message.
 
@@ -1004,17 +1004,17 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 18]
+Belshe & Peon           Expires February 2, 2013               [Page 18]
 
 Internet-Draft                    SPDY                       August 2012
 
 
    Each ID/value pair is as follows:
 
-     0        1        2        3        4        5        6        7
-+--------+--------+--------+--------+--------+--------+--------+--------+
-|Flags(8)| ID(24)                   | Value(32)                         |
-+--------+--------+--------+--------+--------+--------+--------+--------+
+                  0        1        2        3        4        5        6        7
+                  +--------+--------+--------+--------+--------+--------+--------+--------+
+                  |Flags(8)| ID(24)                   | Value(32)                         |
+                  +--------+--------+--------+--------+--------+--------+--------+--------+
 
    Flags: An 8 bit value.  Defined Flags:
 
@@ -1060,7 +1060,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 19]
+Belshe & Peon           Expires February 2, 2013               [Page 19]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1076,6 +1076,19 @@ Internet-Draft                    SPDY                       August 2012
       8 - SETTINGS_CLIENT_CERTIFICATE_VECTOR_SIZE allows the server to
       inform the client if the new size of the client certificate
       vector.
+
+      9 - SETTINGS_SUPPORTING_SCHEMES allows the sender to inform the
+      remote endpoint supporting overlayering protocol schemes.  The
+      corresponding value must be a 32-bit value, and which contains
+      flags as follows:
+
+         bit 0: http
+
+         bit 1: https
+
+         bit 2: ws
+
+         bit 3: wss
 
    Value: A 32-bit value.
 
@@ -1097,6 +1110,17 @@ Internet-Draft                    SPDY                       August 2012
    state on its next SETTINGS frame, it SHOULD send all 5 settings (1,
    2, 3, 4, and 5 in this example) to the server.
 
+
+
+
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 20]
+
+Internet-Draft                    SPDY                       August 2012
+
+
 2.6.5.  PING
 
    The PING control frame is a mechanism for measuring a minimal round-
@@ -1106,20 +1130,13 @@ Internet-Draft                    SPDY                       August 2012
    waiting to be sent, PING should take highest priority).  Each ping
    sent by a sender should use a unique ID.
 
-     0        1        2        3         4        5        6        7
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
-| Length(16)      |XXXXXXXX|1| ID(31)                           |    0x6 | ->
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
+                0        1        2        3         4        5        6        7
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
+                | Length(16)      |XXXXXXXX|1| ID(31)                           |    0x6 | ->
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
 
 
    Control bit: The control bit is always 1 for this message.
-
-
-
-Belshe & Peon           Expires February 17, 2013              [Page 20]
-
-Internet-Draft                    SPDY                       August 2012
-
 
    Type: The message type for a PING message is 6.
 
@@ -1152,6 +1169,14 @@ Internet-Draft                    SPDY                       August 2012
    still finishing processing of previously established streams.
 
    There is an inherent race condition between an endpoint sending
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 21]
+
+Internet-Draft                    SPDY                       August 2012
+
+
    SYN_STREAMs and the remote sending a GOAWAY message.  To deal with
    this case, the GOAWAY contains a last-stream-id indicating the
    stream-id of the last stream which was created on the sending
@@ -1169,26 +1194,18 @@ Internet-Draft                    SPDY                       August 2012
    server does not send a GOAWAY frame to indicate where it stopped
    working).
 
-
-
-
-Belshe & Peon           Expires February 17, 2013              [Page 21]
-
-Internet-Draft                    SPDY                       August 2012
-
-
    After sending a GOAWAY message, the sender must ignore all SYN_STREAM
    frames for new streams.
 
-     0        1        2        3         4        5        6        7
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
-| Length(16)      |Flags(8)|1|  Last-Good-Stream-ID(31)         |     0x7| ->
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
+                0        1        2        3         4        5        6        7
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
+                | Length(16)      |Flags(8)|1|  Last-Good-Stream-ID(31)         |     0x7| ->
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
 
-     8        9        10       11
-+--------+--------+--------+--------+
-|          Status-Code(32)          |
-+--------+--------+--------+--------+
+                8        9        10       11
+                +--------+--------+--------+--------+
+                |          Status-Code(32)          |
+                +--------+--------+--------+--------+
 
    Control bit: The control bit is always 1 for this message.
 
@@ -1207,6 +1224,15 @@ Internet-Draft                    SPDY                       August 2012
       1 - PROTOCOL_ERROR.  This is a generic error, and should only be
       used if a more specific error is not available.
 
+
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 22]
+
+Internet-Draft                    SPDY                       August 2012
+
+
       11 - INTERNAL_ERROR.  This is a generic error which can be used
       when the implementation has internally failed, not due to anything
       in the protocol.
@@ -1222,32 +1248,25 @@ Internet-Draft                    SPDY                       August 2012
 
    Here is the format of a headers frame and headers block:
 
+                0        1        2        3         4        5        6        7
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
+                | Length(16)      |Flags(8)|1| Stream-ID(31)                    |     0x8| ->
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
 
-
-
-
-
-
-Belshe & Peon           Expires February 17, 2013              [Page 22]
-
-Internet-Draft                    SPDY                       August 2012
-
-
-     0        1        2        3         4        5        6        7
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
-| Length(16)      |Flags(8)|1| Stream-ID(31)                    |     0x8| ->
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
-
-     8,9,10..N
-+=========================+
-| Name/Value Header Block |
-+=========================+
+                8,9,10..N
+                +=========================+
+                | Name/Value Header Block |
+                +=========================+
 
    Flags: Flags related to this frame.  Valid flags are:
 
       0x01 = FLAG_FIN - marks this frame as the last frame to be
       transmitted on this stream and puts the sender in the half-closed
       (Section 2.3.6) state.
+
+      0x02 = FLAG_HEADER_END - marks this frame as the end of the
+      current header.  Multiple HEADERS frames may be involved in
+      constructing a single header, if it is sufficiently large.
 
    Length: An unsigned 24 bit value representing the number of bytes
    after the length field.  The minimum length of the length field is 7
@@ -1262,6 +1281,14 @@ Internet-Draft                    SPDY                       August 2012
 
    The WINDOW_UPDATE control frame is used to implement per stream flow
    control in SPDY.  Flow control in SPDY is per hop, that is, only
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 23]
+
+Internet-Draft                    SPDY                       August 2012
+
+
    between the two endpoints of a SPDY connection.  If there are one or
    more intermediaries between the client and the origin server, flow
    control signals are not explicitly forwarded by the intermediaries.
@@ -1281,14 +1308,6 @@ Internet-Draft                    SPDY                       August 2012
    window size is a measure of the buffering capability of the
    recipient.  The sender must not send a data frame with data length
    greater than the transfer window size.  After sending each data
-
-
-
-Belshe & Peon           Expires February 17, 2013              [Page 23]
-
-Internet-Draft                    SPDY                       August 2012
-
-
    frame, the sender decrements its transfer window size by the amount
    of data transmitted.  When the window size becomes less than or equal
    to 0, the sender must pause transmitting data frames.  At the other
@@ -1296,15 +1315,15 @@ Internet-Draft                    SPDY                       August 2012
    to notify the sender that it has consumed some data and freed up
    buffer space to receive more data.
 
-     0        1        2        3         4        5        6        7
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
-| Length(16)      |Flags(8)|1| Stream-ID(31)                    |     0x9| ->
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
+                0        1        2        3         4        5        6        7
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
+                | Length(16)      |Flags(8)|1| Stream-ID(31)                    |     0x9| ->
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
 
-     8        9        10       11
-+--------+--------+--------+--------+
-|Delta-Window-Size                  |
-+--------+--------+--------+--------+
+                8        9        10       11
+                +--------+--------+--------+--------+
+                |Delta-Window-Size                  |
+                +--------+--------+--------+--------+
 
 
    Control bit: The control bit is always 1 for this message.
@@ -1318,6 +1337,13 @@ Internet-Draft                    SPDY                       August 2012
 
    Stream-ID: The stream ID that this WINDOW_UPDATE control frame is
    for.
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 24]
+
+Internet-Draft                    SPDY                       August 2012
+
 
    Delta-Window-Size: The additional number of bytes that the sender can
    transmit in addition to existing remaining window size.  The legal
@@ -1337,14 +1363,6 @@ Internet-Draft                    SPDY                       August 2012
    SETTINGS.  Because SETTINGS is asynchronous, there may be a race
    condition if the recipient wants to decrease the initial window size,
    but its peer immediately sends 64KB on the creation of a new
-
-
-
-Belshe & Peon           Expires February 17, 2013              [Page 24]
-
-Internet-Draft                    SPDY                       August 2012
-
-
    connection, before waiting for the SETTINGS to arrive.  This is one
    case where the window size kept by the sender will become negative.
    Once the sender detects this condition, it must stop sending data
@@ -1375,6 +1393,14 @@ Internet-Draft                    SPDY                       August 2012
    last frame for the stream.
 
    The data frames from the sender and the WINDOW_UPDATE frames from the
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 25]
+
+Internet-Draft                    SPDY                       August 2012
+
+
    recipient are completely asynchronous with respect to each other.
    This property allows a recipient to aggressively update the window
    size kept by the sender to prevent the stream from stalling.
@@ -1393,14 +1419,6 @@ Internet-Draft                    SPDY                       August 2012
 
    The server is required to maintain a vector of client certificates
    associated with a SPDY session.  When the client needs to send a
-
-
-
-Belshe & Peon           Expires February 17, 2013              [Page 25]
-
-Internet-Draft                    SPDY                       August 2012
-
-
    client certificate to the server, it will send a CREDENTIAL frame
    that specifies the index of the slot in which to store the
    certificate as well as proof that the client posesses the
@@ -1424,20 +1442,35 @@ Internet-Draft                    SPDY                       August 2012
    which resource triggered the client certificate request, in order to
    prompt the user accordingly.
 
-     0        1        2        3         4        5        6        7
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
-| Length(16)      |Flags(8)|1| Num-of-Entries-or-Stream-ID-or-ID|     0xa| ->
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
 
-     8        9        10       11        12
-+--------+--------+--------+--------+========+
-| Slot(16)        |Proof Length(16) | Proof  | ->
-+--------+--------+--------+--------+========+
 
-/--Repeated to frame end--\
-+--------+--------+========+
-| Cert Length(16) | Cert   |
-+--------+--------+========+
+
+
+
+
+
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 26]
+
+Internet-Draft                    SPDY                       August 2012
+
+
+                0        1        2        3         4        5        6        7
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
+                | Length(16)      |Flags(8)|1| Num-of-Entries-or-Stream-ID-or-ID|     0xa| ->
+                +--------+--------+--------+-|-------+--------+--------+--------+--------+
+
+                8        9        10       11        12
+                +--------+--------+--------+--------+========+
+                | Slot(16)        |Proof Length(16) | Proof  | ->
+                +--------+--------+--------+--------+========+
+
+                /--Repeated to frame end--\
+                +--------+--------+========+
+                | Cert Length(16) | Cert   |
+                +--------+--------+========+
 
 
    Slot: The index in the server's client certificate vector where this
@@ -1449,14 +1482,6 @@ Internet-Draft                    SPDY                       August 2012
    private key associated with the certificate.  The format is a TLS
    digitally-signed element
    (http://tools.ietf.org/html/rfc5246#section-4.7).  The signature
-
-
-
-Belshe & Peon           Expires February 17, 2013              [Page 26]
-
-Internet-Draft                    SPDY                       August 2012
-
-
    algorithm must be the same as that used in the CertificateVerify
    message.  However, since the MD5+SHA1 signature type used in TLS 1.0
    connections can not be correctly encoded in a digitally-signed
@@ -1480,6 +1505,14 @@ Internet-Draft                    SPDY                       August 2012
    RST_STREAM frame with the status code INVALID_CREDENTIALS.  Upon
    receipt of a RST_STREAM frame with INVALID_CREDENTIALS, the client
    should initiate a new stream directly to the requested origin and
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 27]
+
+Internet-Draft                    SPDY                       August 2012
+
+
    resend the request.  Note, SPDY does not allow the server to request
    different client authentication for different resources in the same
    origin.
@@ -1494,24 +1527,17 @@ Internet-Draft                    SPDY                       August 2012
    allowing the receiver to understand which resource(s) are to be
    pushed are to be included.
 
-     0        1        2        3         4        5        6        7
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
-| Length(16)      |Flags(8)|1| Associated-To-Stream-ID(31)      |     0xb| ->
-+--------+--------+--------+-|-------+--------+--------+--------+--------+
+                  0        1        2        3         4        5        6        7
+                  +--------+--------+--------+-|-------+--------+--------+--------+--------+
+                  | Length(16)      |Flags(8)|1| Associated-To-Stream-ID(31)      |     0xb| ->
+                  +--------+--------+--------+-|-------+--------+--------+--------+--------+
 
-     8        9        10       11       12,13,14..N
-+-|-------+--------+--------+--------+=========================+
-|X| Promised-Stream-Id(31)           | Name/Value Header Block |
-+-|-------+--------+--------+--------+=========================+
+                  8        9        10       11       12,13,14..N
+                  +-|-------+--------+--------+--------+=========================+
+                  |X| Promised-Stream-Id(31)           | Name/Value Header Block |
+                  +-|-------+--------+--------+--------+=========================+
 
    Flags: Flags related to this frame.  Valid flags are:
-
-
-
-Belshe & Peon           Expires February 17, 2013              [Page 27]
-
-Internet-Draft                    SPDY                       August 2012
-
 
       0x01 = FLAG_FIN - marks this frame as the last frame to be
       transmitted on this stream and puts the sender in the half-closed
@@ -1535,6 +1561,14 @@ Internet-Draft                    SPDY                       August 2012
    by two.  The Promised-Stream-ID is subject to the same rules as any
    other stream-id-- when defined and transmitted, the
    Promised-Stream-ID MUST be part of a monotonically increasing
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 28]
+
+Internet-Draft                    SPDY                       August 2012
+
+
    sequence of stream-ids.  There is no requirement that the streams
    referred to by the this frame are created in the order referenced.
 
@@ -1551,89 +1585,45 @@ Internet-Draft                    SPDY                       August 2012
    A Name/Value Header Block augments the streams or group of streams
    identified by the SYN_STREAM (Section 2.6.1), HEADERS
    (Section 2.6.7), or SYN_REPLY (Section 2.6.2) frame stream with
-   additional metadata.  This metadata is assumed to be layered: All
-   streams of a particular group have all of a group's headers, which
-   are then overridden by stream headers.  For HTTP layers, this
-   metadata is interpreted as headers.  It may be optionally sent on an
-   existing stream at any time.  Specific application of the headers in
-   this frame is application-dependent.  The name/value header block
-   within this frame is compressed.
+   additional metadata.
 
-   It is expected that this scheme will achieve similar compression to
-   the algorithm available in previous versions of SPDY for most
+   At the group level, a map of token-index to key-pair is maintained
+   for each defined group.  There is no persistent mapping from
+   stream-id to header-group, instead each HeaderBlock includes
+   reference to the HeaderGroup that will be used in this particular set
+   of metadata.
 
-
-
-Belshe & Peon           Expires February 17, 2013              [Page 28]
-
-Internet-Draft                    SPDY                       August 2012
-
-
-   requests, though the first request may be larger.
-
-   Two levels of state are persisted between requests:
-
-      Connection level headers
-
-      Group level headers
-
-   At the connection level, a single hash-map of token-index to key-pair
-   is maintained.  Data in the connection-level hashmap applies to every
-   stream on the connection.  At the group level, a hash-map of token-
-   index to key-pair is maintained for each defined group.  Data in a
-   group-level hashmap applies only to streams that have been assigned
-   to that group.  The assignment of a grouping is decided by the stream
-   initiator, and is subject to constraints as defined in SETTINGS.
-
-   These constraints are:
+   The HeaderBlock compressor (described later) is subject to the
+   following constraints:
 
       TotalHeaderStorageSize : default(16k)
 
       MaxHeaderGroups: default(1)
 
-      MaxEntriesInTable: default(64)
+      MaxValEntries: default(64)
 
    It is expected that either party will set these to larger values
-   immediately upon connection establishment.
+   immediately upon connection establishment using the SETTINGS frame.
 
-   The token-indexes for any hash-map are not required to be contiguous;
-   the hash-map may be sparse.
+   A stream with a HeaderBlock which declares that it is using
+   HeaderGroup 'G' would use the following algorithm to interpret its
+   meta-data.
 
-   A token-index in one table has no meaning to the other; The address
-   space for each is separate.
-
-   Each request may also include key,value pairs which are not stored.
-
-   The set of headers for any individual stream is the union of these,
-   with the group headers overriding the connection headers, and any
-   individually provided stream headers overriding both the group and
-   connection headers.
-
-   Thus, a stream which is part of group 'G' on connection 'C' will have
-   headers as computed with the following pseudo-code:
+                def compute_headers(stream):
+                headers = {}
+                for index in stream_group[G]:
+                headers[lru_lookup[index].key] = lru_lookup[index].val)
+                for {key, value} in ephemereal_headers_from_HeaderBlock:
+                headers[key] = value
+                return headers
 
 
 
 
-
-
-
-
-
-Belshe & Peon           Expires February 17, 2013              [Page 29]
+Belshe & Peon           Expires February 2, 2013               [Page 29]
 
 Internet-Draft                    SPDY                       August 2012
 
-
-   def compute_headers(stream):
-     headers = {}
-     for {key, value} in connection_headers[C]:
-       headers[key] = value
-     for {key, value} in stream_group_headers[G]:
-       headers[key] = value
-     for {key, value} in headers_frame:
-       headers[key] = value
-     return headers
 
    A smart implementation will be able to interpret a headers frame
    without reconstructing the headers, and thus be able to represent and
@@ -1642,137 +1632,168 @@ Internet-Draft                    SPDY                       August 2012
    The Name/Value Header Block is found in the SYN_STREAM, SYN_REPLY and
    HEADERS control frames, and shares a common format:
 
-        0        1        2     3..N
-   +--------+--------+--------+=====+
-   | HG(8)  | Num-Ops(16)     | Ops |
-   +--------+--------+--------+=====+
+                   0        1        2          3..N       N+1..K
+                   +--------+--------+--------+=====+     +=====+
+                   | HG(8)  | next-lru-seq-num| Ops | ... | Ops |
+                   +--------+--------+--------+=====+     +=====+
+
+   Ops are of the form:
+
+                     +--------+--------+=========+
+                     | OpCode | NumOps | Op Args |
+                     +--------+--------+=========+
 
    HG: (Header Group) An 8 bit unsigned integer specifying the header
    group for this set of headers.
 
-   Num-Ops: A 16 bit unsigned integer specifying the number of
-   operations in this header block.
+   Ops: A number of operations.  Operations will be detailed below.
 
-   Ops: A number of operations, as defined by the Num-Ops field.
-   Operations will be detailed below.
+   The Opcode field indicates the type of operation.
 
-   All Name/Value Ops share a common flag byte defined like so:
+      0x0 (reserved) -- this is not used and is reserved in case a
+      token-based delimiter is required in the future.
 
-   +--|-|-|----+
-   |OP|K|L|XXXX|
-   +--|-|-|----+
+      0x1 (Toggle) indicates that the data which follows will be an lru-
+      index.  That lru-index, if present in the current header-group
+      will be removed from the header group.  If it is not present in
+      the current header group, it will be added to the current header
+      group.  This opcode thus affects what parts of the data stored in
+      the LRU are interpreted as being visible in the current set of
+      headers for whatever frame includes the HeaderBlock
 
-      OP - Opcode field.  One of 0x0, 0x1, or 0x2.
+      0x1 (Clone) indicates that the data which follows will be a key-
+      index and a string literal.  The key-index is used to refer to a
+      pre-existing key, and thus the operation results in the storing of
+      the pre-existing key and the new value.  The key-value will be
+      appended to the LRU, and the index in the LRU added to the current
+      header group.
 
-      K - IsKey field.  One of 0x0 or 0x1.  Indicates whether or not
-      we're addressing a key or value.
-
-      L - Level field.  One of 0x0 or 0x1.  Indicates for certain
-      operations which level of headers table is being modified.
-
-      X Reserved
-
-   The Opcode field indicates the type of operation. 0x0 indicates that
+      0x2 (KVSto) indicates that the data which follows will be two
+      string literals.  The first such string represents a new key to be
+      stored, and the second such string represents a value.  As with
+      Clone, the key-value will be stored in the LRU with a new index,
+      and that index will be added to the current header group.
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 30]
+Belshe & Peon           Expires February 2, 2013               [Page 30]
 
 Internet-Draft                    SPDY                       August 2012
 
 
-   the data will not be stored, and two string literals will follow The
-   Level and Key fields are ignored in this case. 0x1 indicates the data
-   which follows should be stored into the specified table entry.  The
-   table entry is found by examining the Level field, and selecting the
-   table appropriate, then examining the IsKey field, and selecting
-   either the key or value entry. 0x2 indicates that the specified table
-   entry should me modified by truncating the tail of the current entry
-   to the length specified and then appending the provided string.
-   Arguably this operation renders 0x1 redundant, but it would take up
-   more bytes and so we leave in 0x1 for now.
+      0x2 (Eref) indicates that the data which follows will be two
+      string literals.  The first such string represents key, and the
+      second string represents a value.  Unlike KVSto, the Eref does not
+      modify the compressor state-- it only specified a key-value which
+      will be interpreted as being part of the meta-data for the frame
+      which includes the HeaderBlock.
 
-   The Level field encodes the headers overlay-level being selected by
-   the current frame.  Valid Level fields are 0x0, and 0x1. 0x0 is for
-   the current stream group 0x1 is for the connection The IsKey field
-   indicates whether the following string value represents a key or
-   value 0x0 indicates the stored string is for a value 0x1 indicates
-   the stored string is for a key
+   String are always encoded as a single bit, followed by data.  If that
+   bit is '0', then what follows is 7-bit us-ascii, null-terminated.  If
+   that bit is '1', then it is huffman encoded using a canonical
+   huffman-code and ends with an 'eof' character (which is not part of
+   the string).  If the last bit of the EOF is not immediately before
+   the byte boundary, the remaining bits of that byte are padded with
+   zero.  Strings in a request are encoded with a different huffman-
+   encoder than strings in a response, as the frequency of occurance in
+   these differ by quite a bit.
 
-   Detail of an operation with an opcode of 0x0:
+                  A string is either:
+                  +-|============================|====================|--------+
+                  |1| huffman-encoded-characters | huffman-eof-symbol |pad-bits|
+                  +-|============================|====================|--------+
 
-        0        1        2       4..k     k+1       k+2     k+3..n
-   +--|------+--------+--------+========+--------+--------+========+
-   |00|XXXXXX| Key Len(16)     | String | Value Len(16)   | String |
-   +--|------+--------+--------+========+--------+--------+========+
+                  or
 
-   Detail of an operation with an opcode of 0x1: An operation with an
-   Opcode field of 0x1 indicates that the field encodes a replacement to
-   a key or value field of a line in the headers table designated by the
-   L field.  If the 'K' (IsKey) field is 0x0, the subsequent string
-   length and string represents a value.  If the 'K' (IsKey) field is
-   0x1, the subsequent string length and string represent a key.  If the
-   'L' (Level) field is 0x0, the header table for the stream group is
-   modified.  If the 'L' (Level) field ix 0x1, the header table for the
-   connection is modified.
+                  +-|-------+========+--------+
+                  |0|  7 bit-ascii   |00000000|
+                  +-|-------+========+--------+
 
-         0         1        2        3       4..n
-   +--|-|-|----+--------+--------+--------+========+
-   |01|K|L|XXXX|Index(8)| String Len(16)  | String |
-   +--|-|-|----+--------+--------+--------+========+
+   The NumOps field encodes one minus the number of operations that
+   follow.  Since the field-width is 8 bits, a maximum of 256 ops can be
+   represented.  If more than 256 operations are required, simply repeat
+   doing this until all operations have been encoded.  It is expected
+   that this will be extremely rare.
 
-   If the token-index refers to an index that is already in use, the
-   string transmitted here replaces it.  Keys must always be stored
-   before the associated value is stored.  If a value is stored before
-   the key, the recipient MUST issue a session error (Section 2.4.1)
-   with the status code PROTOCOL_ERROR.  If 'K' field is 0x0 and the
-   specified header table does not yet have a key associated with that
-   token-index, the recipient MUST issue a session error (Section 2.4.1)
-   with the status code PROTOCOL_ERROR.  If String Length field is zero,
+   Detail of an operation with an opcode of 0x1 (Toggle):
+
+                     0        1
+                     +--------+--------+
+                     |00000001| NumOps |
+                     +--------+--------+
 
 
+                     repeated NumOps times
+                       ______/ \______
+                      /               \
 
-Belshe & Peon           Expires February 17, 2013              [Page 31]
+                     +--------+--------+
+                     | LRU idx(16)     |
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 31]
 
 Internet-Draft                    SPDY                       August 2012
 
 
-   this indicates that the line at the referenced token-index should be
-   removed from the specified table.  The same entry in any table should
-   be modified at most once in any HEADERS block.  If an entry is
-   modified more than once in a HEADERS block, the recipient MUST issue
-   a session error (Section 2.4.1) with the status code PROTOCOL_ERROR.
-   An operation with an Op field of 0x2 indicates that the field encodes
-   a truncate-and-append to the pre-existing table value.  If no value
-   exists, it should instead be inserted into the table at the specified
-   position.  If a value is being set, and no key has been set, the
-   recipient MUST issue a session error (Section 2.4.2) with the status
-   code PROTOCOL_ERROR.
+                     +--------+--------+
 
-         0         1        2        3        4        5      6..n
-   +--|-|-|----+--------+--------+--------+--------+--------+========+
-   |10|K|L|XXXX| Truncate To(16) |Index(8)| String Len (16) | String |
-   +--|-|-|----+--------+--------+--------+--------+--------+========+
+   Detail of an operation with an opcode of 0x2 (Clone):
+
+                     0        1
+                     +--------+--------+
+                     |00000010| NumOps |
+                     +--------+--------+
 
 
+                        repeated NumOps times
+                       ___________/\___________
+                      /                        \
+
+                     +--------+--------+========+
+                     | Key idx(16)     | String |
+                     +--------+--------+========+
+
+   Detail of an operation with an opcode of 0x3 (KVSto):
+
+                     0        1
+                     +--------+--------+
+                     |00000011| NumOps |
+                     +--------+--------+
 
 
-   Number of Name/Value pairs: The number of repeating name/value pairs
-   following this field.
+                     repeated NumOps times
+                       _______/\______
+                      /               \
 
-   List of Name/Value pairs:
+                     +========+========+
+                     | String | String |
+                     +========+========+
 
-      Length of Name: a 32-bit value containing the number of octets in
-      the name field.  Note that in practice, this length must not
-      exceed 2^24, as that is the maximum size of a SPDY frame.
+   Detail of an operation with an opcode of 0x4 (Eref):
 
-      Name: 0 or more octets, 8-bit sequences of data, excluding 0.
+                     0        1
+                     +--------+--------+
+                     |00000100| NumOps |
+                     +--------+--------+
 
-      Length of Value: a 32-bit value containing the number of octets in
-      the value field.  Note that in practice, this length must not
-      exceed 2^24, as that is the maximum size of a SPDY frame.
 
-      Value: 0 or more octets, 8-bit sequences of data, excluding 0.
+                     repeated NumOps times
+                       _______/\______
+                      /               \
+
+                     +========+========+
+                     | String | String |
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 32]
+
+Internet-Draft                    SPDY                       August 2012
+
+
+                     +========+========+
 
    Each header name must have at least one value.  Header names are
    encoded using the US-ASCII character set [ASCII] and must be all
@@ -1781,22 +1802,8 @@ Internet-Draft                    SPDY                       August 2012
    (Section 2.4.2) with the status code PROTOCOL_ERROR for the
    stream-id.
 
-   Duplicate header names are not allowed.  To send two identically
-   named headers, send a header with two values, where the values are
-   separated by a single NUL (0) byte.  A header value can either be
-   empty (e.g. the length is zero) or it can contain multiple, NUL-
-
-
-
-Belshe & Peon           Expires February 17, 2013              [Page 32]
-
-Internet-Draft                    SPDY                       August 2012
-
-
-   separated values, each with length greater than zero.  The value
-   never starts nor ends with a NUL character.  Recipients of illegal
-   value fields MUST issue a stream error (Section 2.4.2) with the
-   status code PROTOCOL_ERROR for the stream-id.
+   Duplicate header names are allowed, but discouraged, except when
+   encoding a cookie or set-cookie.
 
 2.6.11.1.  Compression
 
@@ -1810,361 +1817,128 @@ Internet-Draft                    SPDY                       August 2012
    For each HEADERS compression instance, the initial state is
    initialized using the following dictionary [UDELCOMPRESSION]:
 
-   const unsigned char SPDY_dictionary_txt[] = {
-           0x00, 0x00, 0x00, 0x07, 0x6f, 0x70, 0x74, 0x69,   \\ - - - - o p t i
-           0x6f, 0x6e, 0x73, 0x00, 0x00, 0x00, 0x04, 0x68,   \\ o n s - - - - h
-           0x65, 0x61, 0x64, 0x00, 0x00, 0x00, 0x04, 0x70,   \\ e a d - - - - p
-           0x6f, 0x73, 0x74, 0x00, 0x00, 0x00, 0x03, 0x70,   \\ o s t - - - - p
-           0x75, 0x74, 0x00, 0x00, 0x00, 0x06, 0x64, 0x65,   \\ u t - - - - d e
-           0x6c, 0x65, 0x74, 0x65, 0x00, 0x00, 0x00, 0x05,   \\ l e t e - - - -
-           0x74, 0x72, 0x61, 0x63, 0x65, 0x00, 0x00, 0x00,   \\ t r a c e - - -
-           0x06, 0x61, 0x63, 0x63, 0x65, 0x70, 0x74, 0x00,   \\ - a c c e p t -
-           0x00, 0x00, 0x0e, 0x61, 0x63, 0x63, 0x65, 0x70,   \\ - - - a c c e p
-           0x74, 0x2d, 0x63, 0x68, 0x61, 0x72, 0x73, 0x65,   \\ t - c h a r s e
-           0x74, 0x00, 0x00, 0x00, 0x0f, 0x61, 0x63, 0x63,   \\ t - - - - a c c
-           0x65, 0x70, 0x74, 0x2d, 0x65, 0x6e, 0x63, 0x6f,   \\ e p t - e n c o
-           0x64, 0x69, 0x6e, 0x67, 0x00, 0x00, 0x00, 0x0f,   \\ d i n g - - - -
-           0x61, 0x63, 0x63, 0x65, 0x70, 0x74, 0x2d, 0x6c,   \\ a c c e p t - l
-           0x61, 0x6e, 0x67, 0x75, 0x61, 0x67, 0x65, 0x00,   \\ a n g u a g e -
-           0x00, 0x00, 0x0d, 0x61, 0x63, 0x63, 0x65, 0x70,   \\ - - - a c c e p
-           0x74, 0x2d, 0x72, 0x61, 0x6e, 0x67, 0x65, 0x73,   \\ t - r a n g e s
-           0x00, 0x00, 0x00, 0x03, 0x61, 0x67, 0x65, 0x00,   \\ - - - - a g e -
-           0x00, 0x00, 0x05, 0x61, 0x6c, 0x6c, 0x6f, 0x77,   \\ - - - a l l o w
-           0x00, 0x00, 0x00, 0x0d, 0x61, 0x75, 0x74, 0x68,   \\ - - - - a u t h
-           0x6f, 0x72, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f,   \\ o r i z a t i o
-           0x6e, 0x00, 0x00, 0x00, 0x0d, 0x63, 0x61, 0x63,   \\ n - - - - c a c
-           0x68, 0x65, 0x2d, 0x63, 0x6f, 0x6e, 0x74, 0x72,   \\ h e - c o n t r
-           0x6f, 0x6c, 0x00, 0x00, 0x00, 0x0a, 0x63, 0x6f,   \\ o l - - - - c o
-           0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e,   \\ n n e c t i o n
-           0x00, 0x00, 0x00, 0x0c, 0x63, 0x6f, 0x6e, 0x74,   \\ - - - - c o n t
-           0x65, 0x6e, 0x74, 0x2d, 0x62, 0x61, 0x73, 0x65,   \\ e n t - b a s e
-           0x00, 0x00, 0x00, 0x10, 0x63, 0x6f, 0x6e, 0x74,   \\ - - - - c o n t
-           0x65, 0x6e, 0x74, 0x2d, 0x65, 0x6e, 0x63, 0x6f,   \\ e n t - e n c o
-           0x64, 0x69, 0x6e, 0x67, 0x00, 0x00, 0x00, 0x10,   \\ d i n g - - - -
+                  Request 1 (for index.html):
+                  SYN_STREAM 1, stream-group (G)=0
+                  Header-block:
+                  Store(0x1): level(C),index(0),k: ":method"
+                  Store(0x1): level(C),index(0),v: "GET"
+                  Store(0x1): level(C),index(1),k: ":version"
+                  Store(0x1): level(C),index(1),v: "HTTP/1.1"
+                  Store(0x1): level(C),index(2),k: "user-agent"
+                  Store(0x1): level(C),index(2),v: "blah blah browser version blah blah"
+                  Store(0x1): level(C),index(3),k: "accept-encoding"
+                  Store(0x1): level(C),index(3),v: "sdch, bzip, compress"
+                  Store(0x1): level(G),index(0),k: ":host"
+                  Store(0x1): level(G),index(0),v: "www.foo.com"
+                  Store(0x1): level(G),index(1),k: "cookie"
+                  Store(0x1): level(G),index(1),v: "SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJHBLA"
+                  Store(0x1): level(G),index(2),k: ":path"
+                  Store(0x1): level(G),index(2),v: "/index.html"
+                  Store(0x1): level(G),index(3),k: "date"
+                  Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:43 2012"
+
+                  At this point the connection headers table looks like this:
+                  0: ":method", "GET"
+                  1: ":version", "HTTP/1.1"
+                  2: "user-agent", "blah blah browser version blah blah"
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 33]
+Belshe & Peon           Expires February 2, 2013               [Page 33]
 
 Internet-Draft                    SPDY                       August 2012
 
 
-           0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d,   \\ c o n t e n t -
-           0x6c, 0x61, 0x6e, 0x67, 0x75, 0x61, 0x67, 0x65,   \\ l a n g u a g e
-           0x00, 0x00, 0x00, 0x0e, 0x63, 0x6f, 0x6e, 0x74,   \\ - - - - c o n t
-           0x65, 0x6e, 0x74, 0x2d, 0x6c, 0x65, 0x6e, 0x67,   \\ e n t - l e n g
-           0x74, 0x68, 0x00, 0x00, 0x00, 0x10, 0x63, 0x6f,   \\ t h - - - - c o
-           0x6e, 0x74, 0x65, 0x6e, 0x74, 0x2d, 0x6c, 0x6f,   \\ n t e n t - l o
-           0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x00, 0x00,   \\ c a t i o n - -
-           0x00, 0x0b, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e,   \\ - - c o n t e n
-           0x74, 0x2d, 0x6d, 0x64, 0x35, 0x00, 0x00, 0x00,   \\ t - m d 5 - - -
-           0x0d, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74,   \\ - c o n t e n t
-           0x2d, 0x72, 0x61, 0x6e, 0x67, 0x65, 0x00, 0x00,   \\ - r a n g e - -
-           0x00, 0x0c, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e,   \\ - - c o n t e n
-           0x74, 0x2d, 0x74, 0x79, 0x70, 0x65, 0x00, 0x00,   \\ t - t y p e - -
-           0x00, 0x04, 0x64, 0x61, 0x74, 0x65, 0x00, 0x00,   \\ - - d a t e - -
-           0x00, 0x04, 0x65, 0x74, 0x61, 0x67, 0x00, 0x00,   \\ - - e t a g - -
-           0x00, 0x06, 0x65, 0x78, 0x70, 0x65, 0x63, 0x74,   \\ - - e x p e c t
-           0x00, 0x00, 0x00, 0x07, 0x65, 0x78, 0x70, 0x69,   \\ - - - - e x p i
-           0x72, 0x65, 0x73, 0x00, 0x00, 0x00, 0x04, 0x66,   \\ r e s - - - - f
-           0x72, 0x6f, 0x6d, 0x00, 0x00, 0x00, 0x04, 0x68,   \\ r o m - - - - h
-           0x6f, 0x73, 0x74, 0x00, 0x00, 0x00, 0x08, 0x69,   \\ o s t - - - - i
-           0x66, 0x2d, 0x6d, 0x61, 0x74, 0x63, 0x68, 0x00,   \\ f - m a t c h -
-           0x00, 0x00, 0x11, 0x69, 0x66, 0x2d, 0x6d, 0x6f,   \\ - - - i f - m o
-           0x64, 0x69, 0x66, 0x69, 0x65, 0x64, 0x2d, 0x73,   \\ d i f i e d - s
-           0x69, 0x6e, 0x63, 0x65, 0x00, 0x00, 0x00, 0x0d,   \\ i n c e - - - -
-           0x69, 0x66, 0x2d, 0x6e, 0x6f, 0x6e, 0x65, 0x2d,   \\ i f - n o n e -
-           0x6d, 0x61, 0x74, 0x63, 0x68, 0x00, 0x00, 0x00,   \\ m a t c h - - -
-           0x08, 0x69, 0x66, 0x2d, 0x72, 0x61, 0x6e, 0x67,   \\ - i f - r a n g
-           0x65, 0x00, 0x00, 0x00, 0x13, 0x69, 0x66, 0x2d,   \\ e - - - - i f -
-           0x75, 0x6e, 0x6d, 0x6f, 0x64, 0x69, 0x66, 0x69,   \\ u n m o d i f i
-           0x65, 0x64, 0x2d, 0x73, 0x69, 0x6e, 0x63, 0x65,   \\ e d - s i n c e
-           0x00, 0x00, 0x00, 0x0d, 0x6c, 0x61, 0x73, 0x74,   \\ - - - - l a s t
-           0x2d, 0x6d, 0x6f, 0x64, 0x69, 0x66, 0x69, 0x65,   \\ - m o d i f i e
-           0x64, 0x00, 0x00, 0x00, 0x08, 0x6c, 0x6f, 0x63,   \\ d - - - - l o c
-           0x61, 0x74, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00,   \\ a t i o n - - -
-           0x0c, 0x6d, 0x61, 0x78, 0x2d, 0x66, 0x6f, 0x72,   \\ - m a x - f o r
-           0x77, 0x61, 0x72, 0x64, 0x73, 0x00, 0x00, 0x00,   \\ w a r d s - - -
-           0x06, 0x70, 0x72, 0x61, 0x67, 0x6d, 0x61, 0x00,   \\ - p r a g m a -
-           0x00, 0x00, 0x12, 0x70, 0x72, 0x6f, 0x78, 0x79,   \\ - - - p r o x y
-           0x2d, 0x61, 0x75, 0x74, 0x68, 0x65, 0x6e, 0x74,   \\ - a u t h e n t
-           0x69, 0x63, 0x61, 0x74, 0x65, 0x00, 0x00, 0x00,   \\ i c a t e - - -
-           0x13, 0x70, 0x72, 0x6f, 0x78, 0x79, 0x2d, 0x61,   \\ - p r o x y - a
-           0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x7a, 0x61,   \\ u t h o r i z a
-           0x74, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00, 0x05,   \\ t i o n - - - -
-           0x72, 0x61, 0x6e, 0x67, 0x65, 0x00, 0x00, 0x00,   \\ r a n g e - - -
-           0x07, 0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x72,   \\ - r e f e r e r
-           0x00, 0x00, 0x00, 0x0b, 0x72, 0x65, 0x74, 0x72,   \\ - - - - r e t r
-           0x79, 0x2d, 0x61, 0x66, 0x74, 0x65, 0x72, 0x00,   \\ y - a f t e r -
-           0x00, 0x00, 0x06, 0x73, 0x65, 0x72, 0x76, 0x65,   \\ - - - s e r v e
+                  3: "accept-encoding", "sdch, bzip, compress"
+
+                  The stream-group table for group zero looks like this:
+                  0: ":host", "www.foo.com"
+                  1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;BLAJHBLA"
+                  2: ":path", "/index.html"
+                  3: "date", "Wed Jul 18 11:50:43 2012"
+
+                  Request 1 (on stream 1) would look like the following if forwarded on HTTP/1.1:
+                  GET /index.html HTTP/1.1
+                  host: www.foo.com
+                  date: Wed Jul 18 11:50:43 2012
+                  cookie: SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJHBLA
+                  user-agent: blah blah browser version blah blah
+                  accept-encoding: sdch, bzip, compress
+
+
+                  Request 2 (for index.js):
+                  SYN_STREAM 3, stream-group (G)=0
+                  Header-block:
+                  Store(0x1): level(G),index(2),v: "/index.js"
+                  Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:44 2012"
+
+                  At this point the connection headers table is unchanged:
+                  0: ":method", "GET"
+                  1: ":version", "HTTP/1.1"
+                  2: "user-agent", "blah blah browser version blah blah"
+                  3: "accept-encoding", "sdch, bzip, compress"
+
+                  The stream-group table for group zero looks like this:
+                  0: ":host", "www.foo.com"
+                  1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;BLAJHBLA"
+                  2: ":path", "/index.js"
+                  3: "date", "Wed Jul 18 11:50:44 2012"
+                  Both the path and the date have changed.
+
+                  Request 2 (on stream 3) would look like the following if forwarded on HTTP/1.1:
+                  GET /index.js HTTP/1.1
+                  host: www.foo.com
+                  date: Wed Jul 18 11:50:44 2012
+                  cookie: SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJHBLA
+                  user-agent: blah blah browser version blah blah
+                  accept-encoding: sdch, bzip, compress
+
+
+                  Request 3 (for index.css):
+                  SYN_STREAM 5, stream-group (G)=0
+                  Header-block:
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 34]
+Belshe & Peon           Expires February 2, 2013               [Page 34]
 
 Internet-Draft                    SPDY                       August 2012
 
 
-           0x72, 0x00, 0x00, 0x00, 0x02, 0x74, 0x65, 0x00,   \\ r - - - - t e -
-           0x00, 0x00, 0x07, 0x74, 0x72, 0x61, 0x69, 0x6c,   \\ - - - t r a i l
-           0x65, 0x72, 0x00, 0x00, 0x00, 0x11, 0x74, 0x72,   \\ e r - - - - t r
-           0x61, 0x6e, 0x73, 0x66, 0x65, 0x72, 0x2d, 0x65,   \\ a n s f e r - e
-           0x6e, 0x63, 0x6f, 0x64, 0x69, 0x6e, 0x67, 0x00,   \\ n c o d i n g -
-           0x00, 0x00, 0x07, 0x75, 0x70, 0x67, 0x72, 0x61,   \\ - - - u p g r a
-           0x64, 0x65, 0x00, 0x00, 0x00, 0x0a, 0x75, 0x73,   \\ d e - - - - u s
-           0x65, 0x72, 0x2d, 0x61, 0x67, 0x65, 0x6e, 0x74,   \\ e r - a g e n t
-           0x00, 0x00, 0x00, 0x04, 0x76, 0x61, 0x72, 0x79,   \\ - - - - v a r y
-           0x00, 0x00, 0x00, 0x03, 0x76, 0x69, 0x61, 0x00,   \\ - - - - v i a -
-           0x00, 0x00, 0x07, 0x77, 0x61, 0x72, 0x6e, 0x69,   \\ - - - w a r n i
-           0x6e, 0x67, 0x00, 0x00, 0x00, 0x10, 0x77, 0x77,   \\ n g - - - - w w
-           0x77, 0x2d, 0x61, 0x75, 0x74, 0x68, 0x65, 0x6e,   \\ w - a u t h e n
-           0x74, 0x69, 0x63, 0x61, 0x74, 0x65, 0x00, 0x00,   \\ t i c a t e - -
-           0x00, 0x06, 0x6d, 0x65, 0x74, 0x68, 0x6f, 0x64,   \\ - - m e t h o d
-           0x00, 0x00, 0x00, 0x03, 0x67, 0x65, 0x74, 0x00,   \\ - - - - g e t -
-           0x00, 0x00, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75,   \\ - - - s t a t u
-           0x73, 0x00, 0x00, 0x00, 0x06, 0x32, 0x30, 0x30,   \\ s - - - - 2 0 0
-           0x20, 0x4f, 0x4b, 0x00, 0x00, 0x00, 0x07, 0x76,   \\ - O K - - - - v
-           0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x00, 0x00,   \\ e r s i o n - -
-           0x00, 0x08, 0x48, 0x54, 0x54, 0x50, 0x2f, 0x31,   \\ - - H T T P - 1
-           0x2e, 0x31, 0x00, 0x00, 0x00, 0x03, 0x75, 0x72,   \\ - 1 - - - - u r
-           0x6c, 0x00, 0x00, 0x00, 0x06, 0x70, 0x75, 0x62,   \\ l - - - - p u b
-           0x6c, 0x69, 0x63, 0x00, 0x00, 0x00, 0x0a, 0x73,   \\ l i c - - - - s
-           0x65, 0x74, 0x2d, 0x63, 0x6f, 0x6f, 0x6b, 0x69,   \\ e t - c o o k i
-           0x65, 0x00, 0x00, 0x00, 0x0a, 0x6b, 0x65, 0x65,   \\ e - - - - k e e
-           0x70, 0x2d, 0x61, 0x6c, 0x69, 0x76, 0x65, 0x00,   \\ p - a l i v e -
-           0x00, 0x00, 0x06, 0x6f, 0x72, 0x69, 0x67, 0x69,   \\ - - - o r i g i
-           0x6e, 0x31, 0x30, 0x30, 0x31, 0x30, 0x31, 0x32,   \\ n 1 0 0 1 0 1 2
-           0x30, 0x31, 0x32, 0x30, 0x32, 0x32, 0x30, 0x35,   \\ 0 1 2 0 2 2 0 5
-           0x32, 0x30, 0x36, 0x33, 0x30, 0x30, 0x33, 0x30,   \\ 2 0 6 3 0 0 3 0
-           0x32, 0x33, 0x30, 0x33, 0x33, 0x30, 0x34, 0x33,   \\ 2 3 0 3 3 0 4 3
-           0x30, 0x35, 0x33, 0x30, 0x36, 0x33, 0x30, 0x37,   \\ 0 5 3 0 6 3 0 7
-           0x34, 0x30, 0x32, 0x34, 0x30, 0x35, 0x34, 0x30,   \\ 4 0 2 4 0 5 4 0
-           0x36, 0x34, 0x30, 0x37, 0x34, 0x30, 0x38, 0x34,   \\ 6 4 0 7 4 0 8 4
-           0x30, 0x39, 0x34, 0x31, 0x30, 0x34, 0x31, 0x31,   \\ 0 9 4 1 0 4 1 1
-           0x34, 0x31, 0x32, 0x34, 0x31, 0x33, 0x34, 0x31,   \\ 4 1 2 4 1 3 4 1
-           0x34, 0x34, 0x31, 0x35, 0x34, 0x31, 0x36, 0x34,   \\ 4 4 1 5 4 1 6 4
-           0x31, 0x37, 0x35, 0x30, 0x32, 0x35, 0x30, 0x34,   \\ 1 7 5 0 2 5 0 4
-           0x35, 0x30, 0x35, 0x32, 0x30, 0x33, 0x20, 0x4e,   \\ 5 0 5 2 0 3 - N
-           0x6f, 0x6e, 0x2d, 0x41, 0x75, 0x74, 0x68, 0x6f,   \\ o n - A u t h o
-           0x72, 0x69, 0x74, 0x61, 0x74, 0x69, 0x76, 0x65,   \\ r i t a t i v e
-           0x20, 0x49, 0x6e, 0x66, 0x6f, 0x72, 0x6d, 0x61,   \\ - I n f o r m a
-           0x74, 0x69, 0x6f, 0x6e, 0x32, 0x30, 0x34, 0x20,   \\ t i o n 2 0 4 -
-           0x4e, 0x6f, 0x20, 0x43, 0x6f, 0x6e, 0x74, 0x65,   \\ N o - C o n t e
-           0x6e, 0x74, 0x33, 0x30, 0x31, 0x20, 0x4d, 0x6f,   \\ n t 3 0 1 - M o
-           0x76, 0x65, 0x64, 0x20, 0x50, 0x65, 0x72, 0x6d,   \\ v e d - P e r m
-           0x61, 0x6e, 0x65, 0x6e, 0x74, 0x6c, 0x79, 0x34,   \\ a n e n t l y 4
+                  Store(0x1): level(G),index(2),v: "/index.css"
+                  Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:44 PDT 2012"
 
+                  Connection level-headers are implied.
+                  Stream-group level headers are implied.
 
+                  For this example, using TaCo (truncate and concatenate) wasn't useful.
+                  If the user, however, changes the cookie on the next request...
 
-Belshe & Peon           Expires February 17, 2013              [Page 35]
-
-Internet-Draft                    SPDY                       August 2012
+                  Request 3 (for somepage.html):
+                  SYN_STREAM 5, stream-group (G)=0
+                  Header-block:
+                  Store(0x1): level(G),index(2),v: "/somepage.html"
+                  TaCo(0x1): level(G),index(1),v,TruncTo(40),"FOOBLA"
 
+                  At this point the connection headers table remains unchanged.
+                  0: ":method", "GET"
+                  1: ":version", "HTTP/1.1"
+                  2: "user-agent", "blah blah browser version blah blah"
+                  3: "accept-encoding", "sdch, bzip, compress"
 
-           0x30, 0x30, 0x20, 0x42, 0x61, 0x64, 0x20, 0x52,   \\ 0 0 - B a d - R
-           0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x34, 0x30,   \\ e q u e s t 4 0
-           0x31, 0x20, 0x55, 0x6e, 0x61, 0x75, 0x74, 0x68,   \\ 1 - U n a u t h
-           0x6f, 0x72, 0x69, 0x7a, 0x65, 0x64, 0x34, 0x30,   \\ o r i z e d 4 0
-           0x33, 0x20, 0x46, 0x6f, 0x72, 0x62, 0x69, 0x64,   \\ 3 - F o r b i d
-           0x64, 0x65, 0x6e, 0x34, 0x30, 0x34, 0x20, 0x4e,   \\ d e n 4 0 4 - N
-           0x6f, 0x74, 0x20, 0x46, 0x6f, 0x75, 0x6e, 0x64,   \\ o t - F o u n d
-           0x35, 0x30, 0x30, 0x20, 0x49, 0x6e, 0x74, 0x65,   \\ 5 0 0 - I n t e
-           0x72, 0x6e, 0x61, 0x6c, 0x20, 0x53, 0x65, 0x72,   \\ r n a l - S e r
-           0x76, 0x65, 0x72, 0x20, 0x45, 0x72, 0x72, 0x6f,   \\ v e r - E r r o
-           0x72, 0x35, 0x30, 0x31, 0x20, 0x4e, 0x6f, 0x74,   \\ r 5 0 1 - N o t
-           0x20, 0x49, 0x6d, 0x70, 0x6c, 0x65, 0x6d, 0x65,   \\ - I m p l e m e
-           0x6e, 0x74, 0x65, 0x64, 0x35, 0x30, 0x33, 0x20,   \\ n t e d 5 0 3 -
-           0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x20,   \\ S e r v i c e -
-           0x55, 0x6e, 0x61, 0x76, 0x61, 0x69, 0x6c, 0x61,   \\ U n a v a i l a
-           0x62, 0x6c, 0x65, 0x4a, 0x61, 0x6e, 0x20, 0x46,   \\ b l e J a n - F
-           0x65, 0x62, 0x20, 0x4d, 0x61, 0x72, 0x20, 0x41,   \\ e b - M a r - A
-           0x70, 0x72, 0x20, 0x4d, 0x61, 0x79, 0x20, 0x4a,   \\ p r - M a y - J
-           0x75, 0x6e, 0x20, 0x4a, 0x75, 0x6c, 0x20, 0x41,   \\ u n - J u l - A
-           0x75, 0x67, 0x20, 0x53, 0x65, 0x70, 0x74, 0x20,   \\ u g - S e p t -
-           0x4f, 0x63, 0x74, 0x20, 0x4e, 0x6f, 0x76, 0x20,   \\ O c t - N o v -
-           0x44, 0x65, 0x63, 0x20, 0x30, 0x30, 0x3a, 0x30,   \\ D e c - 0 0 - 0
-           0x30, 0x3a, 0x30, 0x30, 0x20, 0x4d, 0x6f, 0x6e,   \\ 0 - 0 0 - M o n
-           0x2c, 0x20, 0x54, 0x75, 0x65, 0x2c, 0x20, 0x57,   \\ - - T u e - - W
-           0x65, 0x64, 0x2c, 0x20, 0x54, 0x68, 0x75, 0x2c,   \\ e d - - T h u -
-           0x20, 0x46, 0x72, 0x69, 0x2c, 0x20, 0x53, 0x61,   \\ - F r i - - S a
-           0x74, 0x2c, 0x20, 0x53, 0x75, 0x6e, 0x2c, 0x20,   \\ t - - S u n - -
-           0x47, 0x4d, 0x54, 0x63, 0x68, 0x75, 0x6e, 0x6b,   \\ G M T c h u n k
-           0x65, 0x64, 0x2c, 0x74, 0x65, 0x78, 0x74, 0x2f,   \\ e d - t e x t -
-           0x68, 0x74, 0x6d, 0x6c, 0x2c, 0x69, 0x6d, 0x61,   \\ h t m l - i m a
-           0x67, 0x65, 0x2f, 0x70, 0x6e, 0x67, 0x2c, 0x69,   \\ g e - p n g - i
-           0x6d, 0x61, 0x67, 0x65, 0x2f, 0x6a, 0x70, 0x67,   \\ m a g e - j p g
-           0x2c, 0x69, 0x6d, 0x61, 0x67, 0x65, 0x2f, 0x67,   \\ - i m a g e - g
-           0x69, 0x66, 0x2c, 0x61, 0x70, 0x70, 0x6c, 0x69,   \\ i f - a p p l i
-           0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x78,   \\ c a t i o n - x
-           0x6d, 0x6c, 0x2c, 0x61, 0x70, 0x70, 0x6c, 0x69,   \\ m l - a p p l i
-           0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2f, 0x78,   \\ c a t i o n - x
-           0x68, 0x74, 0x6d, 0x6c, 0x2b, 0x78, 0x6d, 0x6c,   \\ h t m l - x m l
-           0x2c, 0x74, 0x65, 0x78, 0x74, 0x2f, 0x70, 0x6c,   \\ - t e x t - p l
-           0x61, 0x69, 0x6e, 0x2c, 0x74, 0x65, 0x78, 0x74,   \\ a i n - t e x t
-           0x2f, 0x6a, 0x61, 0x76, 0x61, 0x73, 0x63, 0x72,   \\ - j a v a s c r
-           0x69, 0x70, 0x74, 0x2c, 0x70, 0x75, 0x62, 0x6c,   \\ i p t - p u b l
-           0x69, 0x63, 0x70, 0x72, 0x69, 0x76, 0x61, 0x74,   \\ i c p r i v a t
-           0x65, 0x6d, 0x61, 0x78, 0x2d, 0x61, 0x67, 0x65,   \\ e m a x - a g e
-           0x3d, 0x67, 0x7a, 0x69, 0x70, 0x2c, 0x64, 0x65,   \\ - g z i p - d e
-           0x66, 0x6c, 0x61, 0x74, 0x65, 0x2c, 0x73, 0x64,   \\ f l a t e - s d
-           0x63, 0x68, 0x63, 0x68, 0x61, 0x72, 0x73, 0x65,   \\ c h c h a r s e
-           0x74, 0x3d, 0x75, 0x74, 0x66, 0x2d, 0x38, 0x63,   \\ t - u t f - 8 c
+                  The stream-group table for group zero looks like this:
+                  0: ":host", "www.foo.com"
+                  1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;FOOBLA"
+                  2: ":path", "/somepate.html"
+                  Both the path and the date have changed.
 
-
-
-Belshe & Peon           Expires February 17, 2013              [Page 36]
-
-Internet-Draft                    SPDY                       August 2012
-
-
-           0x68, 0x61, 0x72, 0x73, 0x65, 0x74, 0x3d, 0x69,   \\ h a r s e t - i
-           0x73, 0x6f, 0x2d, 0x38, 0x38, 0x35, 0x39, 0x2d,   \\ s o - 8 8 5 9 -
-           0x31, 0x2c, 0x75, 0x74, 0x66, 0x2d, 0x2c, 0x2a,   \\ 1 - u t f - - -
-           0x2c, 0x65, 0x6e, 0x71, 0x3d, 0x30, 0x2e          \\ - e n q - 0 -
-   };
-
-   The entire contents of the name/value header block is compressed
-   using zlib.  There is a single zlib stream for all name value pairs
-   in one direction on a connection.  SPDY uses a SYNC_FLUSH between
-   each compressed frame.
-
-   Implementation notes: the compression engine can be tuned to favor
-   speed or size.  Optimizing for size increases memory use and CPU
-   consumption.  Because header blocks are generally small, implementors
-   may want to reduce the window-size of the compression engine from the
-   default 15bits (a 32KB window) to more like 11bits (a 2KB window).
-   The exact setting is chosen by the compressor, the decompressor will
-   work with any setting.
-
-2.6.11.2.  Header Block Example
-
-   This example only expresses what the client-side would send and how
-   the other side would interpret it.  Since the protocol is symmetric,
-   this is true for any sender of a headers-block and any receiver of a
-   headers block, and so is equivalent for both sides of the connection.
-
-Request 1 (for index.html):
-SYN_STREAM 1, stream-group (G)=0
-  Header-block:
-  Store(0x1): level(C),index(0),k: ":method"
-  Store(0x1): level(C),index(0),v: "GET"
-  Store(0x1): level(C),index(1),k: ":version"
-  Store(0x1): level(C),index(1),v: "HTTP/1.1"
-  Store(0x1): level(C),index(2),k: "user-agent"
-  Store(0x1): level(C),index(2),v: "blah blah browser version blah blah"
-  Store(0x1): level(C),index(3),k: "accept-encoding"
-  Store(0x1): level(C),index(3),v: "sdch, bzip, compress"
-  Store(0x1): level(G),index(0),k: ":host"
-  Store(0x1): level(G),index(0),v: "www.foo.com"
-  Store(0x1): level(G),index(1),k: "cookie"
-  Store(0x1): level(G),index(1),v: "SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJHBLA"
-  Store(0x1): level(G),index(2),k: ":path"
-  Store(0x1): level(G),index(2),v: "/index.html"
-  Store(0x1): level(G),index(3),k: "date"
-  Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:43 2012"
-
-At this point the connection headers table looks like this:
-  0: ":method", "GET"
-
-
-
-Belshe & Peon           Expires February 17, 2013              [Page 37]
-
-Internet-Draft                    SPDY                       August 2012
-
-
-  1: ":version", "HTTP/1.1"
-  2: "user-agent", "blah blah browser version blah blah"
-  3: "accept-encoding", "sdch, bzip, compress"
-
-The stream-group table for group zero looks like this:
-  0: ":host", "www.foo.com"
-  1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;BLAJHBLA"
-  2: ":path", "/index.html"
-  3: "date", "Wed Jul 18 11:50:43 2012"
-
-Request 1 (on stream 1) would look like the following if forwarded on HTTP/1.1:
-  GET /index.html HTTP/1.1
-  host: www.foo.com
-  date: Wed Jul 18 11:50:43 2012
-  cookie: SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJHBLA
-  user-agent: blah blah browser version blah blah
-  accept-encoding: sdch, bzip, compress
-
-
-Request 2 (for index.js):
-SYN_STREAM 3, stream-group (G)=0
-  Header-block:
-  Store(0x1): level(G),index(2),v: "/index.js"
-  Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:44 2012"
-
-At this point the connection headers table is unchanged:
-  0: ":method", "GET"
-  1: ":version", "HTTP/1.1"
-  2: "user-agent", "blah blah browser version blah blah"
-  3: "accept-encoding", "sdch, bzip, compress"
-
-The stream-group table for group zero looks like this:
-  0: ":host", "www.foo.com"
-  1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;BLAJHBLA"
-  2: ":path", "/index.js"
-  3: "date", "Wed Jul 18 11:50:44 2012"
-Both the path and the date have changed.
-
-Request 2 (on stream 3) would look like the following if forwarded on HTTP/1.1:
-  GET /index.js HTTP/1.1
-  host: www.foo.com
-  date: Wed Jul 18 11:50:44 2012
-  cookie: SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJHBLA
-  user-agent: blah blah browser version blah blah
-  accept-encoding: sdch, bzip, compress
-
-
-Request 3 (for index.css):
-
-
-
-Belshe & Peon           Expires February 17, 2013              [Page 38]
-
-Internet-Draft                    SPDY                       August 2012
-
-
-SYN_STREAM 5, stream-group (G)=0
-  Header-block:
-  Store(0x1): level(G),index(2),v: "/index.css"
-  Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:44 PDT 2012"
-
-Connection level-headers are implied.
-Stream-group level headers are implied.
-
-For this example, using TaCo (truncate and concatenate) wasn't useful.
-If the user, however, changes the cookie on the next request...
-
-Request 3 (for somepage.html):
-SYN_STREAM 5, stream-group (G)=0
-  Header-block:
-  Store(0x1): level(G),index(2),v: "/somepage.html"
-  TaCo(0x1): level(G),index(1),v,TruncTo(40),"FOOBLA"
-
-At this point the connection headers table remains unchanged.
-  0: ":method", "GET"
-  1: ":version", "HTTP/1.1"
-  2: "user-agent", "blah blah browser version blah blah"
-  3: "accept-encoding", "sdch, bzip, compress"
-
-The stream-group table for group zero looks like this:
-  0: ":host", "www.foo.com"
-  1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;FOOBLA"
-  2: ":path", "/somepate.html"
-Both the path and the date have changed.
-
-Request 3 (on stream 5) would look like the following if forwarded on HTTP/1.1:
-  GET /somepage.html HTTP/1.1
-  host: www.foo.com
-  date: Wed Jul 18 11:50:44 2012
-  cookie: SOMELONGSTRINGTHATISMOSTLYOPAQUE;FOOBLA
-  user-agent: blah blah browser version blah blah
-  accept-encoding: sdch, bzip, compress
+                  Request 3 (on stream 5) would look like the following if forwarded on HTTP/1.1:
+                  GET /somepage.html HTTP/1.1
+                  host: www.foo.com
+                  date: Wed Jul 18 11:50:44 2012
+                  cookie: SOMELONGSTRINGTHATISMOSTLYOPAQUE;FOOBLA
+                  user-agent: blah blah browser version blah blah
+                  accept-encoding: sdch, bzip, compress
 
 
 
@@ -2180,7 +1954,9 @@ Request 3 (on stream 5) would look like the following if forwarded on HTTP/1.1:
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 39]
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 35]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2236,7 +2012,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 40]
+Belshe & Peon           Expires February 2, 2013               [Page 36]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2292,7 +2068,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 41]
+Belshe & Peon           Expires February 2, 2013               [Page 37]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2348,7 +2124,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 42]
+Belshe & Peon           Expires February 2, 2013               [Page 38]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2404,7 +2180,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 43]
+Belshe & Peon           Expires February 2, 2013               [Page 39]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2460,7 +2236,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 44]
+Belshe & Peon           Expires February 2, 2013               [Page 40]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2516,7 +2292,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 45]
+Belshe & Peon           Expires February 2, 2013               [Page 41]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2572,7 +2348,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 46]
+Belshe & Peon           Expires February 2, 2013               [Page 42]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2628,12 +2404,236 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 47]
+Belshe & Peon           Expires February 2, 2013               [Page 43]
 
 Internet-Draft                    SPDY                       August 2012
 
 
-4.  Design Rationale and Notes
+4.  WebSocket Layering over SPDY
+
+   With this layering, a client and sever can share one connection for
+   both of HTTP requests and WebSockets.
+
+4.1.  Connection Management
+
+4.1.1.  Opening Handshake
+
+4.1.1.1.  Handshake Request
+
+   The client initiates an opening handshake by sending a SYN_STREAM
+   frame.  The SYN_STREAM frame MUST NOT set the FLAG_FIN because
+   WebSocket intends to establish a bi-directional communication port
+   and to send arbitrary data after success in opening handshake.
+
+   The SYN_STREAM Name/Value section will contain all of the following
+   headers which are associated with The WebSocket protocol [RFC6455]
+   opening handshake.  Upgrade, Connection, Sec-WebSocket-Key, and Sec-
+   WebSocket-Version headers MUST NOT be included because we do not have
+   to take care of protocol upgrading or verification over HTTP.
+
+   The following name/value pairs MUST be present in every request:
+
+      ":path" - /resource name/ as used in the "Client Requirements"
+      section of the WebSocket protocol specification.  (See RFC6455
+      [RFC6455])
+
+      ":host" - /host:port/ (e.g. "www.google.com:1234") as used in the
+      "Client Requirements" section of the WebSocket protocol
+      specification.  (See RFC6455 [RFC6455])
+
+      ":version" - the WebSocket protocol version of this request.
+      (MUST be "WebSocket/8", "WebSocket/13", or so.  The number MUST be
+      matched with the Sec-WebSocket-Version header.  See RFC6455
+      [RFC6455])
+
+      ":scheme" - the scheme portion of the URI.  (MUST be "ws" or
+      "wss".  See also /secure/ flag in RFC6455 [RFC6455])
+
+      ":origin" - /origin/ as used in the "Client Requirements" section
+      of the WebSocket protocol specification.  (See RFC6455 [RFC6455])
+
+   In addition, the following OPTIONAL name/value pairs MAY be present:
+
+      ":sec-websocket-protocol" - the Sec-WebSocket-Protocol header (See
+      RFC6455 [RFC6455])
+
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 44]
+
+Internet-Draft                    SPDY                       August 2012
+
+
+      ":sec-websocket-extensions" - the Sec-WebSocket-Extensions header
+      (See RFC6455 [RFC6455])
+
+   Also, other HTTP compatible header name/value pairs MAY be present.
+   All header keys MUST be lowercase.
+
+4.1.1.2.  Handshake Response
+
+   The server responds to a client request with a SYN_REPLY frame.  If
+   the server intends to allow the client connection, SYN_REPLY frame
+   MUST NOT set the FLAG_FIN and MUST have ":status" containing "101".
+   But, an unsuccessful response MUST set the FLAG_FIN and MUST have
+   ":status" containing non-"101" code.  The server MAY fail the opening
+   handshake because of an unexpected header value or a missing
+   mandatory header name.
+
+   The client MAY send some data to the server before receiving the
+   successful response.  The server MUST ignore this data when opening
+   handshake fails.  After sending successful response, the server can
+   send arbitrary data frames at any time.
+
+   The response status line is unfolded into name/value pairs like other
+   WebSocket headers and MUST be present:
+
+      ":status" - The WebSocket or fallback HTTP response status code
+      (e.g. "101" or "101 Switching Protocols".  See RFC6455 [RFC6455])
+
+   In addition, the following OPTIONAL name/value pairs MAY be present:
+
+      ":sec-websocket-protocol" - the Sec-WebSocket-Protocol header (See
+      RFC6455 [RFC6455])
+
+      ":sec-websocket-extensions" - the Sec-WebSocket-Extensions header
+      (See RFC6455 [RFC6455])
+
+   Also, other HTTP compatible header name/value pairs MAY be present.
+   All header names MUST be lowercase.  The successful server response
+   MUST have ":status" containing "101".
+
+   If the handshake fails, the client MUST send a SPDY data frame with
+   empty data field to avoid abnormal SPDY session termination.  The
+   SPDY data frame MUST set the FLAG_FIN to indicate the client intends
+   to send no further data on this stream.
+
+4.1.2.  Closing Handshake
+
+
+
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 45]
+
+Internet-Draft                    SPDY                       August 2012
+
+
+4.1.2.1.  Normal Termination
+
+   In normal termination, WebSocket connection close frame RFC6455
+   [RFC6455] will be sent as a SPDY data frame with FLAG_FIN set.  The
+   closing handshake is based on WebSocket protocol specification.  Both
+   of a server and a client will initiate it then the other end MUST
+   respond it by connection close frame with FLAG_FIN set.
+
+4.1.2.2.  Abnormal Termination and CloseEvent Handling
+
+   In abnormal termination, RST_STREAM SHOULD be handled as connection
+   close frame.  It means that JavaScript API provides CloseEvent (See,
+   The WebSocket API [WEBSOCKETAPI]) when a client receives RST_STREAM.
+   Its code field SHOULD be 1006 (Abnormal Closure).  The GOAWAY control
+   frame with non-zero status code SHOULD be also handled in the same
+   way.  The status code of RST_STREAM and GOAWAY frames SHOULD be
+   encoded to UTF-8 string with its frame type for its reason field.
+   (e.g.  "SPDY/3 RST_STREAM (5)" or "SPDY/3 GOAWAY (1)")
+
+   If a server works as protocol bridge to the WebSocket protocol, it
+   MAY send a close frame which contains the above status code and the
+   above reason to a backend WebSocket server.
+
+4.2.  Bi-directional Communication
+
+   After the opening handshake, the client and the server can send
+   arbitrary WebSocket control and data frames.  Continuation frame,
+   text frame, binary frame, connection close frame, ping frame, and
+   pong frame are valid WebSocket frames.  These WebSocket frames are
+   mapped into each SPDY HEADERS frame and DATA frames as follow.
+
+4.2.1.  Frame mapping
+
+   One WebSocket frame is mapped into one proceeding SPDY HEADERS frame
+   and following plural SPDY data frames.  The SPDY HEADERS frame must
+   contain WebSocket frame fields and following SPDY data frames contain
+   payload data.  These data frames are free to be reframed.
+
+   This plan doesn't care about overheads.  But HEADERS frame are
+   compressed by shared dictionary with other SYN_STREAM, SYN_REPLY, and
+   other HEADERS in the same SPDY connection.  Optimistically, it
+   reduces framing overheads.
+
+   The following name/value pairs MUST be present in SPDY HEADERS
+   frames:
+
+      ":opcode" - The WebSocket frame opcode (See RFC6455 [RFC6455])
+
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 46]
+
+Internet-Draft                    SPDY                       August 2012
+
+
+      ":length" - The WebSocket frame payload length in decimal (See
+      RFC6455 [RFC6455])
+
+      ":fin" - The WebSocket frame fin (See RFC6455 [RFC6455])
+
+   In addition, the following OPTIONAL name/value pairs MAY be present:
+
+      ":rsv1" - The WebSocket frame rsv1
+
+      ":rsv2" - The WebSocket frame rsv2
+
+      ":rsv3" - The WebSocket frame rsv3 (See RFC6455 [RFC6455]).  These
+      values must contain "0" or "1".  When a key doesn't exist, the
+      value is considered to be "0".  Thus, ony enabled bits may appear
+      here.
+
+      ":masking-key" - The WebSocket frame masking-key (See RFC6455
+      [RFC6455]) in hexadecimal (e.g. "deadbeaf").  When this key/value
+      exist, the WebSocket frame mask (See RFC6455 [RFC6455]) is
+      considered to be 1 and following payload data MUST be masked(See
+      RFC6455 [RFC6455]), otherwise the WebSocket frame mask is
+      considered to be 0.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 47]
+
+Internet-Draft                    SPDY                       August 2012
+
+
+5.  Design Rationale and Notes
 
    Authors' notes: The notes in this section have no bearing on the SPDY
    protocol as specified within this document, and none of these notes
@@ -2642,7 +2642,7 @@ Internet-Draft                    SPDY                       August 2012
    resolve protocol ambiguities or how to evolve the protocol going
    forward.  They may be removed before the final draft.
 
-4.1.  Separation of Framing Layer and Application Layer
+5.1.  Separation of Framing Layer and Application Layer
 
    Readers may note that this specification sometimes blends the framing
    layer (Section 2) with requirements of a specific application - HTTP
@@ -2656,7 +2656,7 @@ Internet-Draft                    SPDY                       August 2012
    relates to existing HTTP implementations.  However, the ability to
    reuse the SPDY framing layer is a non goal.
 
-4.2.  Error handling - Framing Layer
+5.2.  Error handling - Framing Layer
 
    Error handling at the SPDY layer splits errors into two groups: Those
    that affect an individual SPDY stream, and those that do not.
@@ -2670,7 +2670,7 @@ Internet-Draft                    SPDY                       August 2012
    the entire session is hosed.  In this case, the endpoint detecting
    the error should initiate a connection close.
 
-4.3.  One Connection Per Domain
+5.3.  One Connection Per Domain
 
    SPDY attempts to use fewer connections than other protocols have
    traditionally used.  The rationale for this behavior is because it is
@@ -2684,7 +2684,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 48]
+Belshe & Peon           Expires February 2, 2013               [Page 48]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2699,7 +2699,7 @@ Internet-Draft                    SPDY                       August 2012
    of-line blocking (especially in the presence of packet loss) is
    outweighed by the benefits of compression and prioritization.
 
-4.4.  Fixed vs Variable Length Fields
+5.4.  Fixed vs Variable Length Fields
 
    SPDY favors use of fixed length 32bit fields in cases where smaller,
    variable length encodings could have been used.  To some, this seems
@@ -2719,7 +2719,7 @@ Internet-Draft                    SPDY                       August 2012
    addressing other aspects of SPDY and TCP interactions, we believe
    this is completely mitigated.
 
-4.5.  Compression Context(s)
+5.5.  Compression Context(s)
 
    When isolating the compression contexts used for communicating with
    multiple origins, we had a few choices to make.  We could have
@@ -2740,7 +2740,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 49]
+Belshe & Peon           Expires February 2, 2013               [Page 49]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2750,14 +2750,14 @@ Internet-Draft                    SPDY                       August 2012
    are using two different origins over a single SPDY session, we simply
    reset the compression state between each transition.
 
-4.6.  Unidirectional streams
+5.6.  Unidirectional streams
 
    Besides providing a clear endpoint for unidirectional streams,
    Associated-To-Stream-ID also avoids the recipient of pushed streams
    from needing to send a set of empty frames (e.g. the SYN_STREAM w/
    FLAG_FIN) to signal that it doesn't wish to send data on the stream.
 
-4.7.  Data Compression
+5.7.  Data Compression
 
    Generic compression of data portion of the streams (as opposed to
    compression of the headers) without knowing the content of the stream
@@ -2773,7 +2773,7 @@ Internet-Draft                    SPDY                       August 2012
    redundant, it was unclear if it was useful at all.  We removed it
    from the specification.
 
-4.8.  Server Push
+5.8.  Server Push
 
    A subtle but important point is that server push streams must be
    declared before the associated stream is closed.  The reason for this
@@ -2796,19 +2796,19 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 50]
+Belshe & Peon           Expires February 2, 2013               [Page 50]
 
 Internet-Draft                    SPDY                       August 2012
 
 
-5.  Security Considerations
+6.  Security Considerations
 
-5.1.  Use of Same-origin constraints
+6.1.  Use of Same-origin constraints
 
    This specification uses the same-origin policy [RFC6454] in all cases
    where verification of content is required.
 
-5.2.  HTTP Headers and SPDY Headers
+6.2.  HTTP Headers and SPDY Headers
 
    At the application level, HTTP uses name/value pairs in its headers.
    Because SPDY merges the existing HTTP headers with SPDY headers,
@@ -2818,14 +2818,14 @@ Internet-Draft                    SPDY                       August 2012
    not a valid sequence in HTTP header naming, preventing any possible
    conflict.
 
-5.3.  Cross-Protocol Attacks
+6.3.  Cross-Protocol Attacks
 
    By utilizing TLS, we believe that SPDY introduces no new cross-
    protocol attacks.  TLS encrypts the contents of all transmission
    (except the handshake itself), making it difficult for attackers to
    control the data which could be used in a cross-protocol attack.
 
-5.4.  Server Push Implicit Headers
+6.4.  Server Push Implicit Headers
 
    Pushed resources do not have an associated request.  In order for
    existing HTTP cache control validations (such as the Vary header) to
@@ -2852,14 +2852,14 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 51]
+Belshe & Peon           Expires February 2, 2013               [Page 51]
 
 Internet-Draft                    SPDY                       August 2012
 
 
-6.  Privacy Considerations
+7.  Privacy Considerations
 
-6.1.  Long Lived Connections
+7.1.  Long Lived Connections
 
    SPDY aims to keep connections open longer between clients and servers
    in order to reduce the latency when a user makes a request.  The
@@ -2870,7 +2870,7 @@ Internet-Draft                    SPDY                       August 2012
    in its current form as well, however the short lived connections make
    it less of a risk.
 
-6.2.  SETTINGS frame
+7.2.  SETTINGS frame
 
    The SPDY SETTINGS frame allows servers to store out-of-band
    transmitted information about the communication between client and
@@ -2908,12 +2908,68 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 52]
+Belshe & Peon           Expires February 2, 2013               [Page 52]
 
 Internet-Draft                    SPDY                       August 2012
 
 
-7.  Incompatibilities with SPDY draft #3
+8.  Sub-protocol negotiation
+
+8.1.  Supporting scheme negotiation using SETTINGS frame
+
+   By default, a client can send SYN_STREAM frames on http and https
+   schemes, but if it want to send them on other schemes, it MUST wait
+   for a server sending SETTINGS frame which specify declaring schemes.
+   Thus, a server SHOULD send a SETTINGS frame as soon as possible
+   whether it supports other schemes or not.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 53]
+
+Internet-Draft                    SPDY                       August 2012
+
+
+9.  Incompatibilities with SPDY draft #3
 
    Here is a list of the major changes between this draft #3 and this
    draft
@@ -2941,7 +2997,7 @@ Internet-Draft                    SPDY                       August 2012
       and changes to the HEADER blocks themselves.
 
       ONGOING: Different header compression technique which uses less
-      CPU for proxies and which should result in higher compression
+      CPU for proxies and which should result in competitive compression
 
       TODO: Addition of end-of-header-section delimiter flag in any
       frame which has a header block
@@ -2949,6 +3005,8 @@ Internet-Draft                    SPDY                       August 2012
       ONGOING: Definition of cert-data push
 
       ONGOING: Definition of name-resolution push
+
+      ONGOING: Redefining prioritization
 
       TODO: Modification of flow-control; allow two-levels of flow
       control so as to allow greater stream concurrency safely
@@ -2962,9 +3020,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-
-
-Belshe & Peon           Expires February 17, 2013              [Page 53]
+Belshe & Peon           Expires February 2, 2013               [Page 54]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3020,12 +3076,12 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 54]
+Belshe & Peon           Expires February 2, 2013               [Page 55]
 
 Internet-Draft                    SPDY                       August 2012
 
 
-8.  Requirements Notation
+10.  Requirements Notation
 
    The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
    "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
@@ -3076,12 +3132,12 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 55]
+Belshe & Peon           Expires February 2, 2013               [Page 56]
 
 Internet-Draft                    SPDY                       August 2012
 
 
-9.  Acknowledgements
+11.  Acknowledgements
 
    Many individuals have contributed to the design and evolution of
    SPDY: Adam Langley, Wan-Teh Chang, Jim Morrison, Mark Nottingham,
@@ -3132,12 +3188,12 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 56]
+Belshe & Peon           Expires February 2, 2013               [Page 57]
 
 Internet-Draft                    SPDY                       August 2012
 
 
-10.  Normative References
+12.  Normative References
 
    [RFC0793]  Postel, J., "Transmission Control Protocol", STD 7,
               RFC 793, September 1981.
@@ -3181,17 +3237,20 @@ Internet-Draft                    SPDY                       August 2012
    [RFC6454]  Barth, A., "The Web Origin Concept", RFC 6454,
               December 2011.
 
+   [RFC6455]  Fette, I. and A. Melnikov, "The WebSocket Protocol",
+              RFC 6455, December 2011.
+
    [TLSNPN]   Langley, A., "TLS Next Protocol Negotiation",
-              <http://tools.ietf.org/html/
-              draft-agl-tls-nextprotoneg-01>.
 
 
 
-
-Belshe & Peon           Expires February 17, 2013              [Page 57]
+Belshe & Peon           Expires February 2, 2013               [Page 58]
 
 Internet-Draft                    SPDY                       August 2012
 
+
+              <http://tools.ietf.org/html/
+              draft-agl-tls-nextprotoneg-01>.
 
    [ASCII]    "US-ASCII. Coded Character Set - 7-Bit American Standard
               Code for Information Interchange. Standard ANSI X3.4-1986,
@@ -3203,6 +3262,9 @@ Internet-Draft                    SPDY                       August 2012
               <http://www.eecis.udel.edu/~amer/PEL/poc/pdf/
               SPDY-Fan.pdf>.
 
+   [WEBSOCKETAPI]
+              Hickson, I., "The WebSocket API",
+              <http://www.w3.org/TR/websockets/>.
 
 
 
@@ -3238,13 +3300,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-
-
-
-
-
-
-Belshe & Peon           Expires February 17, 2013              [Page 58]
+Belshe & Peon           Expires February 2, 2013               [Page 59]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3300,7 +3356,7 @@ Appendix A.  Changes
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 59]
+Belshe & Peon           Expires February 2, 2013               [Page 60]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3356,5 +3412,5 @@ Authors' Addresses
 
 
 
-Belshe & Peon           Expires February 17, 2013              [Page 60]
+Belshe & Peon           Expires February 2, 2013               [Page 61]
 
