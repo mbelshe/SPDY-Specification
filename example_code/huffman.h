@@ -464,7 +464,7 @@ class Huffman {
 
   void Encode(BitBucket* bb, const string& str, bool use_eof) const {
     for (unsigned int i = 0; i < str.size(); ++i) {
-      unsigned short idx = str[i];
+      unsigned short idx = static_cast<unsigned char>(str[i]);
       bb->StoreBits(code_table[idx].vec, code_table[idx].len);
     }
     if (use_eof) {

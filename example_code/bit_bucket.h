@@ -259,6 +259,7 @@ class BitBucket {
   }
 
   bool GetBit() {
+    if (idx_byte >= bsa.size()) return 0;
     bool bit = bsa[idx_byte] & (0x80 >> idx_boff);
     ++idx_boff;
     if (idx_boff >= 8) {

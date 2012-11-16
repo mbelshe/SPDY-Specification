@@ -5,6 +5,8 @@
 # found in the LICENSE file.
 
 import re
+import json
+import sys
 
 def MakeDefaultHeaders(list_o_dicts, items_to_ignore=[]):
   retval = {}
@@ -21,13 +23,27 @@ def MakeDefaultHeaders(list_o_dicts, items_to_ignore=[]):
       retval[key] = val
   return retval
 
+def EncodeStringsAsUTF8(x):
+  retval = {}
+  for k,v in x.iteritems():
+    n_k = k
+    if isinstance(k, unicode):
+      n_k = k.encode("utf8")
+    n_v = v
+    if isinstance(v, unicode):
+      n_v = v.encode("utf8")
+    retval[n_k] = n_v
+  return retval
+
 def ReadHarFile(filename):
   f = open(filename)
-  null = None
-  true = 1
-  false = 0
-  s = f.read()
-  o = eval(s)
+  try:
+    o = json.loads(f.read(), object_hook=EncodeStringsAsUTF8)
+    # and now lets convert all strings to utf8.
+  except Exception as x:
+    print x
+    sys.exit("unable to parse: " + filename)
+
   request_headers = []
   response_headers = []
   for entry in o["log"]["entries"]:

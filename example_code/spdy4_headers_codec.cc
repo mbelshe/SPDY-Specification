@@ -550,8 +550,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     }
   };
 
-  class SerializationInterface {
-    public:
+  struct SerializationInterface {
     virtual void SerializeInstructions(OutputStream* os,
                                        Instructions* instrs,
                                        const Huffman* huff,
@@ -815,26 +814,6 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     storage.UnPinLRUEnd();
     key_lookups.clear();
     instrs.clear();
-  }
-
-  void PreProcessForSerialization(Instructions* instrs) {
-    return;
-    // in particular, we need to manage the toggles.
-    vector<LRUIdx> all_toggles;
-    for (unsigned int i = 0; i < instrs->toggle_ons.size(); ++i) {
-      all_toggles.push_back(instrs->toggle_ons[i].idx());
-    }
-    for (unsigned int i = 0; i < instrs->toggle_offs.size(); ++i) {
-      all_toggles.push_back(instrs->toggle_offs[i].idx());
-    }
-    sort(all_toggles.begin(), all_toggles.end());
-    for (unsigned int i = 1; i < all_toggles.size(); ++i) {
-      if ((all_toggles[i] - all_toggles[i-1]) == 1) {
-        // these belong in a range.
-      }
-    }
-    vector<pair<LRUIdx, LRUIdx> > toggle_ranges;
-    vector<LRUIdx> toggles;
   }
 
   void TouchHeaderGroupEntry(HeaderGroup::iterator i) {
@@ -1197,6 +1176,8 @@ class InlineSerialization :
     WriteControlFrameBoilerplate(os, 0, this_ends_the_frame, stream_id, 0x8U);
     {
       OutputOps(this, TOGGLE, output_toggles, LRUIdxWriter());
+      OutputOps(this, TOGGLE_RANGE, output_toggle_ranges, LRUIdxPairWriter());
+
       OutputOps(this, CLONE , instrs->clones,  CloneWriter());
       OutputOps(this, KVSTO , instrs->kvstos,  KVStoWriter());
       OutputOps(this, EREF  , instrs->erefs ,   ERefWriter());
@@ -1212,7 +1193,7 @@ class InlineSerialization :
     uint32_t frame_size_field_pos = start_of_frame_pos;
     uint32_t flags_field_pos = (start_of_frame_pos +
                                 kFlagFieldOffsetFromFrameStart);
-    os->GetByteAlignedUint16(frame_size_field_pos) = 
+    os->GetByteAlignedUint16(frame_size_field_pos) =
                         static_cast<uint16_t>(frame_length);
     os->GetByteAlignedUint8(flags_field_pos) = frame_flags;
   }

@@ -26,6 +26,7 @@ from optparse import OptionParser
 from spdy_dictionary import spdy_dict
 from word_freak import WordFreak
 
+options = {}
 
 # TODO(eliminate the 'index' parameter in clone and kvsto by
 #      adding an index-start to the frame)
@@ -40,10 +41,10 @@ from word_freak import WordFreak
 
 
 def UnpackInt(data, params, huff):
-  (idx, bitlen) = params
+  bitlen = params
   #print 'AAAAAAAAAAAAAAAAAAAAAAAAA INT(', bitlen, ")"
   #data[idx].DebugFormat()
-  raw_data = data[idx].GetBits(bitlen)[0]
+  raw_data = data.GetBits(bitlen)[0]
   rshift = 0
   if bitlen <=8:
     arg = "%c%c%c%c" % (0,0, 0,raw_data[0])
@@ -64,7 +65,7 @@ def UnpackInt(data, params, huff):
   return retval
 
 def UnpackStr(data, params, huff):
-  (bitlen_idx, bitlen_size, data_idx, use_eof, len_as_bits) = params
+  (bitlen_size, use_eof, len_as_bits) = params
   if not use_eof and not bitlen_size:
     # without either a bitlen size or an EOF, we can't know when the string ends
     # having both is certainly fine, however.
@@ -72,16 +73,16 @@ def UnpackStr(data, params, huff):
   bitlen = -1
   #print 'AAAAAAAAAAAAAAAAAAAAAAAAA STR'
   if bitlen_size:
-    bitlen = UnpackInt(data, (bitlen_idx, bitlen_size), huff)
+    bitlen = UnpackInt(data, bitlen_size, huff)
     if not len_as_bits:
       bitlen *= 8
     #print "unpack strlen_field: ", bitlen
   #data[data_idx].DebugFormat()
   if huff:
-    retval = huff.DecodeFromBB(data[data_idx], use_eof, bitlen)
+    retval = huff.DecodeFromBB(data, use_eof, bitlen)
   else:
-    retval = data[data_idx].GetBits(bitlen)[0]
-  #data[data_idx].DebugFormat()
+    retval = data.GetBits(bitlen)[0]
+  #data.DebugFormat()
   retval = ListToStr(retval)
   #print "str_decoded: ", retval
   #print 'XXXXXXXXXXXXXXXXXXXXXXXXX'
@@ -89,7 +90,7 @@ def UnpackStr(data, params, huff):
 
 # this assumes the bits are near the LSB, but must be packed to be close to MSB
 def PackInt(data, params, val, huff):
-  (idx, bitlen) = params
+  bitlen = params
   if bitlen <= 0 or bitlen > 32 or val  != val & ~(0x1 << bitlen):
     print "bitlen: ", bitlen, " val: ", val
     raise StandardError()
@@ -103,10 +104,10 @@ def PackInt(data, params, val, huff):
     tmp_val = struct.pack(">L", val << (32 - bitlen))
 
   #print FormatAsBits((StrToList(tmp_val), bitlen)), " (", val, ")"
-  data[idx].StoreBits( (StrToList(tmp_val), bitlen) )
+  data.StoreBits( (StrToList(tmp_val), bitlen) )
 
 def PackStr(data, params, val, huff):
-  (bitlen_idx, bitlen_size, data_idx, use_eof, len_as_bits) = params
+  (bitlen_size, use_eof, len_as_bits) = params
   # if len_as_bits, then don't need eof.
   # if eof, then don't technically need bitlen at all...
 
@@ -119,56 +120,36 @@ def PackStr(data, params, val, huff):
     if not len_as_bits:
       formatted_val = (formatted_val[0], len(formatted_val[0])*8)
   else:
-    formatted_val = ([val], len(val)*8)
+    formatted_val = (StrToList(val), len(val)*8)
   if bitlen_size and len_as_bits:
     #print "strlen_field: ", formatted_val[1], " bits"
-    PackInt(data, (bitlen_idx, bitlen_size), formatted_val[1], huff)
+    PackInt(data, bitlen_size, formatted_val[1], huff)
   elif bitlen_size:
     #print "strlen_field: ", formatted_val[1]/8, " bytes ", "(", formatted_val[1], " bits)"
-    PackInt(data, (bitlen_idx, bitlen_size), formatted_val[1]/8, huff)
+    PackInt(data, bitlen_size, formatted_val[1]/8, huff)
 
   #print FormatAsBits(formatted_val), " (", repr(val), ")", "(", repr(ListToStr(formatted_val[0])), ")"
-  data[data_idx].StoreBits(formatted_val)
+  data.StoreBits(formatted_val)
 
 
+packing_instructions = {
+  'opcode'      : (8, PackInt, UnpackInt),
+  'index'       : (16, PackInt, UnpackInt),
+  'index_start' : (16, PackInt, UnpackInt),
+  'key_idx'     : (16, PackInt, UnpackInt),
+  'val'         : ((16, True, False), PackStr, UnpackStr),
+  'key'         : ((16, True, False), PackStr, UnpackStr),
 
-alt_packing_instructions = {
-  'opcode'      : ((0,  8), PackInt, UnpackInt),
-  'index'       : ((0, 16), PackInt, UnpackInt),
-  'index_start' : ((0, 16), PackInt, UnpackInt),
-  'key_idx'     : ((0, 16), PackInt, UnpackInt),
-  'val'         : ((0, 16, 0, True, False), PackStr, UnpackStr),
-  'key'         : ((0, 16, 0, True, False), PackStr, UnpackStr),
+  #'frame_len'   : ((0, 16), PackInt, UnpackInt),
+  #'stream_id'   : ((0, 32), PackInt, UnpackInt),
 }
-
-alt_packing_instructions = {
-  'opcode'      : ((0,  8), PackInt, UnpackInt),
-  'index'       : ((0, 16), PackInt, UnpackInt),
-  'index_start' : ((0, 16), PackInt, UnpackInt),
-  'key_idx'     : ((0, 16), PackInt, UnpackInt),
-  'val'         : ((0, 15, 0, False, True), PackStr, UnpackStr),
-  'key'         : ((0, 15, 0, False, True), PackStr, UnpackStr),
-}
-
-#alt_packing_instructions = {
-#  'opcode'      : ((0,  3), PackInt, UnpackInt),
-#  'index'       : ((0, 12), PackInt, UnpackInt),
-#  'index_start' : ((0, 12), PackInt, UnpackInt),
-#  'key_idx'     : ((0, 12), PackInt, UnpackInt),
-#  'val'         : ((0, 15, 0, False, True), PackStr, UnpackStr),
-#  'key'         : ((0, 15, 0, False, True), PackStr, UnpackStr),
-#}
-#alt_packing_instructions = {
-#  'opcode'      : ((0,  3), PackInt, UnpackInt),
-#  'index'       : ((0, 12), PackInt, UnpackInt),
-#  'index_start' : ((0, 12), PackInt, UnpackInt),
-#  'key_idx'     : ((0, 12), PackInt, UnpackInt),
-#  'val'         : ((0, 0, 0, True, True), PackStr, UnpackStr),
-#  'key'         : ((0, 0, 0, True, True), PackStr, UnpackStr),
-#}
 
 def PackOps(data, packing_instructions, ops, huff):
-  #print "==============  PACKOPS"
+  if options.n != 0:
+    seder = Spdy4SeDer()
+    data.StoreBits(seder.SerializeInstructions(ops, packing_instructions,
+                                               huff, 1234, True))
+    return
   for op in ops:
     #print
     #print FormatOp(op)
@@ -177,15 +158,13 @@ def PackOps(data, packing_instructions, ops, huff):
     for field_name in packing_order:
       if not field_name in op:
         continue
+
       (params, pack_fn, _) = packing_instructions[field_name]
       val = op[field_name]
 
       if field_name == 'opcode':
         val = OpcodeToVal(op[field_name])
-        pack_fn(data, params, val, huff)
-        #pack_fn(data, (0,5) , 0, huff)
-      else:
-        pack_fn(data, params, val, huff)
+      pack_fn(data, params, val, huff)
   (params, pack_fn, _) = packing_instructions['opcode']
   pack_fn(data, params, 0, huff)
   #print "operations data: "
@@ -193,9 +172,12 @@ def PackOps(data, packing_instructions, ops, huff):
   #print
 
 def UnpackOps(data, packing_instructions, huff):
+  if options.n != 0:
+    seder = Spdy4SeDer()
+    return seder.DeserializeInstructions(data, packing_instructions, huff)
   ops = []
   #print "==============UNPACKOPS"
-  while not (data[0].AllConsumed() and data[1].AllConsumed() and data[2].AllConsumed()):
+  while not data.AllConsumed():
     (params, _, unpack_fn) = packing_instructions['opcode']
     opcode = unpack_fn(data, params, huff)
     if opcode == 0:
@@ -205,8 +187,8 @@ def UnpackOps(data, packing_instructions, huff):
     #print "'opcode'",
     try:
       op['opcode'] = opcode_to_op[opcode][0]
-    except:
-      data[0].DebugFormat()
+    except:  # TODO(catch more specific. IndexError?)
+      data.DebugFormat()
       raise
     #print op['opcode']
 
@@ -255,9 +237,9 @@ def FormatOp(op):
   outp = ['{']
   inp = []
   for key in order:
-    if key in op and key is not 'opcode':
+    if key in op and key != 'opcode':
       inp.append("'%s': % 5s" % (key, repr(op[key])))
-    if key in op and key is 'opcode':
+    if key in op and key == 'opcode':
       inp.append("'%s': % 5s" % (key, repr(op[key]).ljust(7)))
   for (key, val) in op.iteritems():
     if key in order:
@@ -267,17 +249,17 @@ def FormatOp(op):
   outp.append('}')
   return ''.join(outp)
 
+def FormatOps(ops):
+  for op in ops:
+    print FormatOp(op)
+
 def KtoV(d):
-  retval = {}
-  for (k, v) in d.iteritems():
-    retval[v] = k
-  return retval
+  return dict((v, k) for k, v in d.iteritems())
 
 def NextIndex(d):
-  indices = [idx for (idx, val) in d.iteritems()]
-  if len(indices) == 0:
+  if not d:
     return 1
-  indices.sort()
+  indices = sorted(d.keys())
   prev_idx = 0
   idx = 0
   for idx in indices:
@@ -295,22 +277,186 @@ def GetHostname(request):
   return "<unknown>"
 
 
-class Line:
+class Line(object):
   def __init__(self, k="", v=""):
     self.k = k
     self.v = v
     self.RecomputeHash()
 
   def __repr__(self):
-    return '[Line k: %s, v: %s]' % (repr(self.k), repr(self.v))
-
-  def __str__(self):
-    return self.__repr__()
+    return '[Line k: %r, v: %r]' % (self.k, self.v)
 
   def RecomputeHash(self):
     self.kvhash = hash(self.k + self.v)
 
-class Spdy4CoDe:
+class Spdy4SeDer(object):  # serializer deserializer
+  def __init__(self):
+    pass
+
+  def PreProcessToggles(self, instructions):
+    ot = [x for x in instructions if x['opcode'] == 'toggl']
+    otr = [x for x in instructions if x['opcode'] == 'trang']
+    return [ot, otr]
+    toggles = [x for x in instructions if x['opcode'] == 'toggl']
+    toggles.sort()
+    ot = []
+    otr = []
+    for toggle in toggles:
+      idx = toggle['index']
+      if otr and idx - otr[-1]['index'] == 1:
+        otr[-1]['index'] = idx
+      elif ot and idx - ot[-1]['index'] == 1:
+        otr.append(ot.pop())
+        otr[-1]['index_start'] = otr[-1]['index']
+        otr[-1]['index'] = idx
+        otr[-1]['opcode'] = 'trang'
+      else:
+        ot.append(toggle)
+    print "LENGTHS:",len(toggles),len(ot), len(otr)
+    return [ot, otr]
+
+  def OutputOps(self,packing_instructions, huff, data, ops, opcode):
+    if not ops:
+      return;
+    #print ops
+    ops = [x for x in ops if x['opcode'] == opcode]
+    ops_idx = 0
+    ops_len = len(ops)
+    while ops_len > ops_idx:
+      ops_to_go = ops_len - ops_idx
+      iteration_end = min(ops_to_go, 256) + ops_idx
+      data.StoreBits8(OpcodeToVal(opcode))
+      data.StoreBits8(min(256, ops_to_go) - 1)
+      orig_idx = ops_idx
+      for i in xrange(ops_to_go):
+        self.WriteOpData(data, ops[orig_idx + i], huff)
+        ops_idx += 1
+    pass
+
+  def WriteOpData(self, data, op, huff):
+    for field_name in packing_order:
+      if not field_name in op:
+        continue
+      if field_name == 'opcode':
+        continue
+      (params, pack_fn, _) = packing_instructions[field_name]
+      val = op[field_name]
+      pack_fn(data, params, val, huff)
+    pass
+
+
+  def WriteControlFrameStreamId(self, data, stream_id):
+    if (stream_id & 0x8000):
+      abort()
+    data.StoreBits32(0x800 | stream_id)
+
+  def WriteControlFrameBoilerplate(self,
+      data,
+      frame_len,
+      flags,
+      stream_id,
+      frame_type):
+    data.StoreBits16(frame_len)
+    data.StoreBits8(flags)
+    data.StoreBits32(stream_id)
+    #self.WriteControlFrameStreamId(data, stream_id)
+    data.StoreBits8(frame_type)
+
+  def SerializeInstructions(self,
+      ops,
+      packing_instructions,
+      huff,
+      stream_id,
+      end_of_frame):
+    print "SerializeInstructions\n", ops
+    (ot, otr) = self.PreProcessToggles(ops)
+
+
+    payload_bb = BitBucket()
+    self.OutputOps(packing_instructions, huff, payload_bb, ot,  'toggl')
+    self.OutputOps(packing_instructions, huff, payload_bb, otr, 'trang')
+    self.OutputOps(packing_instructions, huff, payload_bb, ops, 'clone')
+    self.OutputOps(packing_instructions, huff, payload_bb, ops, 'kvsto')
+    self.OutputOps(packing_instructions, huff, payload_bb, ops, 'eref')
+
+    (payload, payload_len) = payload_bb.GetAllBits()
+    payload_len = (payload_len + 7) / 8  # partial bytes are counted as full
+    frame_bb = BitBucket()
+    self.WriteControlFrameBoilerplate(frame_bb, 0, 0, 0, 0)
+    boilerplate_length = frame_bb.BytesOfStorage()
+    frame_bb = BitBucket()
+    overall_bb = BitBucket()
+    bytes_allowed = 2**16 - boilerplate_length
+    while True:
+      print "paylaod_len: ", payload_len
+      bytes_to_consume = min(payload_len, bytes_allowed)
+      print "bytes_to_consume: ", bytes_to_consume
+      end_of_frame = (bytes_to_consume <= payload_len)
+      print "end_of_Frame: ", end_of_frame
+      self.WriteControlFrameBoilerplate(overall_bb, bytes_to_consume,
+                                        end_of_frame, stream_id, 0x8)
+      overall_bb.StoreBits( (payload, bytes_to_consume*8))
+      payload = payload[bytes_to_consume:]
+      payload_len -= bytes_allowed
+      if payload_len <= 0:
+        break
+    return overall_bb.GetAllBits()
+
+
+  def DeserializeInstructions(self, frame, packing_instructions, huff):
+    ops = []
+    bb = BitBucket()
+    bb.StoreBits(frame.GetAllBits())
+    flags = 0
+    print "DeserializeInstructions"
+    while flags == 0:
+      frame_len = bb.GetBits16()
+      print "frame_len: ", frame_len
+      flags = bb.GetBits8()
+      #print "flags: ", flags
+      stream_id = bb.GetBits32()
+      #print "stream_id: ", stream_id
+      frame_type = bb.GetBits8()
+      #print "frame_type: ", frame_type
+      while frame_len:
+        bits_remaining_at_start = bb.BitsRemaining()
+        opcode_val = bb.GetBits8()
+        #print "opcode_val: ", opcode_val
+        op_count = bb.GetBits8() + 1
+        #print "op_count: ", op_count
+        opcode_description = opcode_to_op[opcode_val]
+        opcode = opcode_description[0]
+        fields = opcode_description[1:]
+        for i in xrange(op_count):
+          op = {'opcode': opcode}
+          for field_name in packing_order:
+            if not field_name in fields:
+              continue
+            (params, _, unpack_fn) = packing_instructions[field_name]
+            val = unpack_fn(bb, params, huff)
+            #print val
+            op[field_name] = val
+          #print op
+          ops.append(op)
+        bits_consumed = (bits_remaining_at_start - bb.BitsRemaining())
+        if not bits_consumed % 8 == 0:
+          print "somehow didn't consume whole bytes..."
+          raise StandardError()
+        frame_len -= bits_consumed / 8
+    #print "ops: ", ops
+    return ops
+
+
+def DeDup(items):
+  s = set()
+  for item in items:
+    if item in s:
+      s.remove(item)
+    else:
+      s.add(item)
+  return list(s)
+
+class Spdy4CoDe(object):
   def __init__(self):
     self.huffman_table = None
     self.wf = WordFreak()
@@ -371,6 +517,7 @@ class Spdy4CoDe:
         "via": "",
         "warning": "",
         "www-authenticate": "",
+        # Common stuff not in the HTTP spec.
         'access-control-allow-origin': "",
         'content-disposition': "",
         'get-dictionary': "",
@@ -501,26 +648,24 @@ class Spdy4CoDe:
     return ops
 
   def OpsToRealOps(self, in_ops):
-    data = [BitBucket(), BitBucket(), BitBucket()]
-    PackOps(data, alt_packing_instructions, in_ops, self.huffman_table)
-    overall  = BitBucket()
-    overall.StoreBits(data[0].GetAllBits())
-    overall.StoreBits(data[1].GetAllBits())
-    overall.StoreBits(data[2].GetAllBits())
-    return ListToStr(overall.GetAllBits()[0])
+    data = BitBucket()
+    PackOps(data, packing_instructions, in_ops, self.huffman_table)
+    return ListToStr(data.GetAllBits()[0])
 
   def RealOpsToOps(self, realops):
     bb = BitBucket()
     bb.StoreBits((StrToList(realops), len(realops)*8))
-    return UnpackOps([bb, BitBucket(), BitBucket()], alt_packing_instructions, self.huffman_table)
+    return UnpackOps(bb, packing_instructions, self.huffman_table)
 
   def Compress(self, realops):
     ba = ''.join(realops)
+    return ba
     retval = self.compressor.compress(ba)
     retval += self.compressor.flush(zlib.Z_SYNC_FLUSH)
     return retval
 
   def Decompress(self, op_blob):
+    return op_blob
     return self.decompressor.decompress(op_blob)
 
   def MakeToggl(self, index):
@@ -591,8 +736,10 @@ class Spdy4CoDe:
           ops.append(op)
           if not key == "cookie":
             self.wf.LookAt([op])
+    print "toggles: ", toggles
+    toggles = DeDup(toggles)
     toggles.sort()
-    #print "toggles: ", toggles
+
     toggle_ops = []
     prev_index = -2
     for index in toggles:  # these will ALL be Toggl (off) ops..
@@ -606,6 +753,7 @@ class Spdy4CoDe:
       else:
         toggle_ops.append(self.MakeToggl(index))
       prev_index = index
+    print toggle_ops
     for index in self.stream_groups[stream_group]:
       self.Touch(index)
     removal_ops = self.MakeRemovalsIfNecessary(stream_group, ops)
@@ -616,7 +764,9 @@ class Spdy4CoDe:
     self.ExecuteOps(ops, stream_group, {})
     return ops
 
-  def ExecuteOps(self, ops, stream_group, ephemereal_headers={}):
+  def ExecuteOps(self, ops, stream_group, ephemereal_headers=None):
+    if ephemereal_headers is None:
+      ephemereal_headers = {}
     #print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
     if not stream_group in self.stream_groups:
       self.stream_groups[stream_group] = []
@@ -624,7 +774,9 @@ class Spdy4CoDe:
       self.ExecuteOp(stream_group, op, ephemereal_headers)
     #print "DONE"
 
-  def ExecuteOp(self, stream_group, op, ephemereal_headers={}):
+  def ExecuteOp(self, stream_group, op, ephemereal_headers=None):
+    if ephemereal_headers is None:
+      ephemereal_headers = {}
     opcode = op["opcode"]
     #print "Executing: ", FormatOp(op)
     if opcode == 'trang':
@@ -687,7 +839,7 @@ class Spdy4CoDe:
       headers['cookie'] = headers['cookie'].replace('\0', '; ')
     return headers
 
-class SPDY4:
+class SPDY4(object):
   def __init__(self, options):
     self.compressor   = Spdy4CoDe()
     self.decompressor = Spdy4CoDe()
@@ -710,7 +862,9 @@ class SPDY4:
     inp_real_ops = self.compressor.OpsToRealOps(inp_ops)
     compressed_blob = self.compressor.Compress(inp_real_ops)
     out_real_ops = self.decompressor.Decompress(compressed_blob)
-    out_ops = self.decompressor.RealOpsToOpAndExecute(out_real_ops, stream_group)
+    out_ops = self.decompressor.RealOpsToOpAndExecute(
+        out_real_ops, stream_group)
+    #print "out_ops:\n", FormatOps(out_ops)
     out_headers = self.decompressor.GenerateAllHeaders(stream_group)
     return (compressed_blob,
             inp_real_ops, out_real_ops,
@@ -718,7 +872,7 @@ class SPDY4:
             inp_ops,      out_ops,
             stream_group)
 
-class SPDY3:
+class SPDY3(object):
   def __init__(self, options):
     self.options = options
     self.compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
@@ -741,8 +895,7 @@ class SPDY3:
       out_frame.append(val)
     return ''.join(out_frame)
 
-
-class HTTP1:
+class HTTP1(object):
   def __init__(self, options):
     self.options = options
     self.compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
@@ -778,13 +931,18 @@ def CompareHeaders(a, b):
       output.append('  -> %s' % v)
       output.append('  -> %s' % b[k])
     del b[k]
-  for (k, v) in b:
+  for (k, v) in b.iteritems():
       output.append('key: %s present in only one (B)' % k)
-  return ''.join(output)
+  return '\n'.join(output)
 
 
 def main():
   parser = OptionParser()
+  parser.add_option("-n", "--new",
+                    type="int",
+                    dest="n",
+                    help="if set, uses the new serialization method",
+                    default=0)
   parser.add_option("-v", "--verbose",
                     type="int",
                     dest="v",
@@ -797,7 +955,9 @@ def main():
                     help="If set, everything will use stream-group 0. "
                     "[default: %default]",
                     default=0)
+  global options
   (options, args) = parser.parse_args()
+
 
   print options
   requests = default_requests
@@ -842,31 +1002,39 @@ def main():
   for i in xrange(len(requests)):
     request = requests[i]
     response = responses[i]
-    rq4 = spdy4_rq.ProcessFrame(request, request)
-    rs4 = spdy4_rs.ProcessFrame(response, request)
-    rq3 = spdy3_rq.ProcessFrame(request, request)
-    rs3 = spdy3_rs.ProcessFrame(response, request)
-    rqh = http1_rq.ProcessFrame(request, request)
-    rsh = http1_rs.ProcessFrame(response, request)
     if options.v >= 2:
       print '##################################################################'
       print '####### request-path: "%s"' % requests[i][":path"][:80]
-      print "####### stream group: %2d, %s" % (rq4[7], GetHostname(request))
-      print "####### dict size: %3d" % spdy4_rs.decompressor.GetDictSize()
-      print
+    if options.v >= 4:
+      print "######## request  ########"
+      for k,v in request.iteritems():
+        print "\t",k, ":", v
 
-      print "## request ##\n", rqh[1]
-      if options.v >= 4:
-        print "request  header: ", request
+    rq4 = spdy4_rq.ProcessFrame(request, request)
+    rq3 = spdy3_rq.ProcessFrame(request, request)
+    rqh = http1_rq.ProcessFrame(request, request)
+
+    if options.v >= 2:
+      print
       for op in rq4[6]:
-        print "rq_op: ", FormatOp(op)
+        print "\trq_op: ", FormatOp(op)
 
-      print "\n## response ##\n", rqh[1]
-      if options.v >= 4:
-        print "response header: ", response
-      for op in rs4[6]:
-        print "rs_op: ", FormatOp(op)
+
+    if options.v >= 4:
+      print "######## response ########"
+      for k,v in response.iteritems():
+        print "\t",k, ":", v
+
+    rs4 = spdy4_rs.ProcessFrame(response, request)
+    rs3 = spdy3_rs.ProcessFrame(response, request)
+    rsh = http1_rs.ProcessFrame(response, request)
+
+    if options.v >= 2:
       print
+      for op in rs4[6]:
+        print "\trs_op: ", FormatOp(op)
+      print
+
     message = CompareHeaders(request, rq4[4])
     if message:
       print "Something is wrong with the request."
@@ -933,15 +1101,15 @@ def main():
     print "Res   Compressed/uncompressed HTTP:  % 2.5f  | % 2.5f  | % 2.5f  " % fmtarg
   print
 
-  print spdy4_rq.wf
-  print
-  print spdy4_rq.wf.length_freaks
-  print
+  #print repr(spdy4_rq.wf)
+  #print
+  #print spdy4_rq.wf.length_freaks
+  #print
 
-  print spdy4_rs.wf
-  print
-  print spdy4_rs.wf.length_freaks
-  print
+  #print repr(spdy4_rs.wf)
+  #print
+  #print spdy4_rs.wf.length_freaks
+  #print
   #print spdy4_rs.wf
 
 main()

@@ -6,7 +6,8 @@
 
 from huffman import Huffman
 from bit_bucket import BitBucket
-from bit_bucket import PrintAsBits
+from common_utils import FormatAsBits
+from common_utils import ListToStr
 
 request_freq_table = [
   ('\x00', 0), ('\x01', 0), ('\x02', 0), ('\x03', 0), ('\x04', 0), ('\x05', 0),
@@ -57,8 +58,8 @@ def main():
     print " encoding: ", s
     sp = [ord(c) for c in s]
     e_result = h.Encode(sp, False)
-    print "      e_result: ", PrintAsBits(e_result)
-    d_result = ''.join(h.Decode(e_result[0], False, e_result[1]))
+    print "      e_result: ", FormatAsBits(e_result)
+    d_result = ''.join(ListToStr(h.Decode(e_result[0], False, e_result[1])))
     if d_result != s:
       print "difference found: ", d_result, " ", s
     else:
@@ -74,7 +75,7 @@ def main():
   #bb.StoreBits(([0xff],6))
   #bb.StoreBits(([0x00],5))
   #bb.StoreBits(([0xff],8))
-  #print PrintAsBits(bb.GetAllBits())
+  #print FormatAsBits(bb.GetAllBits())
 
 main()
 

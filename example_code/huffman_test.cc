@@ -31,14 +31,15 @@ void TestEncodeDecode(const Huffman& huff,
                       bool use_length,
                       int length_delta) {
   string decoded;
-  int num_bits = 0;
+
 
   BitBucket bb;
   huff.Encode(&bb, input, use_eof);
 
+  int num_bits = 0;
   if (use_length)
     num_bits = bb.NumBits() + length_delta;
-  huff.Decode(&decoded, &bb, use_eof, bb.NumBits());
+  huff.Decode(&decoded, &bb, use_eof, num_bits);
   Test(input, decoded);
 }
 
@@ -50,8 +51,8 @@ int main(int argc, char**argv) {
     "foobarbaz",
     "0-2rklnsvkl;-23kDFSi01k0=",
     "-9083480-12hjkadsgf8912345kl;hjajkl;       `123890",
-    "\0\0-3;jsdf",
-    "\xFF\xE0\0\0\t\ne\0\x81\x82",
+    "-3;jsdf",
+    "\xFF\xE0\t\ne\x81\x82",
   }};
   for (unsigned int i = 0; i < tests.size(); ++i) {
     const string& test = tests[i];

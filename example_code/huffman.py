@@ -5,7 +5,7 @@ import heapq
 from collections import deque
 from bit_bucket import BitBucket
 
-class Huffman:
+class Huffman(object):
   def __init__(self, freq_table):
     self.code_tree = None
     self.code_table = []
@@ -13,12 +13,16 @@ class Huffman:
     self.BuildCodeTable(self.code_tree)
 
   def BuildCodeTree(self, freq_table):
+    def MN(x):
+      if isinstance(x, int):
+        return x
+      return ord(x)
     if len(freq_table) < 2:
       # that'd be stupid...
       raise StandardError()
     # freq_table is (symbol, count)
     # code_tree is [freq, symbol, children]
-    leaves = deque(sorted([ [frq, sym, []] for (sym, frq) in freq_table]))
+    leaves = deque(sorted([ [frq, MN(sym), []] for (sym, frq) in freq_table]))
     internals = deque()
     while len(leaves) + len(internals) > 1:
       children = []
@@ -60,7 +64,10 @@ class Huffman:
       (tree, path_so_far) = queue.popleft()
       (freq, name, children) = tree
       if name != None:
-        pre_table.append( (ord(name), str(path_so_far)) )
+        if not isinstance(name, int):
+          pre_table.append( (ord(name), str(path_so_far)) )
+        else:
+          pre_table.append( (    name , str(path_so_far)) )
       if children:
         queue.appendleft( (children[0], str(path_so_far + '0')) )
         queue.appendleft( (children[1], str(path_so_far + '1')) )
@@ -98,7 +105,7 @@ class Huffman:
         bit = bb.GetBits(1)[0][0] >> 7
         root = root[2][bit]
         total_bits += 1
-      if includes_eof and root[1] is not None and ord(root[1]) == 256:
+      if includes_eof and root[1] is not None and root[1] == 256:
         break
       elif root[1] is not None:
         output.append(root[1])
@@ -143,18 +150,15 @@ class Huffman:
     return output
 
   def FormatCodeTable(self):
-    x = sorted([(chr(i), self.code_table[i]) for i in xrange(len(self.code_table))],
-      key=lambda x: (x[1][1], x[1][0]))
+    x = sorted([(chr(i), self.code_table[i])
+                for i in xrange(len(self.code_table))],
+               key=lambda x: (x[1][1], x[1][0]))
     return repr(x)
 
-  def __str__(self):
+  def __repr__(self):
     output = ['[']
     for elem in self.code_table.iteritems():
       output.append(repr(elem))
       output.append(', ')
     output.append(']')
     return ''.join(output)
-
-  def __repr__(self):
-    return self.__str__()
-

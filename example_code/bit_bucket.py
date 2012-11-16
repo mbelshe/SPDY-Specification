@@ -2,7 +2,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 from common_utils import FormatAsBits
+from common_utils import StrToList
 import sys
+import struct
 
 class BitBucket:
   def __init__(self):
@@ -18,6 +20,18 @@ class BitBucket:
   def StoreBit(self, bit):
     self.StoreBits( ([bit << 7], 1) )
 
+  def StoreBits8(self, val):
+    tmp_val = struct.pack(">B", val)
+    self.StoreBits( (StrToList(tmp_val), 8))
+
+  def StoreBits16(self, val):
+    tmp_val = struct.pack(">H", val)
+    self.StoreBits( (StrToList(tmp_val), 16))
+
+  def StoreBits32(self, val):
+    tmp_val = struct.pack(">L", val)
+    self.StoreBits( (StrToList(tmp_val), 32))
+
   def StoreBits(self, input):
     (inp_bytes, inp_bits) = input
     old_out_boff = self.out_boff
@@ -29,9 +43,12 @@ class BitBucket:
       leftover_bits = 8
     if self.out_boff == 0:
       self.output.extend(inp_bytes)
-      if leftover_bits:
-        self.output[-1] &= ~(255 >> leftover_bits)
-        self.out_boff = leftover_bits % 8
+      if not type(inp_bytes[0]) == int:
+        print "type(inp_bytes[0]) == ", type(inp_bytes[0])
+        print repr(input)
+        raise StandardError()
+      self.output[-1] &= ~(255 >> leftover_bits)
+      self.out_boff = leftover_bits % 8
     else:
       # We know there is a non-zero bit offset if we're below here.
       # This also implies there MUST be a byte in output already.
@@ -63,16 +80,36 @@ class BitBucket:
       print "WTF"
     return num_bits
 
+  def BytesOfStorage(self):
+    return (self.NumBits() + 7) / 8
+
   def BitsRemaining(self):
     return self.NumBits() - (8*self.idx_byte + self.idx_boff)
 
   def AllConsumed(self):
     return self.NumBits() <= (8*self.idx_byte + self.idx_boff)
 
+  def GetBits8(self):
+    raw_data = self.GetBits(8)[0]
+    arg = "%c%c%c%c" % (0,0, 0, raw_data[0])
+    return struct.unpack(">L", arg)[0]
+
+  def GetBits16(self):
+    raw_data = self.GetBits(16)[0]
+    arg = "%c%c%c%c" % (0,0, raw_data[0], raw_data[1])
+    return struct.unpack(">L", arg)[0]
+
+  def GetBits32(self):
+    raw_data = self.GetBits(32)[0]
+    arg = "%c%c%c%c" % (raw_data[0], raw_data[1], raw_data[2], raw_data[3])
+    return struct.unpack(">L", arg)[0]
+
   def GetBits(self, num_bits):
     old_idx_boff = self.idx_boff
 
-    if num_bits > self.NumBits() - (8*self.idx_byte + self.idx_boff):
+    bits_available = self.NumBits() - (8*self.idx_byte + self.idx_boff)
+    if num_bits > bits_available:
+      print "num_bits: %d but bits_available: %d" % (num_bits, bits_available)
       raise StandardError()
     retval = []
     bits_left = num_bits
@@ -131,10 +168,5 @@ class BitBucket:
       sys.stdout.write("-")
     print "^"
 
-  def __str__(self):
-    return FormatAsBits((self.output, self.out_boff))
-
   def __repr__(self):
-    return self.__str__()
-
-
+    return FormatAsBits((self.output, self.out_boff))
