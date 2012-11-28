@@ -20,22 +20,15 @@ from word_freak import WordFreak
 
 options = {}
 
-# TODO(eliminate the 'index' parameter in clone and kvsto by
-#      adding an index-start to the frame)
 # TODO(try var-int encoding for indices)
-# TODO(make removals from the LRU implicit-- send no messages about them)
 # TODO(use a separate huffman encoding for cookies, and possible path)
 # TODO(interpret cookies as binary instead of base-64, does it reduce entropy?)
-# TODO(modification to 'toggl' to allow for a list of indices instead
-#      of requiring a new operation for each index not in a consecutive range)
 # TODO(index renumbering so things which are often used together
 #      have near indices. Possibly renumber whever something is referenced)
 
 
 def UnpackInt(data, params, huff):
   bitlen = params
-  #print 'AAAAAAAAAAAAAAAAAAAAAAAAA INT(', bitlen, ')'
-  #data[idx].DebugFormat()
   raw_data = data.GetBits(bitlen)[0]
   rshift = 0
   if bitlen <=8:
@@ -51,9 +44,6 @@ def UnpackInt(data, params, huff):
     arg = '%c%c%c%c' % (raw_data[0], raw_data[1], raw_data[2], raw_data[3])
     rshift = 32 - bitlen
   retval = (struct.unpack('>L', arg)[0] >> rshift)
-  #print FormatAsBits((raw_data, bitlen)), '(', retval, ')'
-  #data[idx].DebugFormat(
-  #print 'XXXXXXXXXXXXXXXXXXXXXXXXX'
   return retval
 
 def UnpackStr(data, params, huff):
@@ -63,21 +53,15 @@ def UnpackStr(data, params, huff):
     # having both is certainly fine, however.
     raise StandardError()
   bitlen = -1
-  #print 'AAAAAAAAAAAAAAAAAAAAAAAAA STR'
   if bitlen_size:
     bitlen = UnpackInt(data, bitlen_size, huff)
     if not len_as_bits:
       bitlen *= 8
-    #print 'unpack strlen_field: ', bitlen
-  #data[data_idx].DebugFormat()
   if huff:
     retval = huff.DecodeFromBB(data, use_eof, bitlen)
   else:
     retval = data.GetBits(bitlen)[0]
-  #data.DebugFormat()
   retval = ListToStr(retval)
-  #print 'str_decoded: ', retval
-  #print 'XXXXXXXXXXXXXXXXXXXXXXXXX'
   return retval
 
 # this assumes the bits are near the LSB, but must be packed to be close to MSB
@@ -95,7 +79,6 @@ def PackInt(data, params, val, huff):
   else:
     tmp_val = struct.pack('>L', val << (32 - bitlen))
 
-  #print FormatAsBits((StrToList(tmp_val), bitlen)), ' (', val, ')'
   data.StoreBits( (StrToList(tmp_val), bitlen) )
 
 def PackStr(data, params, val, huff):
@@ -114,13 +97,9 @@ def PackStr(data, params, val, huff):
   else:
     formatted_val = (StrToList(val), len(val)*8)
   if bitlen_size and len_as_bits:
-    #print 'strlen_field: ', formatted_val[1], ' bits'
     PackInt(data, bitlen_size, formatted_val[1], huff)
   elif bitlen_size:
-    #print 'strlen_field: ', formatted_val[1]/8, ' bytes ', '(', formatted_val[1], ' bits)'
     PackInt(data, bitlen_size, formatted_val[1]/8, huff)
-
-  #print FormatAsBits(formatted_val), ' (', repr(val), ')', '(', repr(ListToStr(formatted_val[0])), ')'
   data.StoreBits(formatted_val)
 
 
@@ -131,9 +110,6 @@ packing_instructions = {
   'key_idx'     : (16, PackInt, UnpackInt),
   'val'         : ((16, True, False), PackStr, UnpackStr),
   'key'         : ((16, True, False), PackStr, UnpackStr),
-
-  #'frame_len'   : ((0, 16), PackInt, UnpackInt),
-  #'stream_id'   : ((0, 32), PackInt, UnpackInt),
 }
 
 def PackOps(data, packing_instructions, ops, huff):
@@ -185,15 +161,21 @@ def FormatOp(op):
   outp.append('}')
   return ''.join(outp)
 
-def FormatOps(ops):
-  for op in ops:
-    print FormatOp(op)
+def FormatOps(ops, prefix=None):
+  if prefix is None:
+    prefix = ''
+  if isinstance(ops, list):
+    for op in ops:
+      print prefix,
+      print FormatOp(op)
+    return
+  for optype in ops.iterkeys():
+    for op in ops[optype]:
+      print prefix,
+      print FormatOp(op)
 
 
 class Spdy4SeDer(object):  # serializer deserializer
-  def __init__(self):
-    pass
-
   def PreProcessToggles(self, instructions):
     toggles = instructions['toggl']
     toggles.sort()
@@ -210,12 +192,9 @@ class Spdy4SeDer(object):  # serializer deserializer
         otr[-1]['opcode'] = 'trang'
       else:
         ot.append(toggle)
-    #print 'LENGTHS:',len(toggles),len(ot), len(otr)
-    #print "(%r)(%r)(%r)" % (toggles, ot, otr)
     return [ot, otr]
 
   def OutputOps(self, packing_instructions, huff, data, ops, opcode):
-    #print ops
     if not ops:
       return;
 
@@ -230,7 +209,6 @@ class Spdy4SeDer(object):  # serializer deserializer
       for i in xrange(ops_to_go):
         self.WriteOpData(data, ops[orig_idx + i], huff)
         ops_idx += 1
-    pass
 
   def WriteOpData(self, data, op, huff):
     for field_name in packing_order:
@@ -241,13 +219,11 @@ class Spdy4SeDer(object):  # serializer deserializer
       (params, pack_fn, _) = packing_instructions[field_name]
       val = op[field_name]
       pack_fn(data, params, val, huff)
-    pass
-
 
   def WriteControlFrameStreamId(self, data, stream_id):
-    if (stream_id & 0x8000):
+    if (stream_id & 0x80000000):
       abort()
-    data.StoreBits32(0x800 | stream_id)
+    data.StoreBits32(0x80000000 | stream_id)
 
   def WriteControlFrameBoilerplate(self,
       data,
@@ -257,8 +233,8 @@ class Spdy4SeDer(object):  # serializer deserializer
       frame_type):
     data.StoreBits16(frame_len)
     data.StoreBits8(flags)
-    data.StoreBits32(stream_id)
-    #self.WriteControlFrameStreamId(data, stream_id)
+    #data.StoreBits32(stream_id)
+    self.WriteControlFrameStreamId(data, stream_id)
     data.StoreBits8(frame_type)
 
   def SerializeInstructions(self,
@@ -286,7 +262,7 @@ class Spdy4SeDer(object):  # serializer deserializer
     overall_bb = BitBucket()
     bytes_allowed = 2**16 - boilerplate_length
     while True:
-      #print 'paylaod_len: ', payload_len
+      #print 'payload_len: ', payload_len
       bytes_to_consume = min(payload_len, bytes_allowed)
       #print 'bytes_to_consume: ', bytes_to_consume
       end_of_frame = (bytes_to_consume <= payload_len)
@@ -343,6 +319,60 @@ class Spdy4SeDer(object):  # serializer deserializer
     #print 'ops: ', ops
     return ops
 
+class HeaderGroup(object):
+  def __init__(self):
+    self.storage = dict()
+    self.generation = 0
+
+  def Empty(self):
+    return not self.storage
+
+  def IncrementGeneration(self):
+    self.generation += 1
+
+  def HasEntry(self, ve):
+    retval = id(ve) in self.storage
+    #if retval:
+    #  print "Has Entry for %s: %s" % (ve['key'], ve['val'])
+    #else:
+    #  print " NO Entry for %s: %s" % (ve['key'], ve['val'])
+    return retval
+
+  def TouchEntry(self, ve):
+    #print "TE:touched: %s: %s (%d)" % (ve['key'], ve['val'], self.generation)
+    self.storage[id(ve)] = (ve, self.generation)
+
+  def AddEntry(self, ve):
+    if id(ve) in self.storage:
+      raise StandardError()
+    self.storage[id(ve)] = (ve, self.generation)
+    #print "AE:  added: %s: %s (%d)", (ve['key'], ve['val'], self.generation)
+
+  def RemoveEntry(self, ve):
+    try:
+      del self.storage[id(ve)]
+    except KeyError:
+      pass
+
+  def FindOldEntries(self):
+    def NotCurrent(x):
+      return x != self.generation
+    retval = [e for he,(e,g) in self.storage.iteritems() if NotCurrent(g)]
+    return retval
+
+  def GetEntries(self):
+    return [e for he,(e, g) in self.storage.iteritems()]
+
+  def Toggle(self, ve):
+    try:
+      #g = self.storage[id(ve)][1]
+      del self.storage[id(ve)]
+      #print "TG: removed: %s: %s (%d)" % (ve['key'], ve['val'], g)
+    except KeyError:
+      if id(ve) in self.storage:
+        raise StandardError()
+      self.storage[id(ve)] = (ve, self.generation)
+      #print "TG:  added: %s: %s (%d)" % (ve['key'], ve['val'], self.generation)
 
 class IDStore(object):
   def __init__(self):
@@ -373,7 +403,6 @@ class Storage(object):
     self.lru = deque()
     self.lru_idx_to_ve = {}
     self.key_idx_to_ke = {}
-    pass
 
   def PopOne(self):  ####
     if not self.lru:
@@ -383,9 +412,8 @@ class Storage(object):
       return
     ve = self.lru[0]
     if self.remove_val_cb:
-      self.remove_val_cb(ve['lru_idx'])
+      self.remove_val_cb(ve)
     self.RemoveVal(ve)
-    pass
 
   def MakeSpace(self, space_required, adding_val):  ####
     while self.num_vals + adding_val > self.max_vals:
@@ -394,7 +422,6 @@ class Storage(object):
     while self.state_size + space_required > self.max_state_size:
       if not PopOne():
         return
-    pass
 
   def FindKeyEntry(self, key): ####
     if key in self.key_map:
@@ -444,17 +471,14 @@ class Storage(object):
     return ke
 
   def InsertVal(self, key, val): ####
-    #print ' InsertVal (%s, %s)' % (key, val)
     ke = self.FindOrAddKey(key)
     if ke['val_map'].get(val, None) is not None:
       print "Hmm. This (%s) shouldn't have existed already" % val
       raise StandardError()
-    #print "InsertVal: ke: ", repr(ke)
     self.IncrementRefCnt(ke)
     self.MakeSpace(len(val), 1)
     self.num_vals += 1
     ke['val_map'][val] = ve = self.NewVE(key, val, ke)
-    #print "InsertVal: ve: ", ve['lru_idx'], ve['key'], ve['val']
     self.DecrementRefCnt(ke)
     return ve
 
@@ -471,9 +495,11 @@ class Storage(object):
     return self.lru_idx_to_ve.get(lru_idx, None)
 
   def MoveToHeadOfLRU(self, ve):  ####
-    self.RemoveFromLRU(ve)
-    ve['lru_idx'] = self.lru_ids.GetNext()
-    self.lru.append(ve)
+    try:
+      self.lru.remove(ve)
+      self.lru.append(ve)
+    except:
+      pass
 
   def RemoveFromLRU(self, ve): ####
     # print "removing from LRU: (%r,%r, %d)" % (ve['key'], ve['val'], ve['lru_idx'])
@@ -524,19 +550,28 @@ class Spdy4CoDe(object):
     self.huffman_table = None
     self.wf = WordFreak()
     self.storage = Storage()
+    def RemoveVEFromAllHeaderGroups(ve):
+      to_be_removed = []
+      for group_id, header_group in self.header_groups.iteritems():
+        #print "Removing %d from hg %d" % (ve['lru_idx'], group_id)
+        header_group.RemoveEntry(ve)
+        if header_group.Empty():
+          to_be_removed.append(group_id)
+      for group_id in to_be_removed:
+        #print "Deleted group_id: %d" % group_id
+        del header_group[group_id]
 
-    self.generation = 1
-    def RemoveIndexFromAllHeaderGroups(x):
-      for k,hg in self.header_groups.iteritems():
-        if x in hg:
-          del hg[x]
-    self.storage.SetRemoveValCB(RemoveIndexFromAllHeaderGroups)
+    self.storage.SetRemoveValCB(RemoveVEFromAllHeaderGroups)
 
     default_dict = {
-        ':host': '',
-        ':method': 'get',
-        ':path': '/',
         ':scheme': 'https',
+        ':method': 'get',
+
+        'date': '',
+        ':host': '',
+        ':path': '/',
+        'cookie': '',
+
         ':status': '200',
         ':status-text': 'OK',
         ':version': '1.1',
@@ -555,8 +590,6 @@ class Spdy4CoDe(object):
         'content-md5': '',
         'content-range': '',
         'content-type': '',
-        'cookie': '',
-        'date': '',
         'etag': '',
         'expect': '',
         'expires': '',
@@ -589,7 +622,6 @@ class Spdy4CoDe(object):
         'via': '',
         'warning': '',
         'www-authenticate': '',
-        # Common stuff not in the HTTP spec.
         'access-control-allow-origin': '',
         'content-disposition': '',
         'get-dictionary': '',
@@ -636,61 +668,70 @@ class Spdy4CoDe(object):
   def MakeERef(self, key, value):
     return {'opcode': 'eref', 'key': key, 'val': value}
 
+  def FindOrMakeHeaderGroup(self, group_id):
+    try:
+      return self.header_groups[group_id]
+    except KeyError:
+      self.header_groups[group_id] = HeaderGroup()
+      return self.header_groups[group_id]
+
+  def TouchHeaderGroupEntry(self, group_id, ve):
+    self.header_groups[group_id].TouchEntry(ve)
+
+  def VEInHeaderGroup(self, group_id, ve):
+    return self.header_groups[group_id].HasEntry(ve)
+
+  def IdxToVE(self, idx):
+    return self.storage.lru_idx_to_ve[idx]
+
   def DiscoverTurnOffs(self, group_id, instructions):
-    header_group = self.FindOrMakeHeaderGroup(group_id)
-    nhg = {}
     toggles_off = []
-    for k,v in header_group.iteritems():
-      if v == self.generation:
-        nhg[k] = v
-      else:
-        toggles_off.append(self.MakeToggl(k))
-    self.header_groups[group_id] = nhg
+    header_group = self.FindOrMakeHeaderGroup(group_id)
+    for ve in header_group.FindOldEntries():
+      toggles_off.append(self.MakeToggl(ve['lru_idx']))
     return toggles_off
 
-  def ExecuteInstructionsExceptERefs(self, header_group, instructions):
+  def RenumberVELruIdx(self, ve):
+    lru_idx = ve['lru_idx']
+    new_lru_idx = ve['lru_idx'] = self.storage.lru_ids.GetNext()
+    del self.storage.lru_idx_to_ve[lru_idx]
+    self.storage.lru_idx_to_ve[new_lru_idx] = ve
+
+  def AdjustHeaderGroupEntries(self, group_id):
+    header_group = self.header_groups[group_id]
+    for ve in sorted(header_group.GetEntries(),key=lambda x: x['lru_idx']):
+      self.storage.MoveToHeadOfLRU(ve)
+      self.RenumberVELruIdx(ve)
+
+  def ExecuteInstructionsExceptERefs(self, group_id, instructions):
+    if 'trang' in instructions:
+      raise StandardError()
     for op in instructions['toggl']:
-      self.ExecuteOp(header_group, op)
+      self.ExecuteOp(group_id, op)
     for op in instructions['clone']:
-      self.ExecuteOp(header_group, op)
+      self.ExecuteOp(group_id, op)
     for op in instructions['kvsto']:
-      self.ExecuteOp(header_group, op)
-    pass
+      self.ExecuteOp(group_id, op)
 
-  def TouchHeaderGroupEntry(self, header_group, index):
-    #print "THGE: ", header_group, index
-    header_group[index] = self.generation
-    pass
-
-  def ProcessKV(self, key, val, header_group, instructions):
+  def ProcessKV(self, key, val, group_id, instructions):
     ke = self.storage.FindKeyEntry(key)
     ve = self.storage.FindValEntry(ke, val)
     if ve is not None:
-      lru_idx = ve['lru_idx']
-      if lru_idx is not None:
-        if not lru_idx in header_group:
-          instructions['toggl'].append(self.MakeToggl(lru_idx))
-        else:
-          self.TouchHeaderGroupEntry(header_group, lru_idx)
+      if not self.VEInHeaderGroup(group_id, ve):
+        instructions['toggl'].append(self.MakeToggl(ve['lru_idx']))
+      else:
+        self.TouchHeaderGroupEntry(group_id, ve)
     elif ke is not None:
-      key_idx = ke['key_idx']
-      instructions['clone'].append(self.MakeClone(key_idx, val))
+      instructions['clone'].append(self.MakeClone(ke['key_idx'], val))
     else:
       instructions['kvsto'].append(self.MakeKvsto(key, val))
-    pass
-
-  def FindOrMakeHeaderGroup(self, group_id):
-    if group_id in self.header_groups:
-      return self.header_groups[group_id]
-    self.header_groups[group_id] = {}
-    return self.header_groups[group_id]
 
   def MakeOperations(self, headers, group_id):
     instructions = {'toggl': [], 'clone': [], 'kvsto': [], 'eref': []}
     incremented_keys = []
     self.storage.PinLRU()
-    header_group = self.FindOrMakeHeaderGroup(group_id)
-    for k in headers.keys():
+    self.FindOrMakeHeaderGroup(group_id)  # make the header group if necessary
+    for k in headers.iterkeys():
       ke = self.storage.FindKeyEntry(k)
       if ke:
         self.storage.IncrementRefCnt(ke)
@@ -700,61 +741,54 @@ class Spdy4CoDe(object):
         splitvals = [x.lstrip(' ') for x in v.split(';')]
         splitvals.sort()
         for splitval in splitvals:
-          self.ProcessKV(k, splitval, header_group, instructions)
+          self.ProcessKV(k, splitval, group_id, instructions)
       else:
-        self.ProcessKV(k, v, header_group, instructions)
+        self.ProcessKV(k, v, group_id, instructions)
 
     turn_offs = self.DiscoverTurnOffs(group_id, instructions)
     instructions['toggl'].extend(turn_offs)
-    self.ExecuteInstructionsExceptERefs(header_group, instructions)
-    for i,_ in header_group.iteritems():
-      ve = self.storage.GetVEFromLRUIdx(i)
-      print "\tMO:  %d: (%s, %s)" % (i, ve["key"], ve["val"])
+    self.ExecuteInstructionsExceptERefs(group_id, instructions)
 
     for ke in incremented_keys:
       self.storage.DecrementRefCnt(ke)
     # SerializeInstructions()
     self.storage.UnPinLRU()
-    self.generation += 1
+    self.header_groups[group_id].IncrementGeneration()
+    self.AdjustHeaderGroupEntries(group_id)
+    #FormatOps(instructions, 'MO\t')
     return instructions
 
   def RealOpsToOpAndExecute(self, realops, group_id):
     ops = self.RealOpsToOps(realops)
-    header_group = self.FindOrMakeHeaderGroup(group_id)
-    self.ExecuteOps(ops, header_group)
+    #FormatOps(ops,'ROTOAE\t')
+    self.storage.PinLRU()
+    self.ExecuteOps(ops, group_id)
+    self.storage.UnPinLRU()
     return ops
 
-  def ExecuteOps(self, ops, header_group, ephemereal_headers=None):
+  def ExecuteOps(self, ops, group_id, ephemereal_headers=None):
+    self.FindOrMakeHeaderGroup(group_id)  # make the header group if necessary
     if ephemereal_headers is None:
       ephemereal_headers = {}
     #print '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
     for op in ops:
-      self.ExecuteOp(header_group, op, ephemereal_headers)
+      self.ExecuteOp(group_id, op, ephemereal_headers)
     #print 'DONE'
 
-  def ExecuteOp(self, header_group, op, ephemereal_headers=None):
+  def ExecuteToggle(self, group_id, idx):
+    self.header_groups[group_id].Toggle(self.IdxToVE(idx))
+
+  def ExecuteOp(self, group_id, op, ephemereal_headers=None):
     #print 'Executing: ', FormatOp(op)
-    if ephemereal_headers is None:
-      ephemereal_headers = {}
     opcode = op['opcode']
     if opcode == 'toggl':
-      index = op['index']
       # Toggl - toggle visibility
-      if index in header_group:
-        del header_group[index]
-      else:
-        self.TouchHeaderGroupEntry(header_group, index)
+      idx = op['index']
+      self.ExecuteToggle(group_id, idx)
     elif opcode == 'trang':
       # Trang - toggles visibility for a range of indices
-      index = op['index']
-      for i in xrange(op['index_start'], op['index']+1):
-        if i in header_group:
-          ve = self.storage.GetVEFromLRUIdx(i)
-          #print "removing ", i," from header_group (%s %s)" % (ve["key"], ve["val"])
-          del header_group[i]
-        else:
-          #print "  adding %d into header_group" % i
-          self.TouchHeaderGroupEntry(header_group, index)
+      for idx in xrange(op['index_start'], op['index']+1):
+        self.ExecuteToggle(group_id, idx)
     elif opcode == 'clone':
       key_idx = op['key_idx']
       # Clone - copies key and stores new value
@@ -762,37 +796,27 @@ class Spdy4CoDe(object):
       if ke is None:
         raise StandardError()
       ve = self.storage.InsertVal(ke['key'], op['val'])
-      if header_group is not None:
-        self.storage.AddToHeadOfLRU(ve)
-        self.TouchHeaderGroupEntry(header_group, ve['lru_idx'])
-      else:
-        self.TouchHeaderGroupEntry(header_group, ve['lru_idx'])
+      self.storage.AddToHeadOfLRU(ve)
+      self.TouchHeaderGroupEntry(group_id, ve)
     elif opcode == 'kvsto':
       # kvsto - store key,value
       ve = self.storage.InsertVal(op['key'], op['val'])
-      if header_group is not None:
+      if group_id is not None:
         self.storage.AddToHeadOfLRU(ve)
-        self.TouchHeaderGroupEntry(header_group, ve['lru_idx'])
-    elif opcode == 'eref':
+        self.TouchHeaderGroupEntry(group_id, ve)
+    elif opcode == 'eref' and ephemereal_headers is not None:
       ephemereal_headers[op['key']] = op['val']
 
   def GetDictSize(self):
     return self.total_storage
 
+
+
   def GenerateAllHeaders(self, group_id):
     headers = {}
     header_group = self.header_groups[group_id]
-    for i,_ in header_group.iteritems():
-      ve = self.storage.GetVEFromLRUIdx(i)
-      print "\tGAE: %d: (%s, %s)" % (i, ve["key"], ve["val"])
-    for index,_ in header_group.iteritems():
-      ve = self.storage.GetVEFromLRUIdx(index)
-      if ve is None:
-        print header_group
-        print "index: ", index
-        print ve
-        print self.storage.lru_idx_to_ve.keys()
-        raise StandardError()
+
+    for ve in sorted(header_group.GetEntries(),key=lambda x: x['lru_idx']):
       key = ve['key']
       val = ve['val']
       if key in headers:
@@ -801,5 +825,6 @@ class Spdy4CoDe(object):
         headers[key] = val
     if 'cookie' in headers:
       headers['cookie'] = headers['cookie'].replace('\0', '; ')
+    self.AdjustHeaderGroupEntries(group_id)
     return headers
 
