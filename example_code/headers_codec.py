@@ -36,6 +36,13 @@ options = {}
 #      we can differentiate easily between strings that are huffman encoded or
 #      strings which are not huffman encoded by examining the first bit.
 #      Alternately, define different opcodes for the various variations.
+# TODO:modify the string packing/unpacking to indicate whether the following
+#      string is huffman-encoded or not. Assuming 7-bit ascii (which is
+#      something to be discussed, this can be accomplished by adding a single
+#      bit before huffman-encoded strings (with value 1). There are other ways
+#      of accomplishing the same thing, e.g. using different operation opcodes
+#      to indicate whether the string parameters in that operation are huffman
+#      encoded.
 
 # Note: Huffman coding is used here instead of range-coding or
 # arithmetic-coding because of its relative CPU efficiency and because it is
