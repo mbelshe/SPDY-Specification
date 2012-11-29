@@ -13,7 +13,7 @@ class Huffman(object):
     self.code_table = []
     self.BuildCodeTree(freq_table)
     self.BuildCodeTable(self.code_tree)
-    print self.FormatCodeTable()
+    #print self.FormatCodeTable()
 
   def BuildCodeTree(self, freq_table):
     def MN(x):
