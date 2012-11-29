@@ -17,6 +17,13 @@ class BitBucket:
     self.idx_byte = 0
     self.idx_boff = 0
 
+  def AdvanceToByteBoundary(self):
+    bits_to_advance = (8 - self.idx_boff) % 8
+    if bits_to_advance:
+      self.idx_boff += bits_to_advance
+      self.idx_boff %= 8
+      self.idx_byte += 1
+
   def StoreBit(self, bit):
     self.StoreBits( ([bit << 7], 1) )
 
@@ -77,14 +84,14 @@ class BitBucket:
       num_bits -= 8
       num_bits += self.out_boff
     if num_bits < 0:
-      print "WTF"
+      print "What the..."
     return num_bits
 
   def BytesOfStorage(self):
     return (self.NumBits() + 7) / 8
 
   def BitsRemaining(self):
-    return self.NumBits() - (8*self.idx_byte + self.idx_boff)
+    return self.NumBits() - (8*self.idx_byte + self.idx_boff) - 1
 
   def AllConsumed(self):
     return self.NumBits() <= (8*self.idx_byte + self.idx_boff)
@@ -154,9 +161,14 @@ class BitBucket:
           if self.idx_boff >= 8:
             self.idx_byte += 1
             self.idx_boff -= 8
+            if self.idx_boff >= 8:
+              raise StandardError()
       if cur_boff:
         retval.append(cur_byte)
     if (old_idx_boff + num_bits) % 8 != self.idx_boff:
+      print "old_idx_boff(%d) + num_bits(%d) != self.idx_boff(%d) " % (
+          old_idx_boff, num_bits, self.idx_boff)
+      print "retval: ", (retval, num_bits)
       raise StandardError()
     return (retval, num_bits)
 

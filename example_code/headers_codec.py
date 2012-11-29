@@ -20,54 +20,135 @@ from word_freak import WordFreak
 
 options = {}
 
-# TODO(try var-int encoding for indices)
-# TODO(use a separate huffman encoding for cookies, and possible path)
-# TODO(interpret cookies as binary instead of base-64, does it reduce entropy?)
-# TODO(index renumbering so things which are often used together
-#      have near indices. Possibly renumber whever something is referenced)
+# Performance is a non-goal for this code.
+
+# TODO:try var-int encoding for indices, or use huffman-coding on the indices
+# TODO:use a separate huffman encoding for cookies, and possibly for path
+# TODO:interpret cookies as binary instead of base-64, does it reduce entropy?
+# TODO:make index renumbering useful so things which are often used together
+#      have near indices, or remove it as not worth the cost/complexity
+# TODO:use other mechanisms other than LRU to perform entry expiry
+# TODO:use canonical huffman codes, like the c++ version
+# TODO:use huffman coding on the operation type. Clones and toggles are by far
+#      the most common operations.
+# TODO:use huffman coding on the operation count. Small counts are far more
+#      common than large counts. Alternatively, simply use a smaller fixed-size.
+# TODO:modify the huffman-coding to always emit a code starting with 1 so that
+#      we can differentiate easily between strings that are huffman encoded or
+#      strings which are not huffman encoded by examining the first bit.
+#      Alternately, define different opcodes for the various variations.
+
+# Note: Huffman coding is used here instead of range-coding or
+# arithmetic-coding because of its relative CPU efficiency and because it is
+# fairly well known (though the canonical huffman code is a bit less well
+# known, it is still better known than most other codings)
 
 
-def UnpackInt(data, params, huff):
-  bitlen = params
-  raw_data = data.GetBits(bitlen)[0]
+###### BEGIN IMPORTANT PARAMS ######
+#  THESE PARAMETERS ARE IMPORTANT
+
+# If strings_use_eof is true, then the bitlen is not necessary, and possibly
+#  detrimental, as it caps the maximum length of any particular string.
+string_length_field_bitlen = 0
+
+# If strings_use_eof is false, however, then string_length_field_bitlen
+#  MUST be >0
+strings_use_eof = 1
+
+# If strings_padded_to_byte_boundary is true, then it is potentially faster
+# (in an optimized implementation) to decode/encode, at the expense of some
+# compression efficiency.
+strings_padded_to_byte_boundary = 1
+
+# if strings_use_huffman is false, then strings will not be encoded with
+# huffman encoding
+strings_use_huffman = 1
+
+###### END IMPORTANT PARAMS ######
+
+
+def UnpackInt(input, bitlen, huff):
+  """
+  Reads an int from an input BitBucket and returns it.
+
+  'bitlen' is between 1 and 32 (inclusive), and represents the number of bits
+  to be read and interpreted as the int.
+
+  'huff' is unused.
+  """
+  raw_input = input.GetBits(bitlen)[0]
   rshift = 0
   if bitlen <=8:
-    arg = '%c%c%c%c' % (0,0, 0,raw_data[0])
+    arg = '%c%c%c%c' % (0,0, 0,raw_input[0])
     rshift = 8 - bitlen
   elif bitlen <=16:
-    arg = '%c%c%c%c' % (0,0, raw_data[0], raw_data[1])
+    arg = '%c%c%c%c' % (0,0, raw_input[0], raw_input[1])
     rshift = 16 - bitlen
   elif bitlen <=24:
-    arg = '%c%c%c%c' % (0,raw_data[0], raw_data[1], raw_data[2])
+    arg = '%c%c%c%c' % (0,raw_input[0], raw_input[1], raw_input[2])
     rshift = 24 - bitlen
   else:
-    arg = '%c%c%c%c' % (raw_data[0], raw_data[1], raw_data[2], raw_data[3])
+    arg = '%c%c%c%c' % (raw_input[0], raw_input[1], raw_input[2], raw_input[3])
     rshift = 32 - bitlen
   retval = (struct.unpack('>L', arg)[0] >> rshift)
   return retval
 
-def UnpackStr(data, params, huff):
-  (bitlen_size, use_eof, len_as_bits) = params
+def UnpackStr(input, params, huff):
+  """
+  Reads a string from an input BitBucket and returns it.
+
+  'input' is a BitBucket containing the data to be interpreted as a string.
+
+  'params' is (bitlen_size, use_eof, pad_to_byte_boundary, use_huffman)
+
+  'bitlen_size' indicates the size of the length field. A size of 0 is valid IFF
+  'use_eof' is true.
+
+  'use_eof' indicates that an EOF character will be used (for ascii strings,
+  this will be a null. For huffman-encoded strings, this will be the specific
+  to that huffman encoding).
+
+  If 'pad_to_byte_boundary' is true, then the 'bitlen_size' parameter
+  represents bits of size, else 'bitlen_size' represents bytes.
+
+
+  if 'use_huffman' is false, then the string is not huffman-encoded.
+
+  If 'huff' is None, then the string is not huffman-encoded. If 'huff' is not
+  None, then it must be a Huffman compatible object which is used to do huffman
+  decoding.
+  """
+  (bitlen_size, use_eof, pad_to_byte_boundary, use_huffman) = params
+  if not use_huffman:
+    huff = None
   if not use_eof and not bitlen_size:
     # without either a bitlen size or an EOF, we can't know when the string ends
     # having both is certainly fine, however.
     raise StandardError()
-  bitlen = -1
   if bitlen_size:
-    bitlen = UnpackInt(data, bitlen_size, huff)
-    if not len_as_bits:
-      bitlen *= 8
-  if huff:
-    retval = huff.DecodeFromBB(data, use_eof, bitlen)
-  else:
-    retval = data.GetBits(bitlen)[0]
+    bitlen = UnpackInt(input, bitlen_size, huff)
+    if huff:
+      retval = huff.DecodeFromBB(input, use_eof, bitlen)
+    else:
+      retval = input.GetBits(bitlen)[0]
+  else:  # bitlen_size == 0
+    if huff:
+      retval = huff.DecodeFromBB(input, use_eof, 0)
+    else:
+      retval = []
+      while True:
+        c = input.GetBits8()
+        retval.append(c)
+        if c == 0:
+          break
+  if pad_to_byte_boundary:
+    input.AdvanceToByteBoundary()
   retval = ListToStr(retval)
   return retval
 
 # this assumes the bits are near the LSB, but must be packed to be close to MSB
-def PackInt(data, params, val, huff):
-  bitlen = params
-  if bitlen <= 0 or bitlen > 32 or val  != val & ~(0x1 << bitlen):
+def PackInt(data, bitlen, val, huff):
+  if bitlen <= 0 or bitlen > 32 or val != (val & ~(0x1 << bitlen)):
     print 'bitlen: ', bitlen, ' val: ', val
     raise StandardError()
   if bitlen <= 8:
@@ -78,38 +159,38 @@ def PackInt(data, params, val, huff):
     tmp_val = struct.pack('>L', val << (24 - bitlen))[1:]
   else:
     tmp_val = struct.pack('>L', val << (32 - bitlen))
-
   data.StoreBits( (StrToList(tmp_val), bitlen) )
 
 def PackStr(data, params, val, huff):
-  (bitlen_size, use_eof, len_as_bits) = params
-  # if len_as_bits, then don't need eof.
+  (bitlen_size, use_eof, pad_to_byte_boundary, use_huffman) = params
   # if eof, then don't technically need bitlen at all...
+  if not use_huffman:
+    huff = None
 
   if not use_eof and not bitlen_size:
     # without either a bitlen size or an EOF, we can't know when the string ends
     # having both is certainly fine, however.
     raise StandardError()
+  val_as_list = StrToList(val)
+  len_in_bits = len(val) * 8
   if huff:
-    formatted_val = huff.Encode(StrToList(val), use_eof)
-    if not len_as_bits:
-      formatted_val = (formatted_val[0], len(formatted_val[0])*8)
-  else:
-    formatted_val = (StrToList(val), len(val)*8)
-  if bitlen_size and len_as_bits:
-    PackInt(data, bitlen_size, formatted_val[1], huff)
-  elif bitlen_size:
-    PackInt(data, bitlen_size, formatted_val[1]/8, huff)
-  data.StoreBits(formatted_val)
+    (val_as_list, len_in_bits) = huff.Encode(val_as_list, use_eof)
+    if pad_to_byte_boundary:
+      len_in_bits = len(val_as_list) *8
+  if bitlen_size:
+    PackInt(data, bitlen_size, len_in_bits, huff)
+  data.StoreBits( (val_as_list, len_in_bits) )
 
 
+str_pack_params = (string_length_field_bitlen, strings_use_eof,
+                   strings_padded_to_byte_boundary, strings_use_huffman)
 packing_instructions = {
-  'opcode'      : (8, PackInt, UnpackInt),
-  'index'       : (16, PackInt, UnpackInt),
-  'index_start' : (16, PackInt, UnpackInt),
-  'key_idx'     : (16, PackInt, UnpackInt),
-  'val'         : ((16, True, False), PackStr, UnpackStr),
-  'key'         : ((16, True, False), PackStr, UnpackStr),
+  'opcode'      : (  8,             PackInt, UnpackInt),
+  'index'       : ( 16,             PackInt, UnpackInt),
+  'index_start' : ( 16,             PackInt, UnpackInt),
+  'key_idx'     : ( 16,             PackInt, UnpackInt),
+  'val'         : (str_pack_params, PackStr, UnpackStr),
+  'key'         : (str_pack_params, PackStr, UnpackStr),
 }
 
 def PackOps(data, packing_instructions, ops, huff):
@@ -197,7 +278,6 @@ class Spdy4SeDer(object):  # serializer deserializer
   def OutputOps(self, packing_instructions, huff, data, ops, opcode):
     if not ops:
       return;
-
     ops_idx = 0
     ops_len = len(ops)
     while ops_len > ops_idx:
@@ -209,6 +289,7 @@ class Spdy4SeDer(object):  # serializer deserializer
       for i in xrange(ops_to_go):
         self.WriteOpData(data, ops[orig_idx + i], huff)
         ops_idx += 1
+
 
   def WriteOpData(self, data, op, huff):
     for field_name in packing_order:
@@ -283,7 +364,7 @@ class Spdy4SeDer(object):  # serializer deserializer
     flags = 0
     #print 'DeserializeInstructions'
     while flags == 0:
-      frame_len = bb.GetBits16()
+      frame_len = bb.GetBits16() * 8
       #print 'frame_len: ', frame_len
       flags = bb.GetBits8()
       #print 'flags: ', flags
@@ -291,7 +372,7 @@ class Spdy4SeDer(object):  # serializer deserializer
       #print 'stream_id: ', stream_id
       frame_type = bb.GetBits8()
       #print 'frame_type: ', frame_type
-      while frame_len:
+      while frame_len > 16:  # 16 bits minimum for the opcode + count...
         bits_remaining_at_start = bb.BitsRemaining()
         opcode_val = bb.GetBits8()
         #print 'opcode_val: ', opcode_val
@@ -309,13 +390,16 @@ class Spdy4SeDer(object):  # serializer deserializer
             val = unpack_fn(bb, params, huff)
             #print val
             op[field_name] = val
+            #print "BitsRemaining: %d (%d)" % (bb.BitsRemaining(), bb.BitsRemaining() % 8)
+          #print "Deser %d" % (bb.NumBits() - bb.BitsRemaining())
           #print op
           ops.append(op)
         bits_consumed = (bits_remaining_at_start - bb.BitsRemaining())
-        if not bits_consumed % 8 == 0:
-          print "somehow didn't consume whole bytes..."
-          raise StandardError()
-        frame_len -= bits_consumed / 8
+        #if not bits_consumed % 8 == 0:
+        #  print "somehow didn't consume whole bytes..."
+        #  print "Bits consumed: %d (%d)" % (bits_consumed, bits_consumed % 8)
+        #  raise StandardError()
+        frame_len -= bits_consumed
     #print 'ops: ', ops
     return ops
 

@@ -4,6 +4,8 @@
 import heapq
 from collections import deque
 from bit_bucket import BitBucket
+from common_utils import FormatAsBits
+import string
 
 class Huffman(object):
   def __init__(self, freq_table):
@@ -11,6 +13,7 @@ class Huffman(object):
     self.code_table = []
     self.BuildCodeTree(freq_table)
     self.BuildCodeTable(self.code_tree)
+    print self.FormatCodeTable()
 
   def BuildCodeTree(self, freq_table):
     def MN(x):
@@ -96,9 +99,11 @@ class Huffman(object):
   def DecodeFromBB(self, bb, includes_eof, bits_to_decode):
     output = []
     total_bits = 0
-    if not includes_eof and bits_to_decode < 0:
+    if not includes_eof and bits_to_decode <= 0:
       # That can't work.
       raise StandardError()
+    if bits_to_decode <= 0:
+      bits_to_decode = -1
     while bits_to_decode < 0 or total_bits < bits_to_decode:
       root = self.code_tree
       while root[1] is None:
@@ -150,10 +155,19 @@ class Huffman(object):
     return output
 
   def FormatCodeTable(self):
-    x = sorted([(chr(i), self.code_table[i])
-                for i in xrange(len(self.code_table))],
-               key=lambda x: (x[1][1], x[1][0]))
-    return repr(x)
+    printable = string.digits + string.letters + string.punctuation + ' ' + "\t"
+    x = sorted([(i,FormatAsBits( self.code_table[i]))
+                for i in xrange(len(self.code_table))])
+    retval = []
+    for entry in x:
+      code, description = entry
+      readable_code = ""
+      if code < 256 and chr(code) in printable and chr(code) != '\t':
+        readable_code = "'%c'" % chr(code)
+      while len(readable_code) < 5:
+          readable_code = " " + readable_code
+      retval.append('%s (%3d): %s' % (readable_code, code, description))
+    return '\n'.join(retval)
 
   def __repr__(self):
     output = ['[']
