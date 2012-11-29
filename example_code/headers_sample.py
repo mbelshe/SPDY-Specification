@@ -91,13 +91,27 @@ class SPDY3(object):
     self.compressor.flush(zlib.Z_SYNC_FLUSH)
 
   def ProcessFrame(self, inp_headers, request_headers):
-    spdy3_frame = self.Spdy3HeadersFormat(inp_headers)
-    return ((self.compressor.compress(spdy3_frame) +
-             self.compressor.flush(zlib.Z_SYNC_FLUSH)),
-             spdy3_frame)
+    raw_spdy3_frame = self.Spdy3HeadersFormat(inp_headers)
+    compress_me_payload = raw_spdy3_frame[12:]
+    final_frame = raw_spdy3_frame[:12]
+    final_frame += self.compressor.compress(compress_me_payload)
+    final_frame += self.compressor.flush(zlib.Z_SYNC_FLUSH)
+    return (final_frame, raw_spdy3_frame)
 
   def Spdy3HeadersFormat(self, request):
     out_frame = []
+    frame_len = 0
+    for (key, val) in request.iteritems():
+      frame_len += 4
+      frame_len += len(key)
+      frame_len += 4
+      frame_len += len(val)
+    stream_id = 1
+    num_kv_pairs = len(request.keys())
+    out_frame.append(struct.pack('!L', 0x1 << 31 | 0x11 << 15 | 0x8))
+    out_frame.append(struct.pack('!L', frame_len))
+    out_frame.append(struct.pack('!L', stream_id))
+    out_frame.append(struct.pack('!L', num_kv_pairs))
     for (key, val) in request.iteritems():
       out_frame.append(struct.pack('!L', len(key)))
       out_frame.append(key)
@@ -134,16 +148,67 @@ def CompareHeaders(a, b):
     b['cookie'] = '; '.join(sorted([x.lstrip(' ') for x in splitvals]))
   for (k,v) in a.iteritems():
     if not k in b:
-      output.append('key: %s present in only one (A)' % k)
+      output.append('\tkey: %s present in only one (A)' % k)
       continue
     if v != b[k]:
-      output.append('key: %s has mismatched values:' % k)
-      output.append('  -> %s' % v)
-      output.append('  -> %s' % b[k])
+      output.append('\tkey: %s has mismatched values:' % k)
+      output.append('\t  -> %s' % v)
+      output.append('\t  -> %s' % b[k])
     del b[k]
   for (k, v) in b.iteritems():
-      output.append('key: %s present in only one (B)' % k)
+      output.append('\tkey: %s present in only one (B)' % k)
   return '\n'.join(output)
+
+
+# this requires that both spdy4 and http1 be present in the list of framers.
+def ProcessAndFormat(top_message, frametype_message,
+                     framers,
+                     request, test_frame,
+                     accumulator):
+  if options.v >= 1:
+    print '    ######## %s ########' % top_message
+  processing_results = []
+
+  for protocol_name, framer in framers.iteritems():
+    result = framer.ProcessFrame(test_frame, request)
+    if protocol_name == 'spdy4':
+      spdy4_result = result
+      processing_results.append((protocol_name, result[:2]))
+    elif protocol_name == 'http1':
+      processing_results.append((protocol_name, result))
+      http1_uncompressed_size = len(result[1])
+    else:
+      processing_results.append((protocol_name, result))
+
+  if options.v >= 2:
+    for op in spdy4_result[6]:
+      print '\t rq_op: ', FormatOp(op)
+
+  message = CompareHeaders(test_frame, spdy4_result[4])
+  if message:
+    print 'Something is wrong with the request.'
+    if options.v >= 1:
+      print message
+    if options.v >= 5:
+      print 'It should be:'
+      for k,v in         request.iteritems(): print '\t%s: %s' % (k,v)
+      print 'but it was:'
+      for k,v in spdy4_result[4].iteritems(): print '\t%s: %s' % (k,v)
+
+  lines = []
+  for protocol_name, results in processing_results:
+    compressed_size, uncompressed_size = map(len, results)
+    accumulator[protocol_name][0] += compressed_size
+    accumulator[protocol_name][1] += uncompressed_size
+    lines.append( ('%s %s' % (protocol_name, frametype_message),
+                  uncompressed_size,
+                  compressed_size,
+                  1.0 * compressed_size / http1_uncompressed_size) )
+  if options.v >= 1:
+    print '                            UC  |  CM  | ratio'
+    for line in sorted(lines):
+      print '     %s frame size: %4d | %4d | %2.2f ' % line
+    print
 
 
 def main():
@@ -180,152 +245,71 @@ def main():
       requests.extend(har_requests)
       responses.extend(har_responses)
 
-  spdy4_rq = SPDY4(options)
-  spdy4_rq.compressor.huffman_table = Huffman(request_freq_table)
-  spdy4_rq.decompressor.huffman_table = spdy4_rq.compressor.huffman_table
-  spdy3_rq = SPDY3(options)
-  http1_rq = HTTP1(options)
-  spdy4_rs = SPDY4(options)
-  spdy4_rs.compressor.huffman_table = Huffman(response_freq_table)
-  spdy4_rs.decompressor.huffman_table = spdy4_rs.compressor.huffman_table
-  spdy3_rs = SPDY3(options)
-  http1_rs = HTTP1(options)
+  spdy4_req = SPDY4(options)
+  spdy4_req.compressor.huffman_table = Huffman(request_freq_table)
+  spdy4_req.decompressor.huffman_table = spdy4_req.compressor.huffman_table
+  spdy3_req = SPDY3(options)
+  http1_req = HTTP1(options)
+  spdy4_rsp = SPDY4(options)
+  spdy4_rsp.compressor.huffman_table = Huffman(response_freq_table)
+  spdy4_rsp.decompressor.huffman_table = spdy4_rsp.compressor.huffman_table
+  spdy3_rsp = SPDY3(options)
+  http1_rsp = HTTP1(options)
 
-  print '        UC: UnCompressed frame size'
-  print '        CM: CoMpressed frame size'
-  print '        UR: Uncompressed / Http uncompressed'
-  print '        CR:   Compressed / Http compressed'
-  def framelen(x):
-    return  len(x) + 10
-  h1usrq = 0
-  h1csrq = 0
-  s3usrq = 0
-  s3csrq = 0
-  s4usrq = 0
-  s4csrq = 0
-  h1usrs = 0
-  h1csrs = 0
-  s3usrs = 0
-  s3csrs = 0
-  s4usrs = 0
-  s4csrs = 0
+  req_accum = {'http1': [0,0], 'spdy3': [0,0], 'spdy4': [0,0]}
+  rsp_accum = {'http1': [0,0], 'spdy3': [0,0], 'spdy4': [0,0]}
   for i in xrange(len(requests)):
     request = requests[i]
     response = responses[i]
     if options.v >= 2:
       print '##################################################################'
-      print '####### request-path: "%s"' % requests[i][':path'][:80]
-    if options.v >= 4:
-      print '######## request  ########'
-      for k,v in request.iteritems():
-        print '\t',k, ':', v
-
-    rq4 = spdy4_rq.ProcessFrame(request, request)
-    rq3 = spdy3_rq.ProcessFrame(request, request)
-    rqh = http1_rq.ProcessFrame(request, request)
-
-    if options.v >= 2:
-      print
-      for op in rq4[6]:
-        print '\trq_op: ', FormatOp(op)
-
-    message = CompareHeaders(request, rq4[4])
-    if message:
-      print 'Something is wrong with the request.'
-      if options.v >= 1:
-        print message
-      if options.v >= 5:
-        print 'It should be:'
-        for k,v in request.iteritems(): print '\t%s: %s' % (k,v)
-        print 'but it was:'
-        for k,v in  rq4[4].iteritems(): print '\t%s: %s' % (k,v)
-
-    (h1comrq, h1uncomrq) = map(len, rqh)
-    h1usrq += h1uncomrq; h1csrq += h1comrq
-    (s3comrq, s3uncomrq) = map(framelen, rq3)
-    s3usrq += s3uncomrq; s3csrq += s3comrq
-    (s4comrq, s4uncomrq) = map(len, rq4[:2])
-    s4usrq += s4uncomrq; s4csrq += s4comrq
-
-    lines = [
-    ('http1 req', h1uncomrq, h1comrq, 1.0*h1comrq/h1uncomrq),
-    ('spdy3 req', s3uncomrq, s3comrq, 1.0*s3comrq/h1uncomrq),
-    ('spdy4 req', s4uncomrq, s4comrq, 1.0*s4comrq/h1uncomrq),
-    ]
-
-    if options.v >= 1:
-      print '                            UC  |  CM  |  ratio'
-      for fmtarg in lines:
-        print '     %s frame size: %4d | %4d | %2.2f ' % fmtarg
-
-    #if options.v >= 4:
-    #  print '######## response ########'
-    #  for k,v in response.iteritems():
-    #    print '\t',k, ':', v
-
-    #rs4 = spdy4_rs.ProcessFrame(response, request)
-    #rs3 = spdy3_rs.ProcessFrame(response, request)
-    #rsh = http1_rs.ProcessFrame(response, request)
-
-    #if options.v >= 2:
-    #  print
-    #  for op in rs4[6]:
-    #    print '\trs_op: ', FormatOp(op)
-    #  print
-
-    #message = CompareHeaders(response, rs4[4])
-    #if message:
-    #  print 'Something is wrong with the response.'
-    #  if options.v >= 1:
-    #    print message
-
-    #(h1comrs, h1uncomrs) = map(len, rsh)
-    #h1usrs += h1uncomrs; h1csrs += h1comrs
-    #(s3comrs, s3uncomrs) = map(framelen, rs3)
-    #s3usrs += s3uncomrs; s3csrs += s3comrs
-    #(s4comrs, s4uncomrs) = map(len, rs4[:2])
-    #s4usrs += s4uncomrs; s4csrs += s4comrs
-
-
-    #lines = [
-    #('http1 res', h1uncomrs, h1comrs, 1.0*h1uncomrs/h1uncomrs, 1.0*h1comrs/h1comrs),
-    #('spdy3 res', s3uncomrs, s3comrs, 1.0*s3uncomrs/h1uncomrs, 1.0*s3comrs/h1comrs),
-    #('spdy4 res', s4uncomrs, s4comrs, 1.0*s4uncomrs/h1uncomrs, 1.0*s4comrs/h1comrs),
-    #]
-
-    #if options.v >= 1:
-    #  print '                            UC  |  CM  |  UR  |  CR'
-    #  for fmtarg in lines:
-    #    print '     %s frame size: %4d | %4d | %2.2f | %2.2f' % fmtarg
-    if options.v >= 1:
-      print
+      print '    ####### request-path: "%s"' % requests[i][':path'][:80]
+    ProcessAndFormat("request", "req",
+        {'http1': http1_req, 'spdy3': spdy3_req, 'spdy4': spdy4_req},
+        request, request,
+        req_accum)
+    ProcessAndFormat("response", "rsp",
+        {'http1': http1_rsp, 'spdy3': spdy3_rsp, 'spdy4': spdy4_rsp},
+        request, response,
+        rsp_accum)
   print 'Thats all folks. If you see this, everything worked OK'
 
   print '######################################################################'
   print '######################################################################'
   print
   print '                                       http1   |   spdy3   |   spdy4 '
-  fmtarg = (h1usrq, s3usrq, s4usrq)
-  print 'Req              Uncompressed Sums:  % 8d  | % 8d  | % 8d  ' % fmtarg
-  fmtarg = (h1csrq,  s3csrq, s4csrq)
+
+
+
+
+  fmtarg = (req_accum['http1'][1], req_accum['spdy3'][1], req_accum['spdy4'][1])
   print 'Req                Compressed Sums:  % 8d  | % 8d  | % 8d  ' % fmtarg
 
-  if h1usrq:
-    fmtarg = (h1usrq*1./h1usrq,  s3usrq*1./h1usrq, s4usrq*1./h1usrq)
-    print 'Req Uncompressed/uncompressed HTTP:  % 2.5f  | % 2.5f  | % 2.5f  ' % fmtarg
-    fmtarg = (h1csrq*1./h1usrq,  s3csrq*1./h1usrq, s4csrq*1./h1usrq)
+  fmtarg = (req_accum['http1'][0], req_accum['spdy3'][0], req_accum['spdy4'][0])
+  print 'Req              Uncompressed Sums:  % 8d  | % 8d  | % 8d  ' % fmtarg
+
+
+  fmtarg = (rsp_accum['http1'][1], rsp_accum['spdy3'][1], rsp_accum['spdy4'][1])
+  print 'Rsp                Compressed Sums:  % 8d  | % 8d  | % 8d  ' % fmtarg
+
+  fmtarg = (rsp_accum['http1'][0], rsp_accum['spdy3'][0], rsp_accum['spdy4'][0])
+  print 'Rsp              Uncompressed Sums:  % 8d  | % 8d  | % 8d  ' % fmtarg
+
+
+
+  if req_accum['http1'][1]:
+    fmtarg = (1.0 * req_accum['http1'][0]/req_accum['http1'][1],
+              1.0 * req_accum['spdy3'][0]/req_accum['http1'][1],
+              1.0 * req_accum['spdy4'][0]/req_accum['http1'][1])
     print 'Req   Compressed/uncompressed HTTP:  % 2.5f  | % 2.5f  | % 2.5f  ' % fmtarg
-    print
-  fmtarg = (h1usrs, s3usrs, s4usrs)
-  #print 'Res              Uncompressed Sums:  % 8d  | % 8d  | % 8d  ' % fmtarg
-  #fmtarg = (h1csrs,  s3csrs, s4csrs)
-  #print 'Res                Compressed Sums:  % 8d  | % 8d  | % 8d  ' % fmtarg
-  #if h1usrs:
-  #  fmtarg = (h1usrs*1./h1usrs,  s3usrs*1./h1usrs, s4usrs*1./h1usrs)
-  #  print 'Res Uncompressed/uncompressed HTTP:  % 2.5f  | % 2.5f  | % 2.5f  ' % fmtarg
-  #  fmtarg = (h1csrs*1./h1usrs,  s3csrs*1./h1usrs, s4csrs*1./h1usrs)
-  #  print 'Res   Compressed/uncompressed HTTP:  % 2.5f  | % 2.5f  | % 2.5f  ' % fmtarg
-  #print
+
+  if rsp_accum['http1'][0]:
+    fmtarg = (1.0 * rsp_accum['http1'][0]/rsp_accum['http1'][1],
+              1.0 * rsp_accum['spdy3'][0]/rsp_accum['http1'][1],
+              1.0 * rsp_accum['spdy4'][0]/rsp_accum['http1'][1])
+    print 'Rsp   Compressed/uncompressed HTTP:  % 2.5f  | % 2.5f  | % 2.5f  ' % fmtarg
+
+  print
 
 
 

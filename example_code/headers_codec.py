@@ -11,8 +11,6 @@ from bit_bucket import BitBucket
 from collections import defaultdict
 from collections import deque
 from common_utils import *
-from header_freq_tables import request_freq_table
-from header_freq_tables import response_freq_table
 from huffman import Huffman
 from optparse import OptionParser
 from spdy_dictionary import spdy_dict
