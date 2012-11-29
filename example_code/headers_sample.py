@@ -8,6 +8,7 @@ import re
 import struct
 
 from common_utils import *
+#from common_utils import IDStore
 from default_headers import default_requests
 from default_headers import default_responses
 from harfile import ReadHarFile
@@ -33,37 +34,55 @@ options = {}
 # TODO(index renumbering so things which are often used together
 #      have near indices. Possibly renumber whever something is referenced)
 
-def KtoV(d):
-  return dict((v, k) for k, v in d.iteritems())
-
-def NextIndex(d):
-  if not d:
-    return 1
-  indices = sorted(d.keys())
-  prev_idx = 0
-  idx = 0
-  for idx in indices:
-    if idx - prev_idx > 1:
-      # jumped up by more than one.
-      return prev_idx + 1
-    prev_idx = idx
-  return idx + 1
-
 class SPDY4(object):
+  """
+  This class formats header frames in SPDY4 wire format, and then reads the
+  resulting wire-formatted data and restores the data. Thus, it compresses and
+  decompresses header data.
+
+  It also keeps track of letter frequencies so that better frequency tables
+  can eventually be constructed for use with the Huffman encoder.
+  """
   def __init__(self, options):
     self.compressor   = Spdy4CoDe()
     self.decompressor = Spdy4CoDe()
     self.options = options
     self.hosts = {}
+    self.group_ids = IDStore()
     self.wf = self.compressor.wf
+    self.compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
+                                       zlib.DEFLATED, 15)
+    self.compressor.flush(zlib.Z_SYNC_FLUSH)
+    self.decompressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
+                                       zlib.DEFLATED, 15)
+    self.decompressor.flush(zlib.Z_SYNC_FLUSH)
 
   def ProcessFrame(self, inp_headers, request_headers):
+    """
+    'inp_headers' are the headers that will be processed
+    'request_headers' are the request headers associated with this frame
+       the host is extracted from this data. For a response, this would be
+       the request that engendered the response. For a request, it is just
+       the request again.
+
+    It returns:
+    (compressed_frame,
+     wire_formatted_operations_before_compression,
+     wire_formatted_operations_after_decompression,
+     input_headers,
+     outputted_headers_after_encode_decode,
+     operations_as_computed_by_encoder,
+     operations_as_recovered_after_decode)
+
+    Note that compressing with an unmodified stream-compressor like gzip is
+    effective, however it is insecure.
+    """
     normalized_host = re.sub('[0-1a-zA-Z-\.]*\.([^.]*\.[^.]*)', '\\1',
                              request_headers[':host'])
     if normalized_host in self.hosts:
       header_group = self.hosts[normalized_host]
     else:
-      header_group = NextIndex(KtoV(self.hosts))
+      header_group = self.group_ids.GetNext()
       self.hosts[normalized_host] = header_group
     if self.options.f:
       header_group = 0
@@ -74,7 +93,6 @@ class SPDY4(object):
     out_real_ops = self.decompressor.Decompress(compressed_blob)
     out_ops = self.decompressor.RealOpsToOpAndExecute(
         out_real_ops, header_group)
-    #FormatOps(out_ops, 'OutOps\t')
     out_headers = self.decompressor.GenerateAllHeaders(header_group)
     return (compressed_blob,
             inp_real_ops, out_real_ops,
@@ -91,6 +109,17 @@ class SPDY3(object):
     self.compressor.flush(zlib.Z_SYNC_FLUSH)
 
   def ProcessFrame(self, inp_headers, request_headers):
+    """
+    'inp_headers' are the headers that will be processed
+    'request_headers' are the request headers associated with this frame
+       the host is extracted from this data. For a response, this would be
+       the request that engendered the response. For a request, it is just
+       the request again.
+    It outputs: (spdy3_frame_compressed_with_gzip, uncompressed_spdy3_frame)
+    Note that compressing with an unmodified stream-compressor like gzip is
+    effective, however it is insecure.
+    """
+
     raw_spdy3_frame = self.Spdy3HeadersFormat(inp_headers)
     compress_me_payload = raw_spdy3_frame[12:]
     final_frame = raw_spdy3_frame[:12]
@@ -128,6 +157,16 @@ class HTTP1(object):
     self.compressor.flush(zlib.Z_SYNC_FLUSH)
 
   def ProcessFrame(self, inp_headers, request_headers):
+    """
+    'inp_headers' are the headers that will be processed
+    'request_headers' are the request headers associated with this frame
+       the host is extracted from this data. For a response, this would be
+       the request that engendered the response. For a request, it is just
+       the request again.
+    It outputs: (http1_frame_compressed_with_gzip, uncompressed_http1_frame)
+    Note that compressing with an unmodified stream-compressor like gzip is
+    effective, however it is insecure.
+    """
     http1_frame = self.HTTP1HeadersFormat(inp_headers)
     return ((self.compressor.compress(http1_frame) +
              self.compressor.flush(zlib.Z_SYNC_FLUSH)),
@@ -137,6 +176,12 @@ class HTTP1(object):
     return FormatAsHTTP1(frame)
 
 def CompareHeaders(a, b):
+  """
+  Compares two sets of headers, and returns a message denoting any differences.
+  It ignores ordering differences in cookies, but tests that all the content
+  does exist in both.
+  If nothing is different, it returns an empty string
+  """
   a = dict(a)
   b = dict(b)
   output = []
@@ -160,11 +205,28 @@ def CompareHeaders(a, b):
   return '\n'.join(output)
 
 
-# this requires that both spdy4 and http1 be present in the list of framers.
 def ProcessAndFormat(top_message, frametype_message,
                      framers,
                      request, test_frame,
                      accumulator):
+  """
+  This uses the various different framing classes to encode/compress,
+  potentially report on the results of each, and then accumulates stats on the
+  effectiveness of each.
+  'top_message' is the message printed at the top of the results,
+                e.g. "request foo"
+  'frametype_message' denotes the kind of message, e.g. request or response.
+  'framers' is a dictionary of protocol_name: framer. It *must* include a
+           'spdy4' and 'http1' framer if the function is to do its job properly.
+  'request' is the request associated with the test_frame. If the test_frame is
+            a request, this would simply be a repetition of that. If the
+            test_frame is a response, this would be the request which engendered
+            the response.
+  'accumulator' is a dictionary of protocol_name to list-of-ints (of size two).
+               this function adds the compressed and uncompressed sizes into
+               the dictionary entry corresponding to the protocol_name for each
+               of the framers in 'framers'
+  """
   if options.v >= 1:
     print '    ######## %s ########' % top_message
   processing_results = []
@@ -279,9 +341,6 @@ def main():
   print
   print '                                       http1   |   spdy3   |   spdy4 '
 
-
-
-
   fmtarg = (req_accum['http1'][1], req_accum['spdy3'][1], req_accum['spdy4'][1])
   print 'Req                Compressed Sums:  % 8d  | % 8d  | % 8d  ' % fmtarg
 
@@ -294,8 +353,6 @@ def main():
 
   fmtarg = (rsp_accum['http1'][0], rsp_accum['spdy3'][0], rsp_accum['spdy4'][0])
   print 'Rsp              Uncompressed Sums:  % 8d  | % 8d  | % 8d  ' % fmtarg
-
-
 
   if req_accum['http1'][1]:
     fmtarg = (1.0 * req_accum['http1'][0]/req_accum['http1'][1],
@@ -310,18 +367,5 @@ def main():
     print 'Rsp   Compressed/uncompressed HTTP:  % 2.5f  | % 2.5f  | % 2.5f  ' % fmtarg
 
   print
-
-
-
-  #print repr(spdy4_rq.wf)
-  #print
-  #print spdy4_rq.wf.length_freaks
-  #print
-
-  #print repr(spdy4_rs.wf)
-  #print
-  #print spdy4_rs.wf.length_freaks
-  #print
-  #print spdy4_rs.wf
 
 main()

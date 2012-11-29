@@ -11,6 +11,7 @@ from bit_bucket import BitBucket
 from collections import defaultdict
 from collections import deque
 from common_utils import *
+#from common_utils import IDStore
 from huffman import Huffman
 from optparse import OptionParser
 from spdy_dictionary import spdy_dict
@@ -146,6 +147,14 @@ def UnpackStr(input, params, huff):
 
 # this assumes the bits are near the LSB, but must be packed to be close to MSB
 def PackInt(data, bitlen, val, huff):
+  """ Packs an int of up to 32 bits, as specified by the 'bitlen' parameter into
+  the BitBucket object 'data'.
+  'data' the BitBucket object into which the int is written
+  'bitlen' the number of bits used for the int
+  'val' the value to be packed into data (limited by bitlen)
+        If val is larger than 'bitlen', the bits near the LSB are packed.
+  'huff' is unused.
+  """
   if bitlen <= 0 or bitlen > 32 or val != (val & ~(0x1 << bitlen)):
     print 'bitlen: ', bitlen, ' val: ', val
     raise StandardError()
@@ -160,6 +169,19 @@ def PackInt(data, bitlen, val, huff):
   data.StoreBits( (StrToList(tmp_val), bitlen) )
 
 def PackStr(data, params, val, huff):
+  """
+  Packs a string into the output BitBucket ('data').
+  'data' is the BitBucket into which the string will be written.
+  'params' is (bitlen_size, use_eof, pad_to_byte_boundary, use_huffman)
+  bitlen_size - between 0 and 32 bits. It can be zero IFF 'use_eof' is true
+  use_eof - if true, the string is encoded with an EOF character. When
+            use_huffman is false, this character is '\0', but when
+            use_huffman is true, this character is determined by the encoder
+  pad_to_byte_boundary - if true, then enough bits are written to ensure that
+                         the data ends on a byte boundary.
+  'val' is the string to be packed
+  'huff' is the Huffman object to be used when doing huffman encoding.
+  """
   (bitlen_size, use_eof, pad_to_byte_boundary, use_huffman) = params
   # if eof, then don't technically need bitlen at all...
   if not use_huffman:
@@ -179,9 +201,12 @@ def PackStr(data, params, val, huff):
     PackInt(data, bitlen_size, len_in_bits, huff)
   data.StoreBits( (val_as_list, len_in_bits) )
 
-
 str_pack_params = (string_length_field_bitlen, strings_use_eof,
                    strings_padded_to_byte_boundary, strings_use_huffman)
+# This is the list of things to do for each fieldtype we may be packing.
+# the first param is what is passed to the pack/unpack function.
+# the second and third params are the packing and unpacking functions,
+# respectively.
 packing_instructions = {
   'opcode'      : (  8,             PackInt, UnpackInt),
   'index'       : ( 16,             PackInt, UnpackInt),
@@ -192,14 +217,22 @@ packing_instructions = {
 }
 
 def PackOps(data, packing_instructions, ops, huff):
+  """ Packs (i.e. renders into wire-format) the operations in 'ops' into the
+  BitBucket 'data', using the 'packing_instructions' and possibly the Huffman
+  encoder 'huff'
+  """
   seder = Spdy4SeDer()
   data.StoreBits(seder.SerializeInstructions(ops, packing_instructions,
                                              huff, 1234, True))
 
 def UnpackOps(data, packing_instructions, huff):
+  """
+  Unpacks wire-formatted ops into an in-memory representation
+  """
   seder = Spdy4SeDer()
   return seder.DeserializeInstructions(data, packing_instructions, huff)
 
+# The order in which to format and pack operations.
 packing_order = ['opcode',
                  'index',
                  'index_start',
@@ -208,6 +241,7 @@ packing_order = ['opcode',
                  'val',
                  ]
 
+# opcode-name: opcode-value list-of-fields-for-opcode
 opcodes = {
     'toggl': (0x1, 'index'),
     'trang': (0x2, 'index', 'index_start'),
@@ -216,14 +250,17 @@ opcodes = {
     'eref' : (0x5,          'key',                    'val'),
     }
 
+# an inverse dict of opcode-val: opcode-name list-of-fields-for-opcode
 opcode_to_op = {}
 for (key, val) in opcodes.iteritems():
   opcode_to_op[val[0]] = [key] + list(val[1:])
 
-def OpcodeToVal(x):
-  return opcodes[x][0]
+def OpcodeToVal(opcode_name):
+  """ Gets the opcode-value for an opcode-name"""
+  return opcodes[opcode_name][0]
 
 def FormatOp(op):
+  """ Pretty-prints an op to a string for easy human consumption"""
   order = packing_order
   outp = ['{']
   inp = []
@@ -241,6 +278,8 @@ def FormatOp(op):
   return ''.join(outp)
 
 def FormatOps(ops, prefix=None):
+  """ Pretty-prints an operation or list of operations for easy human
+  consumption"""
   if prefix is None:
     prefix = ''
   if isinstance(ops, list):
@@ -255,7 +294,15 @@ def FormatOps(ops, prefix=None):
 
 
 class Spdy4SeDer(object):  # serializer deserializer
+  """
+  A class which serializes into and/or deserializes from SPDY4 wire format
+  """
   def PreProcessToggles(self, instructions):
+    """
+    Examines the 'toggl' operations in 'instructions' and computes the
+    'trang' and remnant 'toggle' operations, returning them as:
+    (output_toggles, output_toggle_ranges)
+    """
     toggles = instructions['toggl']
     toggles.sort()
     ot = []
@@ -274,6 +321,21 @@ class Spdy4SeDer(object):  # serializer deserializer
     return [ot, otr]
 
   def OutputOps(self, packing_instructions, huff, data, ops, opcode):
+    """
+    formats ops (all of type represented by opcode) into wire-format, and
+    stores them into the BitBucket represented by 'data'
+
+    'data' the bitbucket into which everything is stored
+    'packing_instructions' the isntructions on how to pack fields
+    'huff' a huffman object possibly used for string encoding
+    'ops' the operations to be encoded into spdy4 wire format and stored.
+    'opcode' the type of all of the ops.
+
+    The general format of such is:
+    | opcode-type | num-opcodes | list-of-operations
+    where num-opcodes cannot exceed 256, thus the function may output
+    a number of such sequences.
+    """
     if not ops:
       return;
     ops_idx = 0
@@ -290,6 +352,10 @@ class Spdy4SeDer(object):  # serializer deserializer
 
 
   def WriteOpData(self, data, op, huff):
+    """
+    A helper function for OutputOps which does the packing for
+    the operation's fields.
+    """
     for field_name in packing_order:
       if not field_name in op:
         continue
@@ -310,6 +376,8 @@ class Spdy4SeDer(object):  # serializer deserializer
       flags,
       stream_id,
       frame_type):
+    """ Writes the frame-length, flags, stream-id, and frame-type
+    in SPDY4 format into the bit-bucket represented bt 'data'"""
     data.StoreBits16(frame_len)
     data.StoreBits8(flags)
     #data.StoreBits32(stream_id)
@@ -322,6 +390,11 @@ class Spdy4SeDer(object):  # serializer deserializer
       huff,
       stream_id,
       end_of_frame):
+    """ Serializes a set of instructions possibly containing many different
+    type of opcodes into SPDY4 wire format, discovers the resultant length,
+    computes the appropriate SPDY4 boilerplate, and then returns this
+    in a new BitBucket
+    """
     #print 'SerializeInstructions\n', ops
     (ot, otr) = self.PreProcessToggles(ops)
 
@@ -356,6 +429,10 @@ class Spdy4SeDer(object):  # serializer deserializer
     return overall_bb.GetAllBits()
 
   def DeserializeInstructions(self, frame, packing_instructions, huff):
+    """ Takes SPDY4 wire-format data and de-serializes it into in-memory
+    operations
+    It returns these operations.
+    """
     ops = []
     bb = BitBucket()
     bb.StoreBits(frame.GetAllBits())
@@ -402,6 +479,8 @@ class Spdy4SeDer(object):  # serializer deserializer
     return ops
 
 class HeaderGroup(object):
+  """ A HeaderGroup is a list of ValueEntries (VEs) which are the key-values to
+  be instantiated as a header frame """
   def __init__(self):
     self.storage = dict()
     self.generation = 0
@@ -456,22 +535,9 @@ class HeaderGroup(object):
       self.storage[id(ve)] = (ve, self.generation)
       #print "TG:  added: %s: %s (%d)" % (ve['key'], ve['val'], self.generation)
 
-class IDStore(object):
-  def __init__(self):
-    self.ids = set()
-    self.next_idx = 0
-
-  def GetNext(self):
-    if self.ids:
-      return self.ids.pop()
-    self.next_idx += 1
-    return self.next_idx
-
-  def DoneWithId(self, id):
-    self.ids.add(id)
-
-
 class Storage(object):
+  """ This object keeps track of key and LRU ids, all keys and values, and the
+  mechanism for expiring key/value entries as necessary"""
   def __init__(self):  ####
     self.key_map = {}
     self.key_ids = IDStore()
@@ -487,6 +553,12 @@ class Storage(object):
     self.key_idx_to_ke = {}
 
   def PopOne(self):  ####
+    """ Gets rid of the oldest entry on the LRU so long as
+    we haven't yet hit the 'pin' (an entry which is None)
+    TODO: This should skip entries in the header-group which is being
+    processed, but since this is annoying to do in python, this function
+    doesn't yet do it.
+    """
     if not self.lru:
       return
     if self.lru[0] is None:
@@ -498,6 +570,10 @@ class Storage(object):
     self.RemoveVal(ve)
 
   def MakeSpace(self, space_required, adding_val):  ####
+    """
+    Makes enough space for 'space_required' new bytes and 'adding_val' new val
+    entries by popping elements from the LRU (using PopOne)
+    """
     while self.num_vals + adding_val > self.max_vals:
       if not self.PopOne():
         return
@@ -645,15 +721,16 @@ class Spdy4CoDe(object):
 
     self.storage.SetRemoveValCB(RemoveVEFromAllHeaderGroups)
 
+    # TODO: Order this such that toggles for the initial request are all
+    # together, and thus the client may use a single trang to get what it
+    # wants.
     default_dict = {
+        'date': '',
         ':scheme': 'https',
         ':method': 'get',
-
-        'date': '',
-        ':host': '',
         ':path': '/',
+        ':host': '',
         'cookie': '',
-
         ':status': '200',
         ':status-text': 'OK',
         ':version': '1.1',
@@ -721,22 +798,25 @@ class Spdy4CoDe(object):
       self.storage.lru_idx_to_ve[lru_idx] = ve
 
   def OpsToRealOps(self, in_ops):
+    """ Packs in-memory format operations into wire format"""
     data = BitBucket()
     PackOps(data, packing_instructions, in_ops, self.huffman_table)
     return ListToStr(data.GetAllBits()[0])
 
   def RealOpsToOps(self, realops):
+    """ Unpacks wire format operations into in-memory format"""
     bb = BitBucket()
     bb.StoreBits((StrToList(realops), len(realops)*8))
     return UnpackOps(bb, packing_instructions, self.huffman_table)
 
   def Compress(self, realops):
+    """ basically does nothing"""
     ba = ''.join(realops)
     return ba
 
   def Decompress(self, op_blob):
+    """ basically does nothing"""
     return op_blob
-    return self.decompressor.decompress(op_blob)
 
   def MakeToggl(self, index):
     return {'opcode': 'toggl', 'index': index}
@@ -767,6 +847,9 @@ class Spdy4CoDe(object):
     return self.storage.lru_idx_to_ve[idx]
 
   def DiscoverTurnOffs(self, group_id, instructions):
+    """ Discovers the elements in the header-group which are not current, and
+    thus should be removed from the header group (i.e. turned off)
+    """
     toggles_off = []
     header_group = self.FindOrMakeHeaderGroup(group_id)
     for ve in header_group.FindOldEntries():
@@ -780,6 +863,8 @@ class Spdy4CoDe(object):
     self.storage.lru_idx_to_ve[new_lru_idx] = ve
 
   def AdjustHeaderGroupEntries(self, group_id):
+    """ Moves elements which have been referenced/modified to the head of the LRU
+    and possibly renumbers them"""
     header_group = self.header_groups[group_id]
     for ve in sorted(header_group.GetEntries(),key=lambda x: x['lru_idx']):
       self.storage.MoveToHeadOfLRU(ve)
@@ -796,6 +881,8 @@ class Spdy4CoDe(object):
       self.ExecuteOp(group_id, op)
 
   def ProcessKV(self, key, val, group_id, instructions):
+    """ Comes up with the appropriate operation for the key, value, and adds
+    it into 'instructions'"""
     ke = self.storage.FindKeyEntry(key)
     ve = self.storage.FindValEntry(ke, val)
     if ve is not None:
@@ -809,6 +896,9 @@ class Spdy4CoDe(object):
       instructions['kvsto'].append(self.MakeKvsto(key, val))
 
   def MakeOperations(self, headers, group_id):
+    """ Computes the entire set of operations necessary to encode the 'headers'
+    for header-group 'group_id'
+    """
     instructions = {'toggl': [], 'clone': [], 'kvsto': [], 'eref': []}
     incremented_keys = []
     self.storage.PinLRU()
@@ -841,6 +931,7 @@ class Spdy4CoDe(object):
     return instructions
 
   def RealOpsToOpAndExecute(self, realops, group_id):
+    """ Deserializes from SPDY4 wire format and executes the operations"""
     ops = self.RealOpsToOps(realops)
     #FormatOps(ops,'ROTOAE\t')
     self.storage.PinLRU()
@@ -849,6 +940,7 @@ class Spdy4CoDe(object):
     return ops
 
   def ExecuteOps(self, ops, group_id, ephemereal_headers=None):
+    """ Executes a list of operations"""
     self.FindOrMakeHeaderGroup(group_id)  # make the header group if necessary
     if ephemereal_headers is None:
       ephemereal_headers = {}
@@ -861,6 +953,7 @@ class Spdy4CoDe(object):
     self.header_groups[group_id].Toggle(self.IdxToVE(idx))
 
   def ExecuteOp(self, group_id, op, ephemereal_headers=None):
+    """ Executes a single operation """
     #print 'Executing: ', FormatOp(op)
     opcode = op['opcode']
     if opcode == 'toggl':
@@ -889,12 +982,10 @@ class Spdy4CoDe(object):
     elif opcode == 'eref' and ephemereal_headers is not None:
       ephemereal_headers[op['key']] = op['val']
 
-  def GetDictSize(self):
-    return self.total_storage
-
-
-
   def GenerateAllHeaders(self, group_id):
+    """ Given a group-id, generates the set of headers currently associated
+    with that header group, and returns them.
+    """
     headers = {}
     header_group = self.header_groups[group_id]
 
