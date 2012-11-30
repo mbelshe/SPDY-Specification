@@ -80,6 +80,7 @@ class BitBucket {
     bsa_boff = 0;
     num_bits = bsa.size() * 8;
   }
+
   void StoreByteAlignedUint32(uint32_t val) {
     char* val_base = reinterpret_cast<char*>(&val);
     StoreByteAligned(val_base, val_base + 4);

@@ -25,11 +25,11 @@ class SPDY4HeadersCodec {
 
   size_t CurrentStateSize() const;
 
-  void OutputCompleteHeaderFrame(OutputStream* os,
-                                 uint32_t stream_id,
-                                 uint32_t group_id,
-                                 const HeaderFrame& headers,
-                                 bool this_ends_the_frame);
+  void ProcessFrame(OutputStream* os,
+                    uint32_t stream_id,
+                    uint32_t group_id,
+                    const HeaderFrame& headers,
+                    bool this_ends_the_frame);
 
   void SetMaxStateSize(size_t max_size);
 

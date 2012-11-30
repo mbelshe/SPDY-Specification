@@ -50,12 +50,12 @@ class SPDY4(object):
     self.hosts = {}
     self.group_ids = IDStore()
     self.wf = self.compressor.wf
-    self.compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
-                                       zlib.DEFLATED, 15)
-    self.compressor.flush(zlib.Z_SYNC_FLUSH)
-    self.decompressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
-                                       zlib.DEFLATED, 15)
-    self.decompressor.flush(zlib.Z_SYNC_FLUSH)
+    #self.compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
+    #                                   zlib.DEFLATED, 15)
+    #self.compressor.flush(zlib.Z_SYNC_FLUSH)
+    #self.decompressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
+    #                                   zlib.DEFLATED, 15)
+    #self.decompressor.flush(zlib.Z_SYNC_FLUSH)
 
   def ProcessFrame(self, inp_headers, request_headers):
     """

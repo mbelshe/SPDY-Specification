@@ -302,7 +302,7 @@ class Storage {
       //cout << "num_vals(" << num_vals
       //  << ") + 1 > max_vals(" << max_vals << ") ";
       //  )
-      PopOne();
+      if(!PopOne()) return
     }
     while (state_size + space_required > max_state_size) {
       // DEBUG_PRINT(
@@ -310,7 +310,7 @@ class Storage {
       //     << ") + space_required(" << space_required
       //     << ")  > max_state_size(" << max_state_size << ") ";
       // )
-      if (!PopOne()) break;
+      if (!PopOne()) return;
     }
   }
 
@@ -670,11 +670,11 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
   // 3) Renumber every referenced element when it is referenced.
   //    This is similar #2, but could be done with the current implementation.
 
-  void OutputCompleteHeaderFrame(OutputStream* os,
-                                 StreamId stream_id,
-                                 GroupId group_id,
-                                 const HeaderFrame& headers,
-                                 bool this_ends_the_frame) {
+  void ProcessFrame(OutputStream* os,
+                    StreamId stream_id,
+                    GroupId group_id,
+                    const HeaderFrame& headers,
+                    bool this_ends_the_frame) {
     storage.PinLRUEnd();
     // We'll want to discover the KVPs to turn off, then
     //   - turn off stream group indices which don't exist in the headers.
@@ -691,18 +691,12 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     //       - then fixup the size for the current frame and emit new frame
     //         headers
     //
-    vector<ToggleOp>::iterator first_toggle_on;
-    vector<ToggleOp>::iterator first_toggle_off;
-    vector<CloneOp>::iterator first_clone;
-    vector<KVStoOp>::iterator first_kvsto;
 
     if (header_groups.find(group_id) == header_groups.end()) {
       header_groups[group_id] = HeaderGroup();
     }
     HeaderGroup& header_group = header_groups[group_id];
     list<string> cookie_strs;  // Yes, this must exist for the func scope.
-
-
 
     // First we construct (and possibly emit) toggles. That is guaranteed
     // to be safe because it will remove no entries.
@@ -772,12 +766,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     // Note that this is done after doing deletions due to exceeding the max
     // buffer size, since some of the deletions may have already cleared some of
     // the elements we must be turning off.
-    DiscoverTurnOffs(&(instrs.toggle_offs), stream_id);
-
-    first_toggle_on = instrs.toggle_ons.begin();
-    first_toggle_off = instrs.toggle_offs.begin();
-    first_clone = instrs.clones.begin();
-    first_kvsto = instrs.kvstos.begin();
+    DiscoverTurnOffs(&(instrs.toggle_offs), group_id);
 
     ExecuteInstructionsExceptERefs(group_id, instrs);
 
@@ -1293,13 +1282,13 @@ size_t SPDY4HeadersCodec::CurrentStateSize() const {
   return impl->CurrentStateSize();
 }
 
-void SPDY4HeadersCodec::OutputCompleteHeaderFrame(OutputStream* os,
-                                                  StreamId stream_id,
-                                                  GroupId group_id,
-                                                  const HeaderFrame& headers,
-                                                  bool this_ends_the_frame) {
-  impl->OutputCompleteHeaderFrame(os, stream_id, group_id,
-                                   headers, this_ends_the_frame);
+void SPDY4HeadersCodec::ProcessFrame(OutputStream* os,
+                                     StreamId stream_id,
+                                     GroupId group_id,
+                                     const HeaderFrame& headers,
+                                     bool this_ends_the_frame) {
+  impl->ProcessFrame(os, stream_id, group_id,
+                     headers, this_ends_the_frame);
 }
 
 void SPDY4HeadersCodec::SetMaxStateSize(size_t size) {

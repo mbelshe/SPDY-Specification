@@ -309,9 +309,7 @@ Stats DoSPDY4CoDec(double time_to_iterate,
       cout << "||||||||||||||||||||||\n";
 #endif
       size_t prev_size = os.BytesRequired();
-      req_in.OutputCompleteHeaderFrame(&os, stream_id,
-                                       header_group, request,
-                                       true /* end of frame*/);
+      req_in.ProcessFrame(&os, stream_id, header_group, request, true);
       size_t framesize = os.BytesRequired() - prev_size;
       compressed_size += framesize;
       //req_out.ProcessInput(&os);
