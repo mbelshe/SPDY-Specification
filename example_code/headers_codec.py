@@ -357,7 +357,6 @@ class Spdy4SeDer(object):  # serializer deserializer
         self.WriteOpData(data, ops[orig_idx + i], huff)
         ops_idx += 1
 
-
   def WriteOpData(self, data, op, huff):
     """
     A helper function for OutputOps which does the packing for

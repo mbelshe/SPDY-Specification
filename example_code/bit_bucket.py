@@ -7,10 +7,18 @@ import sys
 import struct
 
 class BitBucket:
+  """
+  This class allows for bit-level manipulations of a list of bits.
+  In particular, it allows for the storage of bits (or sets of bits), and
+  it allows for the fetching of those stored bits (effectively in a FIFO manner)
+  """
   def __init__(self):
     self.Clear()
 
   def Clear(self):
+    """
+    Clears out all data and resets the BitBucket to like-new state
+    """
     self.output = []
     self.out_byte = 0
     self.out_boff = 0
@@ -18,6 +26,9 @@ class BitBucket:
     self.idx_boff = 0
 
   def AdvanceToByteBoundary(self):
+    """
+    Inserts enough '0's to ensure that the number of bits stored % 8 == 0
+    """
     bits_to_advance = (8 - self.idx_boff) % 8
     if bits_to_advance:
       self.idx_boff += bits_to_advance
@@ -25,22 +36,44 @@ class BitBucket:
       self.idx_byte += 1
 
   def StoreBit(self, bit):
+    """
+    Stores a single bit.
+    """
+    if bit:
+      bit = 1
+    else:
+      bit = 0
     self.StoreBits( ([bit << 7], 1) )
 
   def StoreBits8(self, val):
+    """
+    Stores the 8 least-significant-bits from val
+    """
     tmp_val = struct.pack(">B", val)
     self.StoreBits( (StrToList(tmp_val), 8))
 
   def StoreBits16(self, val):
+    """
+    Stores the 16 least-significant-bits from val in network order (big endian)
+    """
     tmp_val = struct.pack(">H", val)
     self.StoreBits( (StrToList(tmp_val), 16))
 
   def StoreBits32(self, val):
+    """
+    Stores the 32 least-significant-bits from val in network order (big endian)
+    """
     tmp_val = struct.pack(">L", val)
     self.StoreBits( (StrToList(tmp_val), 32))
 
-  def StoreBits(self, input):
-    (inp_bytes, inp_bits) = input
+  def StoreBits(self, input_tuple):
+    """
+    (inp_bytes, inp_bits) = input_tuple
+    Stores inp_bits from inp_bytes. When inp_bits < len(inp_bytes)*8, the
+    most-significant-bits (this is opposite the other StoreBits) of the last
+    element of inp_bytes are used.
+    """
+    (inp_bytes, inp_bits) = input_tuple
     old_out_boff = self.out_boff
     if not inp_bytes:
       return
@@ -76,9 +109,17 @@ class BitBucket:
       raise StandardError()
 
   def GetAllBits(self):
+    """ Returns a tuple containing (list-of-bytes, number-of-bits)
+    When number-of-bits % 8 != 0, the last byte in list-of-bytes
+    will have the remaining bits (number-of-bits % 8) stored
+    from the most-significant bit onward towards the least-significant bit
+    """
     return (self.output, self.NumBits())
 
   def NumBits(self):
+    """
+    Returns the number of bits stored into this BitBucket
+    """
     num_bits = 8*len(self.output)
     if self.out_boff % 8:
       num_bits -= 8
@@ -88,30 +129,54 @@ class BitBucket:
     return num_bits
 
   def BytesOfStorage(self):
+    """
+    Returns the number of bytes necessary to hold all of the bits which have
+    been stored into this BitBucket
+    """
     return (self.NumBits() + 7) / 8
 
   def BitsRemaining(self):
+    """
+    Returns the number of unread/unconsumed bits.
+    """
     return self.NumBits() - (8*self.idx_byte + self.idx_boff) - 1
 
   def AllConsumed(self):
+    """ Returns true if all stored bits were consumed, else returns false"""
     return self.NumBits() <= (8*self.idx_byte + self.idx_boff)
 
   def GetBits8(self):
+    """
+    Gets the next 8 unconsumed bits from the BitBucket and returns that as
+    an int
+    """
     raw_data = self.GetBits(8)[0]
     arg = "%c%c%c%c" % (0,0, 0, raw_data[0])
     return struct.unpack(">L", arg)[0]
 
   def GetBits16(self):
+    """
+    Gets the next 16 unconsumed bits from the BitBucket and returns that as an
+    int
+    """
     raw_data = self.GetBits(16)[0]
     arg = "%c%c%c%c" % (0,0, raw_data[0], raw_data[1])
     return struct.unpack(">L", arg)[0]
 
   def GetBits32(self):
+    """
+    Gets the next 32 unconsumed bits from the BitBucket and returns that as an
+    int
+    """
     raw_data = self.GetBits(32)[0]
     arg = "%c%c%c%c" % (raw_data[0], raw_data[1], raw_data[2], raw_data[3])
     return struct.unpack(">L", arg)[0]
 
   def GetBits(self, num_bits):
+    """
+    Gets the specified number of unconsumed bits and returns it as a list of
+    ints (all of which are < 256)
+    """
     old_idx_boff = self.idx_boff
 
     bits_available = self.NumBits() - (8*self.idx_byte + self.idx_boff)
@@ -173,6 +238,9 @@ class BitBucket:
     return (retval, num_bits)
 
   def DebugFormat(self):
+    """
+    Prints out (to stdout) a representation intended to help with debugging
+    """
     print FormatAsBits((self.output, self.out_boff))
     for i in xrange(self.idx_byte*8 + self.idx_boff - 1):
       if not i % 8:

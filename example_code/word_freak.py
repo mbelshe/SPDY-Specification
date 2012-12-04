@@ -3,6 +3,11 @@
 # found in the LICENSE file.
 
 class WordFreak:
+  """
+  Observes and accumulates letter frequencies.
+  Though it is called 'Word'Freq, it is better thought of
+  as letter freq.
+  """
   def __init__(self):
     self.code = []
     self.character_freaks = []

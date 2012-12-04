@@ -8,6 +8,10 @@ from common_utils import FormatAsBits
 import string
 
 class Huffman(object):
+  """
+  This class takes in a frequency table, constructs a huffman code, and
+  then allows for encoding and decoding of strings.
+  """
   def __init__(self, freq_table):
     self.code_tree = None
     self.code_table = []
@@ -16,6 +20,10 @@ class Huffman(object):
     #print self.FormatCodeTable()
 
   def BuildCodeTree(self, freq_table):
+    """ Given a frequency table (a list of tuples of (symbol, frequency-count)),
+    constructs the huffman tree which is to say a tree where the root of any
+    subtree is the sum of the weight of its children, and where subtrees are
+    constructed by examining the node with the smallest weight """
     def MN(x):
       if isinstance(x, int):
         return x
@@ -45,6 +53,10 @@ class Huffman(object):
     self.code_tree = internals.pop()
 
   def BinaryStringToBREP(self, binary_string):
+    """
+    Given a string containing '1's and '0's, construct the binary
+    representation which is (list-of-bytes, number-of-bits-as-int)
+    """
     output = []
     bitlen = len(binary_string)
     if not bitlen:
@@ -61,6 +73,12 @@ class Huffman(object):
     return (output, bitlen)
 
   def BuildCodeTable(self, code_tree):
+    """ Given a code-tree as constructed in BuildCodeTree,
+    construct a table useful or doing (realtively) quick
+    encoding of a plaintext symbol into into its huffman encoding.
+    The table is ordered in the order of symbols, and contains
+    the binary representation of the huffman encoding for each symbol.
+    """
     queue = deque([(code_tree, '')])
     pre_table = []
     while queue:
@@ -82,6 +100,11 @@ class Huffman(object):
       self.code_table.append(self.BinaryStringToBREP(binary_string))
 
   def EncodeToBB(self, bb, text, include_eof):
+    """
+    Given a BitBucket 'bb', and a string 'text', encode the string using the
+    pre-computed huffman codings and store them into the BitBucket. if
+    'include_eof' is true, then an EFO will also be encoded at the end.
+    """
     for c in text:
       prelen = bb.GetAllBits()[1]
       prestr = str(bb)
@@ -92,11 +115,23 @@ class Huffman(object):
       bb.StoreBits(self.code_table[256])
 
   def Encode(self, text, include_eof):
+    """
+    Encodes 'text' using the pre-computed huffman coding, and returns it as
+    a tuple of (list-of-bytes, number-of-bits-as-int). If 'include_eof' is true,
+    then an EOF will be encoded at the end.
+    """
     bb = BitBucket()
     self.EncodeToBB(bb, text, include_eof)
     return bb.GetAllBits()
 
   def DecodeFromBB(self, bb, includes_eof, bits_to_decode):
+    """
+    Decodes the huffman-encoded text stored in the BitBucket 'bb back into a
+    plaintext string.  If 'includes_eof' is true, then it is assumed that the
+    string was encoded with an EOF.  If bits_to_decode > 0, then 'includes_eof'
+    is allowed to be false, and that many bits will be consumed from the
+    BitBucket
+    """
     output = []
     total_bits = 0
     if not includes_eof and bits_to_decode <= 0:
@@ -121,6 +156,10 @@ class Huffman(object):
     return output
 
   def Decode(self, text, includes_eof, bits_to_decode):
+    """
+    This shouldn't be used (use the DecodeFromBB version instead).
+    Decodes a plaintext string from the huffman-encoded string 'text'
+    """
     output = []
     if not text:
       return output
@@ -155,6 +194,9 @@ class Huffman(object):
     return output
 
   def FormatCodeTable(self):
+    """
+    Makes a formatted version of the code table, useful for debugging
+    """
     printable = string.digits + string.letters + string.punctuation + ' ' + "\t"
     x = sorted([(i,FormatAsBits( self.code_table[i]))
                 for i in xrange(len(self.code_table))])
@@ -176,3 +218,4 @@ class Huffman(object):
       output.append(', ')
     output.append(']')
     return ''.join(output)
+

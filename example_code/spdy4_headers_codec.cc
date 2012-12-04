@@ -302,7 +302,7 @@ class Storage {
       //cout << "num_vals(" << num_vals
       //  << ") + 1 > max_vals(" << max_vals << ") ";
       //  )
-      if(!PopOne()) return
+      if(!PopOne()) return;
     }
     while (state_size + space_required > max_state_size) {
       // DEBUG_PRINT(

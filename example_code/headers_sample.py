@@ -128,6 +128,9 @@ class SPDY3(object):
     return (final_frame, raw_spdy3_frame)
 
   def Spdy3HeadersFormat(self, request):
+    """
+    Formats the provided headers in SPDY3 format, uncompressed
+    """
     out_frame = []
     frame_len = 0
     for (key, val) in request.iteritems():
@@ -173,6 +176,7 @@ class HTTP1(object):
              http1_frame)
 
   def HTTP1HeadersFormat(self, frame):
+    """ Formats the provided headers in HTTP1 format """
     return FormatAsHTTP1(frame)
 
 def CompareHeaders(a, b):
@@ -341,17 +345,16 @@ def main():
   print
   print '                                       http1   |   spdy3   |   spdy4 '
 
-  fmtarg = (req_accum['http1'][1], req_accum['spdy3'][1], req_accum['spdy4'][1])
+  fmtarg = (req_accum['http1'][0], req_accum['spdy3'][0], req_accum['spdy4'][0])
   print 'Req                Compressed Sums:  % 8d  | % 8d  | % 8d  ' % fmtarg
 
-  fmtarg = (req_accum['http1'][0], req_accum['spdy3'][0], req_accum['spdy4'][0])
+  fmtarg = (req_accum['http1'][1], req_accum['spdy3'][1], req_accum['spdy4'][1])
   print 'Req              Uncompressed Sums:  % 8d  | % 8d  | % 8d  ' % fmtarg
 
-
-  fmtarg = (rsp_accum['http1'][1], rsp_accum['spdy3'][1], rsp_accum['spdy4'][1])
+  fmtarg = (rsp_accum['http1'][0], rsp_accum['spdy3'][0], rsp_accum['spdy4'][0])
   print 'Rsp                Compressed Sums:  % 8d  | % 8d  | % 8d  ' % fmtarg
 
-  fmtarg = (rsp_accum['http1'][0], rsp_accum['spdy3'][0], rsp_accum['spdy4'][0])
+  fmtarg = (rsp_accum['http1'][1], rsp_accum['spdy3'][1], rsp_accum['spdy4'][1])
   print 'Rsp              Uncompressed Sums:  % 8d  | % 8d  | % 8d  ' % fmtarg
 
   if req_accum['http1'][1]:
