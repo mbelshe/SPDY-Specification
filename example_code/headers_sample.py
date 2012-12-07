@@ -3,181 +3,16 @@
 # Copyright (c) 2012 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
-import zlib
 import re
-import struct
+import optparse
 
-from common_utils import *
-#from common_utils import IDStore
-from default_headers import default_requests
-from default_headers import default_responses
-from harfile import ReadHarFile
-from header_freq_tables import request_freq_table
-from header_freq_tables import response_freq_table
-from headers_codec import FormatOp
-from headers_codec import FormatOps
-from headers_codec import Spdy4CoDe
-from huffman import Huffman
-from optparse import OptionParser
-from spdy_dictionary import spdy_dict
+import harfile
+import default_headers
+import http1_gzip
+import spdy3_codec
+import spdy4_codec
 
 options = {}
-
-# TODO(eliminate the 'index' parameter in clone and kvsto by
-#      adding an index-start to the frame)
-# TODO(try var-int encoding for indices)
-# TODO(make removals from the LRU implicit-- send no messages about them)
-# TODO(use a separate huffman encoding for cookies, and possible path)
-# TODO(interpret cookies as binary instead of base-64, does it reduce entropy?)
-# TODO(modification to 'toggl' to allow for a list of indices instead
-#      of requiring a new operation for each index not in a consecutive range)
-# TODO(index renumbering so things which are often used together
-#      have near indices. Possibly renumber whever something is referenced)
-
-class SPDY4(object):
-  """
-  This class formats header frames in SPDY4 wire format, and then reads the
-  resulting wire-formatted data and restores the data. Thus, it compresses and
-  decompresses header data.
-
-  It also keeps track of letter frequencies so that better frequency tables
-  can eventually be constructed for use with the Huffman encoder.
-  """
-  def __init__(self, options):
-    self.compressor   = Spdy4CoDe()
-    self.decompressor = Spdy4CoDe()
-    self.options = options
-    self.hosts = {}
-    self.group_ids = IDStore()
-    self.wf = self.compressor.wf
-    #self.compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
-    #                                   zlib.DEFLATED, 15)
-    #self.compressor.flush(zlib.Z_SYNC_FLUSH)
-    #self.decompressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
-    #                                   zlib.DEFLATED, 15)
-    #self.decompressor.flush(zlib.Z_SYNC_FLUSH)
-
-  def ProcessFrame(self, inp_headers, request_headers):
-    """
-    'inp_headers' are the headers that will be processed
-    'request_headers' are the request headers associated with this frame
-       the host is extracted from this data. For a response, this would be
-       the request that engendered the response. For a request, it is just
-       the request again.
-
-    It returns:
-    (compressed_frame,
-     wire_formatted_operations_before_compression,
-     wire_formatted_operations_after_decompression,
-     input_headers,
-     outputted_headers_after_encode_decode,
-     operations_as_computed_by_encoder,
-     operations_as_recovered_after_decode)
-
-    Note that compressing with an unmodified stream-compressor like gzip is
-    effective, however it is insecure.
-    """
-    normalized_host = re.sub('[0-1a-zA-Z-\.]*\.([^.]*\.[^.]*)', '\\1',
-                             request_headers[':host'])
-    if normalized_host in self.hosts:
-      header_group = self.hosts[normalized_host]
-    else:
-      header_group = self.group_ids.GetNext()
-      self.hosts[normalized_host] = header_group
-    if self.options.f:
-      header_group = 0
-    inp_ops = self.compressor.MakeOperations(inp_headers, header_group)
-
-    inp_real_ops = self.compressor.OpsToRealOps(inp_ops)
-    compressed_blob = self.compressor.Compress(inp_real_ops)
-    out_real_ops = self.decompressor.Decompress(compressed_blob)
-    out_ops = self.decompressor.RealOpsToOpAndExecute(
-        out_real_ops, header_group)
-    out_headers = self.decompressor.GenerateAllHeaders(header_group)
-    return (compressed_blob,
-            inp_real_ops, out_real_ops,
-            inp_headers,  out_headers,
-            inp_ops,      out_ops,
-            header_group)
-
-class SPDY3(object):
-  def __init__(self, options):
-    self.options = options
-    self.compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
-                                       zlib.DEFLATED, 15)
-    self.compressor.compress(spdy_dict);
-    self.compressor.flush(zlib.Z_SYNC_FLUSH)
-
-  def ProcessFrame(self, inp_headers, request_headers):
-    """
-    'inp_headers' are the headers that will be processed
-    'request_headers' are the request headers associated with this frame
-       the host is extracted from this data. For a response, this would be
-       the request that engendered the response. For a request, it is just
-       the request again.
-    It outputs: (spdy3_frame_compressed_with_gzip, uncompressed_spdy3_frame)
-    Note that compressing with an unmodified stream-compressor like gzip is
-    effective, however it is insecure.
-    """
-
-    raw_spdy3_frame = self.Spdy3HeadersFormat(inp_headers)
-    compress_me_payload = raw_spdy3_frame[12:]
-    final_frame = raw_spdy3_frame[:12]
-    final_frame += self.compressor.compress(compress_me_payload)
-    final_frame += self.compressor.flush(zlib.Z_SYNC_FLUSH)
-    return (final_frame, raw_spdy3_frame)
-
-  def Spdy3HeadersFormat(self, request):
-    """
-    Formats the provided headers in SPDY3 format, uncompressed
-    """
-    out_frame = []
-    frame_len = 0
-    for (key, val) in request.iteritems():
-      frame_len += 4
-      frame_len += len(key)
-      frame_len += 4
-      frame_len += len(val)
-    stream_id = 1
-    num_kv_pairs = len(request.keys())
-    out_frame.append(struct.pack('!L', 0x1 << 31 | 0x11 << 15 | 0x8))
-    out_frame.append(struct.pack('!L', frame_len))
-    out_frame.append(struct.pack('!L', stream_id))
-    out_frame.append(struct.pack('!L', num_kv_pairs))
-    for (key, val) in request.iteritems():
-      out_frame.append(struct.pack('!L', len(key)))
-      out_frame.append(key)
-      out_frame.append(struct.pack('!L', len(val)))
-      out_frame.append(val)
-    return ''.join(out_frame)
-
-class HTTP1(object):
-  def __init__(self, options):
-    self.options = options
-    self.compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
-                                       zlib.DEFLATED, 15)
-    self.compressor.compress(spdy_dict);
-    self.compressor.flush(zlib.Z_SYNC_FLUSH)
-
-  def ProcessFrame(self, inp_headers, request_headers):
-    """
-    'inp_headers' are the headers that will be processed
-    'request_headers' are the request headers associated with this frame
-       the host is extracted from this data. For a response, this would be
-       the request that engendered the response. For a request, it is just
-       the request again.
-    It outputs: (http1_frame_compressed_with_gzip, uncompressed_http1_frame)
-    Note that compressing with an unmodified stream-compressor like gzip is
-    effective, however it is insecure.
-    """
-    http1_frame = self.HTTP1HeadersFormat(inp_headers)
-    return ((self.compressor.compress(http1_frame) +
-             self.compressor.flush(zlib.Z_SYNC_FLUSH)),
-             http1_frame)
-
-  def HTTP1HeadersFormat(self, frame):
-    """ Formats the provided headers in HTTP1 format """
-    return FormatAsHTTP1(frame)
 
 def CompareHeaders(a, b):
   """
@@ -209,8 +44,11 @@ def CompareHeaders(a, b):
   return '\n'.join(output)
 
 
-def ProcessAndFormat(top_message, frametype_message,
+def ProcessAndFormat(top_message,
+                     frametype_message,
+                     protocol_name_field_width,
                      framers,
+                     baseline_name,
                      request, test_frame,
                      accumulator):
   """
@@ -235,50 +73,97 @@ def ProcessAndFormat(top_message, frametype_message,
     print '    ######## %s ########' % top_message
   processing_results = []
 
+  baseline_size = None
   for protocol_name, framer in framers.iteritems():
     result = framer.ProcessFrame(test_frame, request)
-    if protocol_name == 'spdy4':
-      spdy4_result = result
-      processing_results.append((protocol_name, result[:2]))
-    elif protocol_name == 'http1':
-      processing_results.append((protocol_name, result))
-      http1_uncompressed_size = len(result[1])
-    else:
-      processing_results.append((protocol_name, result))
+    processing_results.append((protocol_name, result))
+    if protocol_name == baseline_name:
+      baseline_size = len(result['serialized_ops'])
 
-  if options.v >= 2:
-    for op in spdy4_result[6]:
-      print '\t rq_op: ', FormatOp(op)
-
-  message = CompareHeaders(test_frame, spdy4_result[4])
-  if message:
-    print 'Something is wrong with the request.'
-    if options.v >= 1:
-      print message
-    if options.v >= 5:
-      print 'It should be:'
-      for k,v in         request.iteritems(): print '\t%s: %s' % (k,v)
-      print 'but it was:'
-      for k,v in spdy4_result[4].iteritems(): print '\t%s: %s' % (k,v)
+    if options.v >= 2 and 'decompressed_interpretable_ops' in result:
+      framer.PrintOps(result['decompressed_interpretable_ops'])
+    if 'output_headers' in result:
+      output_headers = result['output_headers']
+      message = CompareHeaders(test_frame, output_headers)
+      if message:
+        print 'Something is wrong with this frame.'
+        if options.v >= 1:
+          print message
+        if options.v >= 5:
+          print 'It should be:'
+          for k,v in        request.iteritems(): print '\t%s: %s' % (k,v)
+          print 'but it was:'
+          for k,v in output_headers.iteritems(): print '\t%s: %s' % (k,v)
 
   lines = []
   for protocol_name, results in processing_results:
-    compressed_size, uncompressed_size = map(len, results)
+    compressed_size = len(results['compressed'])
+    uncompressed_size = len(results['serialized_ops'])
     accumulator[protocol_name][0] += compressed_size
     accumulator[protocol_name][1] += uncompressed_size
+    if baseline_size is not None:
+      ratio = 1.0 * compressed_size / baseline_size
+    else:
+      ratio = 0
     lines.append( ('%s %s' % (protocol_name, frametype_message),
                   uncompressed_size,
                   compressed_size,
-                  1.0 * compressed_size / http1_uncompressed_size) )
+                  ratio) )
   if options.v >= 1:
-    print '                            UC  |  CM  | ratio'
+    print ('\t%% %ds              UC  |  CM  | ratio' % (
+           protocol_name_field_width+10)) % ''
+    line_format = '\t%% %ds frame size: %%4d | %%4d | %%2.2f ' % (
+        protocol_name_field_width+10)
     for line in sorted(lines):
-      print '     %s frame size: %4d | %4d | %2.2f ' % line
+      print line_format % line
     print
 
+# comman-separated list of name[="string"]
+def ParseCodecList(options_string):
+  key_accum= []
+  val_accum= []
+  parsed_params = {}
+
+  i = 0
+  os_len = len(options_string)
+  parsing_val = False
+  escape = False
+  while i < os_len:
+    c = options_string[i]
+    i += 1
+    if not parsing_val:
+      if c == ',':
+        if key_accum:
+          parsed_params[''.join(key_accum)] = ''.join(val_accum)
+          key_accum = []
+          val_accum = []
+      elif c == '=':
+        parsing_val = True
+        c = options_string[i]
+        i += 1
+        if c != '"':
+          raise StandardError()
+        continue
+      else:  # c != ',' and c != '='
+        key_accum.append(c)
+
+    else:  # parsing_key == False
+      if escape:
+        escape = False
+        val_accum.append(c)
+      else:
+        if c == '\\':
+          escape = True
+        elif c == '"':
+          parsing_val = False
+        else:
+          val_accum.append(c)
+  if key_accum:
+        parsed_params[''.join(key_accum)] = ''.join(val_accum)
+  return parsed_params
 
 def main():
-  parser = OptionParser()
+  parser = optparse.OptionParser()
   parser.add_option('-n', '--new',
                     type='int',
                     dest='n',
@@ -296,34 +181,66 @@ def main():
                     help='If set, everything will use stream-group 0. '
                     '[default: %default]',
                     default=0)
+  parser.add_option('-c', '--codecs',
+                    dest='c',
+                    help='If set, the argument will be parsed as a'
+                    'comma-separated list of compression module names'
+                    'to use and the parameters to be passed to each.'
+                    'e.g. --c'
+                    'http1_gzip,spdy3_codec,spdy4_codec,exec_codec="exec_parap1,'
+                    'exec_param2" [default: %default]',
+                    default="http1_gzip,spdy3_codec,spdy4_codec")
+  parser.add_option('-b', '--baseline',
+                    dest='b',
+                    help='Baseline codec-- all comparitive ratios are based on'
+                    'this',
+                    default='http1_gzip')
+  parser.add_option('-t', '--test_codec',
+                    dest='t',
+                    help='the codecs which is compressed then decompressed'
+                    'and compared to the input to verify that it is working'
+                    'properly',
+                    default='spdy4_codec')
   global options
   (options, args) = parser.parse_args()
+  codec_params = ParseCodecList(options.c)
 
-
-  print options
-  requests = default_requests
-  responses = default_responses
+  # load .har files
+  requests = default_headers.default_requests
+  responses = default_headers.default_responses
   if args >= 1:
     requests = []
     responses = []
     for filename in args:
-      (har_requests, har_responses) = ReadHarFile(filename)
+      (har_requests, har_responses) = harfile.ReadHarFile(filename)
       requests.extend(har_requests)
       responses.extend(har_responses)
 
-  spdy4_req = SPDY4(options)
-  spdy4_req.compressor.huffman_table = Huffman(request_freq_table)
-  spdy4_req.decompressor.huffman_table = spdy4_req.compressor.huffman_table
-  spdy3_req = SPDY3(options)
-  http1_req = HTTP1(options)
-  spdy4_rsp = SPDY4(options)
-  spdy4_rsp.compressor.huffman_table = Huffman(response_freq_table)
-  spdy4_rsp.decompressor.huffman_table = spdy4_rsp.compressor.huffman_table
-  spdy3_rsp = SPDY3(options)
-  http1_rsp = HTTP1(options)
+  test_name = options.t
+  baseline_name = options.b
 
-  req_accum = {'http1': [0,0], 'spdy3': [0,0], 'spdy4': [0,0]}
-  rsp_accum = {'http1': [0,0], 'spdy3': [0,0], 'spdy4': [0,0]}
+  # load indicated codec modules and prepare for their execution
+  codec_names = []
+  codec_modules = {}
+  req_accum = {}
+  rsp_accum = {}
+  request_processors = {}
+  response_processors = {}
+  module_name_to_module = {}
+  longest_module_name = 0
+  for module_name, params in codec_params.iteritems():
+    if len(module_name) > longest_module_name:
+      longest_module_name = len(module_name)
+    module = __import__(module_name, globals(), locals(), [], -1)
+    module_name_to_module[module_name] = module
+    req_accum[module_name] = [0,0]
+    rsp_accum[module_name] = [0,0]
+
+    request_processor = module.Processor(options, True, params)
+    request_processors[module_name] = request_processor
+    response_processor = module.Processor(options, False, params)
+    response_processors[module_name] = response_processor
+
   for i in xrange(len(requests)):
     request = requests[i]
     response = responses[i]
@@ -331,11 +248,17 @@ def main():
       print '##################################################################'
       print '    ####### request-path: "%s"' % requests[i][':path'][:80]
     ProcessAndFormat("request", "req",
-        {'http1': http1_req, 'spdy3': spdy3_req, 'spdy4': spdy4_req},
+        longest_module_name,
+        request_processors,
+        baseline_name,
+        #{'http1': http1_req, 'spdy3': spdy3_req, 'spdy4': spdy4_req},
         request, request,
         req_accum)
     ProcessAndFormat("response", "rsp",
-        {'http1': http1_rsp, 'spdy3': spdy3_rsp, 'spdy4': spdy4_rsp},
+        longest_module_name,
+        response_processors,
+        baseline_name,
+        #{'http1': http1_rsp, 'spdy3': spdy3_rsp, 'spdy4': spdy4_rsp},
         request, response,
         rsp_accum)
   print 'Thats all folks. If you see this, everything worked OK'
@@ -343,32 +266,38 @@ def main():
   print '######################################################################'
   print '######################################################################'
   print
-  print '                                       http1   |   spdy3   |   spdy4 '
-
-  fmtarg = (req_accum['http1'][0], req_accum['spdy3'][0], req_accum['spdy4'][0])
-  print 'Req                Compressed Sums:  % 8d  | % 8d  | % 8d  ' % fmtarg
-
-  fmtarg = (req_accum['http1'][1], req_accum['spdy3'][1], req_accum['spdy4'][1])
-  print 'Req              Uncompressed Sums:  % 8d  | % 8d  | % 8d  ' % fmtarg
-
-  fmtarg = (rsp_accum['http1'][0], rsp_accum['spdy3'][0], rsp_accum['spdy4'][0])
-  print 'Rsp                Compressed Sums:  % 8d  | % 8d  | % 8d  ' % fmtarg
-
-  fmtarg = (rsp_accum['http1'][1], rsp_accum['spdy3'][1], rsp_accum['spdy4'][1])
-  print 'Rsp              Uncompressed Sums:  % 8d  | % 8d  | % 8d  ' % fmtarg
-
-  if req_accum['http1'][1]:
-    fmtarg = (1.0 * req_accum['http1'][0]/req_accum['http1'][1],
-              1.0 * req_accum['spdy3'][0]/req_accum['http1'][1],
-              1.0 * req_accum['spdy4'][0]/req_accum['http1'][1])
-    print 'Req   Compressed/uncompressed HTTP:  % 2.5f  | % 2.5f  | % 2.5f  ' % fmtarg
-
-  if rsp_accum['http1'][0]:
-    fmtarg = (1.0 * rsp_accum['http1'][0]/rsp_accum['http1'][1],
-              1.0 * rsp_accum['spdy3'][0]/rsp_accum['http1'][1],
-              1.0 * rsp_accum['spdy4'][0]/rsp_accum['http1'][1])
-    print 'Rsp   Compressed/uncompressed HTTP:  % 2.5f  | % 2.5f  | % 2.5f  ' % fmtarg
-
+  baseline_size = 0
+  lines = []
+  if baseline_name in req_accum:
+    baseline_size = req_accum[baseline_name][1]
+  for module_name, stats in req_accum.iteritems():
+    (compressed_size, uncompressed_size) = stats
+    ratio = 0
+    if baseline_size > 0:
+      ratio = 1.0* compressed_size / baseline_size
+    lines.append(('req',
+                  module_name,
+                  uncompressed_size,
+                  compressed_size,
+                  ratio) )
+  if baseline_name in rsp_accum:
+    baseline_size = rsp_accum[baseline_name][1]
+  for module_name, stats in rsp_accum.iteritems():
+    (compressed_size, uncompressed_size) = stats
+    ratio = 0
+    if baseline_size > 0:
+      ratio = 1.0* compressed_size / baseline_size
+    lines.append(('rsp',
+                  module_name,
+                  uncompressed_size,
+                  compressed_size,
+                  ratio) )
+  print ('\t    %% %ds                UC    |    CM    | ratio' % (
+         longest_module_name+10)) % ''
+  line_format = '\t%%s %% %ds frame size: %%8d | %%8d | %%2.2f ' % (
+      longest_module_name+10)
+  for line in sorted(lines):
+    print line_format % line
   print
 
 main()
