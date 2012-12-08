@@ -159,7 +159,8 @@ def ParseCodecList(options_string):
         else:
           val_accum.append(c)
   if key_accum:
-        parsed_params[''.join(key_accum)] = ''.join(val_accum)
+    parsed_params[''.join(key_accum)] = ''.join(val_accum)
+  print parsed_params
   return parsed_params
 
 def main():
@@ -195,12 +196,6 @@ def main():
                     help='Baseline codec-- all comparitive ratios are based on'
                     'this',
                     default='http1_gzip')
-  parser.add_option('-t', '--test_codec',
-                    dest='t',
-                    help='the codecs which is compressed then decompressed'
-                    'and compared to the input to verify that it is working'
-                    'properly',
-                    default='spdy4_codec')
   global options
   (options, args) = parser.parse_args()
   codec_params = ParseCodecList(options.c)
@@ -216,7 +211,6 @@ def main():
       requests.extend(har_requests)
       responses.extend(har_responses)
 
-  test_name = options.t
   baseline_name = options.b
 
   # load indicated codec modules and prepare for their execution
