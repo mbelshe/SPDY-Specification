@@ -11,11 +11,21 @@ A spec for .har files can be found here:
 If you wish to implement a new codec and test it, there are two easy approaches.
 1) Develop it in python, and load it into a module. An examination of
 headers_sample.py should show how this is done. http1_gzip.py is a good example.
+
 2) Develop it in whatever language, and use the 'fork_codec' module to fork-exec
 it in a separate process, and communicate to/from it with pipes. A short example
 of a program that could be fork-exec'd is 'trivial_codec.py', which accepts
 HTTP1 formatted input from stdin, and produces 8-byte unsigned int-followed by
 compressed-payload for each HTTP frame on stdout.
+
+In either case, you can include your compression module from the command-line.
+The following example loads http1_gzip.py, spdy4_codec.py, and fork_codec.py,
+which in turn launches trivial_codec.py
+
+  ./headers_sample.py \
+      --codecs="http1_gzip,spdy4_codec,fork_codec=\"$PWD/trivial_codec.py\""
+  The format of the "--codecs" parameter is:
+      --codecs=(module_name[="module_params"])*
 
 
 You can gather a .har file for a session you wish to analyze with Chome's
