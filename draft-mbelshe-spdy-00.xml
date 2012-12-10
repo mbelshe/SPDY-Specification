@@ -478,7 +478,7 @@
 
 <t>Length: This frame is always 4 bytes long.</t>
 
-<t>ID: A unique ID for this ping, represented as an unsigned 32 bit value.  When the client initiates a ping, it must use an odd numbered ID.  When the server initiates a ping, it must use an even numbered ping.  Use of odd/even IDs is required in order to avoid accidental looping on PINGs (where each side initiates an identical PING at the same time).</t>
+<t>ID: A unique ID for this ping, represented as an unsigned 32 bit value.  When the client initiates a ping, it must use an odd numbered ID.  When the server initiates a ping, it must use an even numbered ping.  Use of odd/even IDs is required in order to avoid incorrect calculation of round-trip time (where each side initiates an identical PING at the same time).</t>
 
 <t>Note: If a sender uses all possible PING ids (e.g. has sent all 2^31 possible IDs), it can wrap and start re-using IDs.</t>
 
