@@ -626,11 +626,7 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
          ++i) {
       ExecuteToggle(group_id, *i);
     }
-    for (vector<ToggleOp>::const_iterator i = instrs.toggle_offs.begin();
-         i != instrs.toggle_offs.end();
-         ++i) {
-      ExecuteToggle(group_id, *i);
-    }
+    ExecuteTurnOffs(group_id, instrs);
     ExecuteClones(group_id, instrs.clones);
     for (vector<KVStoOp>::const_iterator i = instrs.kvstos.begin();
          i != instrs.kvstos.end();
@@ -638,6 +634,15 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
       ExecuteKVSto(group_id, *i);
     }
     // not executing erefs here.
+  }
+
+  void ExecuteTurnOffs(GroupId group_id,
+                       const Instructions& instrs) {
+    for (vector<ToggleOp>::const_iterator i = instrs.toggle_offs.begin();
+         i != instrs.toggle_offs.end();
+         ++i) {
+      ExecuteToggle(group_id, *i);
+    }
   }
 
   void ExecuteInstructions(GroupId group_id,
@@ -766,9 +771,11 @@ class SPDY4HeadersCodecImpl : public Storage::ValEntryRemovalInterface {
     // Note that this is done after doing deletions due to exceeding the max
     // buffer size, since some of the deletions may have already cleared some of
     // the elements we must be turning off.
-    DiscoverTurnOffs(&(instrs.toggle_offs), group_id);
+
 
     ExecuteInstructionsExceptERefs(group_id, instrs);
+    DiscoverTurnOffs(&(instrs.toggle_offs), group_id);
+    ExecuteTurnOffs(group_id, instrs);
 
     for (vector<LookupCache>::iterator key_lu_it = key_lookups.begin();
          key_lu_it != key_lookups.end();
