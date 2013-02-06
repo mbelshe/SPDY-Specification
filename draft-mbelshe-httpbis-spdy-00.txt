@@ -96,8 +96,8 @@ Table of Contents
        2.6.8.  GOAWAY . . . . . . . . . . . . . . . . . . . . . . . . 22
        2.6.9.  HEADERS  . . . . . . . . . . . . . . . . . . . . . . . 23
        2.6.10. WINDOW_UPDATE  . . . . . . . . . . . . . . . . . . . . 24
-       2.6.11. CREDENTIAL . . . . . . . . . . . . . . . . . . . . . . 26
-       2.6.12. Name/Value Header Block  . . . . . . . . . . . . . . . 28
+       2.6.11. CREDENTIAL . . . . . . . . . . . . . . . . . . . . . . 27
+       2.6.12. Name/Value Header Block  . . . . . . . . . . . . . . . 29
    3.  HTTP Layering over SPDY  . . . . . . . . . . . . . . . . . . . 36
      3.1.  Connection Management  . . . . . . . . . . . . . . . . . . 36
        3.1.1.  Use of GOAWAY  . . . . . . . . . . . . . . . . . . . . 36
@@ -1324,18 +1324,18 @@ Internet-Draft                    SPDY                       August 2012
 
 2.6.10.  WINDOW_UPDATE
 
-   The WINDOW_UPDATE control frame is used to implement per stream flow
-   control in SPDY.  Flow control in SPDY is per hop, that is, only
-   between the two endpoints of a SPDY connection.  If there are one or
-   more intermediaries between the client and the origin server, flow
-   control signals are not explicitly forwarded by the intermediaries.
-   (However, throttling of data transfer by any recipient may have the
-   effect of indirectly propagating flow control information upstream
-   back to the original sender.)  Flow control only applies to the data
-   portion of data frames.  Recipients must buffer all control frames.
-   If a recipient fails to buffer an entire control frame, it MUST issue
-   a stream error (Section 2.4.2) with the status code
-   FLOW_CONTROL_ERROR for the stream.
+   The WINDOW_UPDATE control frame is used to implement per stream and
+   per session flow control in SPDY.  Flow control in SPDY is per hop,
+   that is, only between the two endpoints of a SPDY connection.  If
+   there are one or more intermediaries between the client and the
+   origin server, flow control signals are not explicitly forwarded by
+   the intermediaries.  (However, throttling of data transfer by any
+   recipient may have the effect of indirectly propagating flow control
+   information upstream back to the original sender.)  Flow control only
+   applies to the data portion of data frames.  Recipients must buffer
+   all control frames.  If a recipient fails to buffer an entire control
+   frame, it MUST issue a stream error (Section 2.4.2) with the status
+   code FLOW_CONTROL_ERROR for the stream.
 
 
 
@@ -1344,6 +1344,27 @@ Belshe & Peon           Expires February 2, 2013               [Page 24]
 
 Internet-Draft                    SPDY                       August 2012
 
+
+   Flow control in SPDY is implemented by a data transfer window for
+   each stream and one for the entire session.  The data transfer window
+   is a simple uint32 that indicates how many bytes of data the sender
+   can transmit.  When the session starts, the sender initializes the
+   session window to the initial session window size.  After a stream is
+   created, but before any data frames have been transmitted, the sender
+   initializes the stream window to the initial stream window size.  The
+   window size is a measure of the buffering capability of the
+   recipient.  The sender must not send a data frame with a data length
+   greater than the session window size or the stream window size.
+   After sending each data frame, the sender decrements both the per
+   stream window size and the session window size by the amount of data
+   transmitted.  When a stream window size becomes less than or equal to
+   0, the sender must pause transmitting data frames for that stream.
+   Likewise, when the session window size becomes less than or equal to
+   0, the sender must pause transmitting any data frames for the
+   session, regardless of what stream it belongs to.  The recipient can
+   send a WINDOW_UPDATE frame back to notify the sender that it has
+   consumed some data and freed up buffer space to receive more data for
+   the stream or session.
 
    Flow control in SPDY is implemented by a data transfer window kept by
    the sender of each stream.  The data transfer window is a simple
@@ -1372,27 +1393,6 @@ Internet-Draft                    SPDY                       August 2012
 
    Length: An unsigned 16-bit value representing the number of bytes
    which follow the frame header.  For WINDOW_UPDATE frames, this value
-   is always 4.
-
-   Stream-ID: The stream ID that this WINDOW_UPDATE control frame is
-   for.
-
-   Delta-Window-Size: The additional number of bytes that the sender can
-   transmit in addition to existing remaining window size.  The legal
-   range for this field is 1 to 2^31 - 1 (0x7fffffff) bytes.
-
-   The window size as kept by the sender must never exceed 2^31
-   (although it can become negative in one special case).  If a sender
-   receives a WINDOW_UPDATE that causes the its window size to exceed
-   this limit, it must send RST_STREAM with status code
-   FLOW_CONTROL_ERROR to terminate the stream.
-
-   When a SPDY connection is first established, the default initial
-   window size for all streams is 64KB.  An endpoint can use the
-   SETTINGS control frame to adjust the initial window size for the
-   connection.  That is, its peer can start out using the 64KB default
-   initial window size when sending data frames before receiving the
-   SETTINGS.  Because SETTINGS is asynchronous, there may be a race
 
 
 
@@ -1401,6 +1401,31 @@ Belshe & Peon           Expires February 2, 2013               [Page 25]
 Internet-Draft                    SPDY                       August 2012
 
 
+   is always 4.
+
+   Stream-ID: The stream ID that this WINDOW_UPDATE control frame is
+   for.  If the stream ID value is 0, the WINDOW_UPDATE frame applies to
+   the session window.
+
+   Delta-Window-Size: The additional number of bytes that the sender can
+   transmit in addition to existing remaining window size.  The legal
+   range for this field is 1 to 2^31 - 1 (0x7fffffff) bytes.
+
+   The window size as kept by the sender must never exceed 2^31
+   (although it can become negative in one special case).  If a sender
+   receives a WINDOW_UPDATE that causes the window size to exceed this
+   limit, then if the Stream-ID was 0, it MUST send a GOAWAY frame with
+   status code FLOW_CONTROL_ERROR to terminate the session.  And if the
+   Stream-ID references an active stream, it must send a RST_STREAM
+   frame with status code FLOW_CONTROL_ERROR to terminate the stream.
+
+   When a SPDY connection is first established, the default initial
+   window size for all streams is 64KB and the initial window size for
+   the session is 64KB.  An endpoint can use the SETTINGS control frame
+   to adjust the initial window size for the streams in the session.
+   That is, its peer can start out using the 64KB default initial stream
+   window size when sending data frames before receiving a SETTINGS
+   frame.  Because SETTINGS is asynchronous, there may be a race
    condition if the recipient wants to decrease the initial window size,
    but its peer immediately sends 64KB on the creation of a new
    connection, before waiting for the SETTINGS to arrive.  This is one
@@ -1416,21 +1441,29 @@ Internet-Draft                    SPDY                       August 2012
       default initial window size), and send WINDOW_UPDATE as it
       consumes data.
 
-   In the case of option 2, both sides must compute the window size
-   based on the initial window size in the SETTINGS.  For example, if
-   the recipient sets the initial window size to be 16KB, and the sender
-   sends 64KB immediately on connection establishment, the sender will
-   discover its window size is -48KB on receipt of the SETTINGS.  As the
-   recipient consumes the first 16KB, it must send a WINDOW_UPDATE of
-   16KB back to the sender.  This interaction continues until the
-   sender's window size becomes positive again, and it can resume
-   transmitting data frames.
+   In the case of option 2, both sides must compute the stream window
+   size based on the initial stream window size in the SETTINGS.  For
+   example, if the recipient sets the initial stream window size to be
+   16KB, and the sender sends 64KB for a stream immediately on session
+   establishment, the sender will discover its window size is -48KB on
+   receipt of the SETTINGS.  As the recipient consumes the first 16KB,
+   it can send a WINDOW_UPDATE of 16KB back to the sender.  This
+   interaction continues until the sender's window size becomes positive
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 26]
+
+Internet-Draft                    SPDY                       August 2012
+
+
+   again, and it can resume transmitting data frames.
 
    After the recipient reads in a data frame with FLAG_FIN that marks
    the end of the data stream, it should not send WINDOW_UPDATE frames
-   as it consumes the last data frame.  A sender should ignore all the
-   WINDOW_UPDATE frames associated with the stream after it send the
-   last frame for the stream.
+   for the stream as it consumes the last data frame.  A sender should
+   ignore all the WINDOW_UPDATE frames associated with the stream after
+   it send the last frame for the stream.
 
    The data frames from the sender and the WINDOW_UPDATE frames from the
    recipient are completely asynchronous with respect to each other.
@@ -1448,14 +1481,6 @@ Internet-Draft                    SPDY                       August 2012
    valid for both hostnames.  However, because the SSL connection can
    contain at most one client certificate, the client needs a mechanism
    to send additional client certificates to the server.
-
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 26]
-
-Internet-Draft                    SPDY                       August 2012
-
 
    The server is required to maintain a vector of client certificates
    associated with a SPDY session.  When the client needs to send a
@@ -1480,6 +1505,14 @@ Internet-Draft                    SPDY                       August 2012
    different pages (in different tabs).  When the renegotiation + client
    certificate request comes in, the browser is unable to determine
    which resource triggered the client certificate request, in order to
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 27]
+
+Internet-Draft                    SPDY                       August 2012
+
+
    prompt the user accordingly.
 
   0        1        2        3        4         5        6        7
@@ -1505,14 +1538,6 @@ Internet-Draft                    SPDY                       August 2012
    Proof: Cryptographic proof that the client has possession of the
    private key associated with the certificate.  The format is a TLS
    digitally-signed element
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 27]
-
-Internet-Draft                    SPDY                       August 2012
-
-
    (http://tools.ietf.org/html/rfc5246#section-4.7).  The signature
    algorithm must be the same as that used in the CertificateVerify
    message.  However, since the MD5+SHA1 signature type used in TLS 1.0
@@ -1536,6 +1561,14 @@ Internet-Draft                    SPDY                       August 2012
    credential (either missing or invalid), it must reply with a
    RST_STREAM frame with the status code INVALID_CREDENTIALS.  Upon
    receipt of a RST_STREAM frame with INVALID_CREDENTIALS, the client
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 28]
+
+Internet-Draft                    SPDY                       August 2012
+
+
    should initiate a new stream directly to the requested origin and
    resend the request.  Note, SPDY does not allow the server to request
    different client authentication for different resources in the same
@@ -1559,15 +1592,6 @@ Internet-Draft                    SPDY                       August 2012
 
    The HeaderBlock compressor (described later) is subject to the
    following constraints:
-
-
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 28]
-
-Internet-Draft                    SPDY                       August 2012
-
 
       TotalHeaderStorageSize : default(16k)
 
@@ -1594,6 +1618,13 @@ Internet-Draft                    SPDY                       August 2012
    without reconstructing the headers, and thus be able to represent and
    interpret headers with less memory and CPU.
 
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 29]
+
+Internet-Draft                    SPDY                       August 2012
+
+
    The Name/Value Header Block is found in the SYN_STREAM, SYN_REPLY and
    HEADERS control frames, and shares a common format:
 
@@ -1617,13 +1648,6 @@ Internet-Draft                    SPDY                       August 2012
 
       0x0 (reserved) -- this is not used and is reserved in case a
       token-based delimiter is required in the future.
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 29]
-
-Internet-Draft                    SPDY                       August 2012
-
 
       0x1 (Toggle) indicates that the data which follows will be an lru-
       index.  That lru-index, if present in the current header-group
@@ -1649,6 +1673,14 @@ Internet-Draft                    SPDY                       August 2012
       0x2 (Eref) indicates that the data which follows will be two
       string literals.  The first such string represents key, and the
       second string represents a value.  Unlike KVSto, the Eref does not
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 30]
+
+Internet-Draft                    SPDY                       August 2012
+
+
       modify the compressor state-- it only specified a key-value which
       will be interpreted as being part of the meta-data for the frame
       which includes the HeaderBlock.
@@ -1674,13 +1706,6 @@ Internet-Draft                    SPDY                       August 2012
                   |0|  7 bit-ascii   |00000000|
                   +-|-------+========+--------+
 
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 30]
-
-Internet-Draft                    SPDY                       August 2012
-
-
    The NumOps field encodes one minus the number of operations that
    follow.  Since the field-width is 8 bits, a maximum of 256 ops can be
    represented.  If more than 256 operations are required, simply repeat
@@ -1705,6 +1730,13 @@ Internet-Draft                    SPDY                       August 2012
 
    Detail of an operation with an opcode of 0x2 (Clone):
 
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 31]
+
+Internet-Draft                    SPDY                       August 2012
+
+
                      0        1
                      +--------+--------+
                      |00000010| NumOps |
@@ -1720,22 +1752,6 @@ Internet-Draft                    SPDY                       August 2012
                      +--------+--------+========+
 
    Detail of an operation with an opcode of 0x3 (KVSto):
-
-
-
-
-
-
-
-
-
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 31]
-
-Internet-Draft                    SPDY                       August 2012
-
 
                      0        1
                      +--------+--------+
@@ -1769,6 +1785,14 @@ Internet-Draft                    SPDY                       August 2012
 
    Each header name must have at least one value.  Header names are
    encoded using the US-ASCII character set [ASCII] and must be all
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 32]
+
+Internet-Draft                    SPDY                       August 2012
+
+
    lower case.  The length of each name must be greater than zero.  A
    recipient of a zero-length name MUST issue a stream error
    (Section 2.4.2) with the status code PROTOCOL_ERROR for the
@@ -1785,13 +1809,6 @@ Internet-Draft                    SPDY                       August 2012
    specification, any reference to 'zlib' is referring to the ZLIB
    Compressed Data Format Specification Version 3.3 as part of RFC1950.
    [RFC1950]
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 32]
-
-Internet-Draft                    SPDY                       August 2012
-
 
    For each HEADERS compression instance, the initial state is
    initialized using the following dictionary [UDELCOMPRESSION]:
@@ -1824,6 +1841,14 @@ Internet-Draft                    SPDY                       August 2012
 
                   The stream-group table for group zero looks like this:
                   0: ":host", "www.foo.com"
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 33]
+
+Internet-Draft                    SPDY                       August 2012
+
+
                   1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;BLAJHBLA"
                   2: ":path", "/index.html"
                   3: "date", "Wed Jul 18 11:50:43 2012"
@@ -1841,14 +1866,6 @@ Internet-Draft                    SPDY                       August 2012
                   SYN_STREAM 3, stream-group (G)=0
                   Header-block:
                   Store(0x1): level(G),index(2),v: "/index.js"
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 33]
-
-Internet-Draft                    SPDY                       August 2012
-
-
                   Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:44 2012"
 
                   At this point the connection headers table is unchanged:
@@ -1880,6 +1897,14 @@ Internet-Draft                    SPDY                       August 2012
                   Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:44 PDT 2012"
 
                   Connection level-headers are implied.
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 34]
+
+Internet-Draft                    SPDY                       August 2012
+
+
                   Stream-group level headers are implied.
 
                   For this example, using TaCo (truncate and concatenate) wasn't useful.
@@ -1897,14 +1922,6 @@ Internet-Draft                    SPDY                       August 2012
                   2: "user-agent", "blah blah browser version blah blah"
                   3: "accept-encoding", "sdch, bzip, compress"
 
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 34]
-
-Internet-Draft                    SPDY                       August 2012
-
-
                   The stream-group table for group zero looks like this:
                   0: ":host", "www.foo.com"
                   1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;FOOBLA"
@@ -1918,23 +1935,6 @@ Internet-Draft                    SPDY                       August 2012
                   cookie: SOMELONGSTRINGTHATISMOSTLYOPAQUE;FOOBLA
                   user-agent: blah blah browser version blah blah
                   accept-encoding: sdch, bzip, compress
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
