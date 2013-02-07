@@ -1332,11 +1332,11 @@ Internet-Draft                    SPDY                       August 2012
    the intermediaries.  (However, throttling of data transfer by any
    recipient may have the effect of indirectly propagating flow control
    information upstream back to the original sender.)  Flow control only
-   applies to the data portion of data frames.  Recipients must buffer
-   all control frames.  If a recipient fails to buffer an entire control
-   frame, it MUST issue a stream error (Section 2.4.2) with the status
-   code FLOW_CONTROL_ERROR for the stream.
+   applies to the data portion of data frames.
 
+   Flow control in SPDY is implemented by a data transfer window for
+   each stream and one for the entire session.  The data transfer window
+   is a simple uint32 that indicates how many bytes of data the sender
 
 
 
@@ -1345,9 +1345,6 @@ Belshe & Peon           Expires February 2, 2013               [Page 24]
 Internet-Draft                    SPDY                       August 2012
 
 
-   Flow control in SPDY is implemented by a data transfer window for
-   each stream and one for the entire session.  The data transfer window
-   is a simple uint32 that indicates how many bytes of data the sender
    can transmit.  When the session starts, the sender initializes the
    session window to the initial session window size.  After a stream is
    created, but before any data frames have been transmitted, the sender
@@ -1393,6 +1390,9 @@ Internet-Draft                    SPDY                       August 2012
 
    Length: An unsigned 16-bit value representing the number of bytes
    which follow the frame header.  For WINDOW_UPDATE frames, this value
+   is always 4.
+
+   Stream-ID: The stream ID that this WINDOW_UPDATE control frame is
 
 
 
@@ -1401,9 +1401,6 @@ Belshe & Peon           Expires February 2, 2013               [Page 25]
 Internet-Draft                    SPDY                       August 2012
 
 
-   is always 4.
-
-   Stream-ID: The stream ID that this WINDOW_UPDATE control frame is
    for.  If the stream ID value is 0, the WINDOW_UPDATE frame applies to
    the session window.
 
@@ -1449,6 +1446,9 @@ Internet-Draft                    SPDY                       August 2012
    receipt of the SETTINGS.  As the recipient consumes the first 16KB,
    it can send a WINDOW_UPDATE of 16KB back to the sender.  This
    interaction continues until the sender's window size becomes positive
+   again, and it can resume transmitting data frames.
+
+   After the recipient reads in a data frame with FLAG_FIN that marks
 
 
 
@@ -1457,9 +1457,6 @@ Belshe & Peon           Expires February 2, 2013               [Page 26]
 Internet-Draft                    SPDY                       August 2012
 
 
-   again, and it can resume transmitting data frames.
-
-   After the recipient reads in a data frame with FLAG_FIN that marks
    the end of the data stream, it should not send WINDOW_UPDATE frames
    for the stream as it consumes the last data frame.  A sender should
    ignore all the WINDOW_UPDATE frames associated with the stream after
@@ -1505,6 +1502,9 @@ Internet-Draft                    SPDY                       August 2012
    different pages (in different tabs).  When the renegotiation + client
    certificate request comes in, the browser is unable to determine
    which resource triggered the client certificate request, in order to
+   prompt the user accordingly.
+
+
 
 
 
@@ -1512,8 +1512,6 @@ Belshe & Peon           Expires February 2, 2013               [Page 27]
 
 Internet-Draft                    SPDY                       August 2012
 
-
-   prompt the user accordingly.
 
   0        1        2        3        4         5        6        7
   +--------+--------+--------+--------+-|-------+--------+--------+--------+
@@ -1561,6 +1559,8 @@ Internet-Draft                    SPDY                       August 2012
    credential (either missing or invalid), it must reply with a
    RST_STREAM frame with the status code INVALID_CREDENTIALS.  Upon
    receipt of a RST_STREAM frame with INVALID_CREDENTIALS, the client
+   should initiate a new stream directly to the requested origin and
+   resend the request.  Note, SPDY does not allow the server to request
 
 
 
@@ -1569,8 +1569,6 @@ Belshe & Peon           Expires February 2, 2013               [Page 28]
 Internet-Draft                    SPDY                       August 2012
 
 
-   should initiate a new stream directly to the requested origin and
-   resend the request.  Note, SPDY does not allow the server to request
    different client authentication for different resources in the same
    origin.
 
@@ -1618,6 +1616,8 @@ Internet-Draft                    SPDY                       August 2012
    without reconstructing the headers, and thus be able to represent and
    interpret headers with less memory and CPU.
 
+   The Name/Value Header Block is found in the SYN_STREAM, SYN_REPLY and
+
 
 
 Belshe & Peon           Expires February 2, 2013               [Page 29]
@@ -1625,7 +1625,6 @@ Belshe & Peon           Expires February 2, 2013               [Page 29]
 Internet-Draft                    SPDY                       August 2012
 
 
-   The Name/Value Header Block is found in the SYN_STREAM, SYN_REPLY and
    HEADERS control frames, and shares a common format:
 
                    0        1        2          3..N       N+1..K
@@ -1673,6 +1672,7 @@ Internet-Draft                    SPDY                       August 2012
       0x2 (Eref) indicates that the data which follows will be two
       string literals.  The first such string represents key, and the
       second string represents a value.  Unlike KVSto, the Eref does not
+      modify the compressor state-- it only specified a key-value which
 
 
 
@@ -1681,7 +1681,6 @@ Belshe & Peon           Expires February 2, 2013               [Page 30]
 Internet-Draft                    SPDY                       August 2012
 
 
-      modify the compressor state-- it only specified a key-value which
       will be interpreted as being part of the meta-data for the frame
       which includes the HeaderBlock.
 
@@ -1729,6 +1728,7 @@ Internet-Draft                    SPDY                       August 2012
                      +--------+--------+
 
    Detail of an operation with an opcode of 0x2 (Clone):
+
 
 
 
