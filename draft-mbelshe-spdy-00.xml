@@ -86,6 +86,58 @@
           <t>For best performance, it is expected that non-battery operated clients will leave open connections until the user navigates away from all web pages referencing the connection, or until the server closes the connection. Servers are encouraged to leave connections open for as long as possible, but can terminate idle connections if necessary.  When either endpoint closes the transport-level connection, it MUST first send a <xref target="GOAWAY">GOAWAY</xref> frame so that the endpoints can reliably determine if requests finished before the close. It is expected that battery-operated clients may have more involved heuristics as to when a connection should be closed.</t>
         </section>
 
+        <section anchor="ConnectionHeader" title="Connection Header">
+          
+          <t>Upon establishment of a TCP connection and determination 
+            that SPDY will be used by both peers to communicate, each 
+            endpoint MUST send a connection header as a final confirmation
+            and to establish the default parameters for the SPDY connection.</t>
+  
+          <t>
+            The client connection header is a sequence of 25 octets (in hex notation)
+          </t>
+          <figure><artwork type="inline">
+  464f4f202a20485454502f322e300d0a0d0a4241520d0a0d0a</artwork></figure>
+          <t>
+            (the string <spanx style="verb">FOO * HTTP/2.0\r\n\r\nBAR\r\n\r\n</spanx>) followed by a
+            <xref target="SETTINGS">SETTINGS frame</xref>.  The client sends the client connection header
+            immediately upon receipt of a 101 Switching Protocols response (indicating a successful
+            upgrade), or after receiving a TLS Finished message from the server. If starting an
+            HTTP/2.0 connection with prior knowledge of server support for the protocol, the client
+            connection header is sent upon connection establishment.
+          </t>
+          <t>
+            <list>
+              <t>
+                The client connection header is selected so that a large proportion of HTTP/1.1 or
+                HTTP/1.0 servers and intermediaries do not attempt to process further frames.  Note
+                that this does not address the concerns raised in <xref target="TALKING"/>.
+              </t>
+            </list>
+          </t>
+          <t>
+            The server connection header consists of just 
+            a <xref target="SETTINGS">SETTINGS frame</xref> that MUST be the 
+            first frame the server sends in the SPDY connection.
+          </t>
+          <t>
+            To avoid unnecessary latency, clients are permitted to send 
+            additional frames to the server immediately after sending the client 
+            connection header, without waiting to receive the server connection header.
+            It is important to note, however, that the server connection header 
+            SETTINGS frame might include parameters that necessarily alter 
+            how a client is expected to communicate with the server. Upon 
+            receiving the SETTINGS frame, the client is expected to honor any 
+            parameters established. 
+          </t>
+          <t>
+            Clients and servers MUST terminate the TCP connection if either
+            peer does not begin with a valid connection header.  A 
+            <xref target="GOAWAY">GOAWAY frame</xref> MAY be omitted if it is 
+            clear that the peer is not using SPDY.
+          </t>
+        </section>
+
         <section title="Framing">
           <t>Once the connection is established, clients and servers exchange framed messages.</t>
 
@@ -1419,6 +1471,23 @@
           </front>
         </reference>
       </references>
+
+      <references title="Informative References">
+        <reference anchor="TALKING" target="http://w2spconf.com/2011/papers/websocket.pdf">
+          <front>
+            <title>
+              Talking to Yourself for Fun and Profit
+            </title>
+            <author initials="L-S." surname="Huang"/>
+            <author initials="E." surname="Chen"/>
+            <author initials="A." surname="Barth"/>
+            <author initials="E." surname="Rescorla"/>
+            <author initials="C." surname="Jackson"/>
+            <date year="2011" />
+          </front>
+        </reference>
+      </references>
+
       <section title="Changes">
         <t>To be removed by RFC Editor before publication</t>
       </section>
