@@ -527,7 +527,13 @@
           </section>
 
           <section anchor="RST_STREAM" title="RST_STREAM">
-            <t>The RST_STREAM frame allows for abnormal termination of a stream.  When sent by the creator of a stream, it indicates the creator wishes to cancel the stream.  When sent by the recipient of a stream, it indicates an error or that the recipient did not want to accept the stream, so the stream should be closed.</t>
+            <t>
+              The RST_STREAM frame (type=0x3) allows for abnormal termination of a stream.  When sent by
+              the initiator of a stream, it indicates that they wish to cancel the stream.  When
+              sent by the receiver of a stream, it indicates that either the 
+              receiver is rejecting the stream, requesting that the stream be 
+              cancelled or that an error condition has occurred. 
+            </t>
             <figure>
               <artwork>
   0        1        2        3        4         5        6        7
@@ -537,33 +543,38 @@
 
   8        9        10       11
   +--------+--------+--------+--------+
-  | Status-Code(32)                   |
+  |            Error-Code(32)         |
   +--------+--------+--------+--------+
               </artwork>
             </figure>
 
-            <t>Length: An unsigned 16-bit value representing the number of bytes which follow the frame header. For RST_STREAM frames, this value is always 4.</t>
-
-            <t>Flags: Flags related to this frame. RST_STREAM does not define any flags.  This value must be 0.</t>
-
-            <t>Stream-ID: The 31-bit identifier for this stream.</t>
-
-            <t>Status code: (32 bits) An indicator for why the stream is being terminated.The following status codes are defined:
-              <list>
-                <t>1 - PROTOCOL_ERROR. This is a generic error, and should only be used if a more specific error is not available.</t>
-                <t>2 - INVALID_STREAM. This is returned when a frame is received for a stream which is not active.</t>
-                <t>3 - REFUSED_STREAM.  Indicates that the stream was refused before any processing has been done on the stream.</t>
-                <t>4 - UNSUPPORTED_VERSION.  Indicates that the recipient of a stream does not support the SPDY version requested.</t>
-                <t>5 - CANCEL.  Used by the creator of a stream to indicate that the stream is no longer needed.</t>
-                <t>6 - INTERNAL_ERROR.  This is a generic error which can be used when the implementation has internally failed, not due to anything in the protocol.</t>
-                <t>7 - FLOW_CONTROL_ERROR.  The endpoint detected that its peer violated the flow control protocol.</t>
-                <t>10 - INVALID_CREDENTIALS.  The server received a request for a resource whose origin does not have valid credentials in the client certificate vector.</t>
-                <t>11 - FRAME_TOO_LARGE.  The endpoint received a frame which this implementation could not support.  If FRAME_TOO_LARGE is sent for a HEADERS+PRIORITY, HEADERS, or PUSH_PROMISE frame without fully processing the compressed portion of those frames, then the compression state will be out-of-sync with the other endpoint.  In this case, senders of FRAME_TOO_LARGE MUST close the session.</t>
-                <t>Note:  0 is not a valid status code for a RST_STREAM.</t>
-              </list>
+            <t>
+              The RST_STREAM frame contains a single unsigned, 
+              32-bit integer identifying the <xref target="ErrorCodes">error code</xref>.  
+              The error code indicates why the stream is being terminated.
             </t>
-
-            <t>After receiving a RST_STREAM on a stream, the recipient must not send additional frames for that stream, and the stream moves into the closed state.</t>
+            
+            <t>
+              No type-flags are defined.
+            </t>
+  
+            <t>
+              The RST_STREAM frame fully terminates the referenced stream
+              and causes it to enter the closed state. After receiving a 
+              RST_STREAM on a stream, the receiver MUST NOT send additional 
+              frames for that stream. However, after sending the RST_STREAM, 
+              the sending endpoint MUST be prepared to receive and process 
+              additional frames sent on the stream that might have been sent 
+              by the peer prior to the arrival of the RST_STREAM.
+            </t>
+  
+            <t>
+              RST_STREAM frames MUST be associated with a stream. If a 
+              RST_STREAM frame is received whose stream 
+              identifier field is 0x0 the recipient MUST respond with a 
+              <xref target="SessionErrorHandler">session error</xref> of type 
+              PROTOCOL_ERROR.
+            </t>
           </section>
 
           <section anchor="PUSH_PROMISE" title="PUSH_PROMISE">
