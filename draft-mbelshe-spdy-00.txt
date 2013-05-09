@@ -96,15 +96,15 @@ Table of Contents
        2.7.7.  GOAWAY . . . . . . . . . . . . . . . . . . . . . . . . 22
        2.7.8.  HEADERS  . . . . . . . . . . . . . . . . . . . . . . . 23
        2.7.9.  WINDOW_UPDATE  . . . . . . . . . . . . . . . . . . . . 24
-       2.7.10. CREDENTIAL . . . . . . . . . . . . . . . . . . . . . . 26
-       2.7.11. Name/Value Header Block  . . . . . . . . . . . . . . . 28
-   3.  HTTP Layering over SPDY  . . . . . . . . . . . . . . . . . . . 35
-     3.1.  Connection Management  . . . . . . . . . . . . . . . . . . 35
-       3.1.1.  Use of GOAWAY  . . . . . . . . . . . . . . . . . . . . 35
-     3.2.  HTTP Request/Response  . . . . . . . . . . . . . . . . . . 36
-       3.2.1.  Request  . . . . . . . . . . . . . . . . . . . . . . . 36
-       3.2.2.  Response . . . . . . . . . . . . . . . . . . . . . . . 37
-       3.2.3.  Authentication . . . . . . . . . . . . . . . . . . . . 38
+       2.7.10. CREDENTIAL . . . . . . . . . . . . . . . . . . . . . . 27
+       2.7.11. Name/Value Header Block  . . . . . . . . . . . . . . . 29
+   3.  HTTP Layering over SPDY  . . . . . . . . . . . . . . . . . . . 37
+     3.1.  Connection Management  . . . . . . . . . . . . . . . . . . 37
+       3.1.1.  Use of GOAWAY  . . . . . . . . . . . . . . . . . . . . 37
+     3.2.  HTTP Request/Response  . . . . . . . . . . . . . . . . . . 38
+       3.2.1.  Request  . . . . . . . . . . . . . . . . . . . . . . . 38
+       3.2.2.  Response . . . . . . . . . . . . . . . . . . . . . . . 39
+       3.2.3.  Authentication . . . . . . . . . . . . . . . . . . . . 40
 
 
 
@@ -113,42 +113,42 @@ Belshe & Peon           Expires February 2, 2013                [Page 2]
 Internet-Draft                    SPDY                       August 2012
 
 
-     3.3.  Server Push Transactions . . . . . . . . . . . . . . . . . 39
-       3.3.1.  Server implementation  . . . . . . . . . . . . . . . . 40
-       3.3.2.  Client implementation  . . . . . . . . . . . . . . . . 41
-   4.  WebSocket Layering over SPDY . . . . . . . . . . . . . . . . . 43
-     4.1.  Connection Management  . . . . . . . . . . . . . . . . . . 43
-       4.1.1.  Opening Handshake  . . . . . . . . . . . . . . . . . . 43
-       4.1.2.  Closing Handshake  . . . . . . . . . . . . . . . . . . 44
-     4.2.  Bi-directional Communication . . . . . . . . . . . . . . . 45
-       4.2.1.  Frame mapping  . . . . . . . . . . . . . . . . . . . . 45
-   5.  Design Rationale and Notes . . . . . . . . . . . . . . . . . . 47
-     5.1.  Separation of Framing Layer and Application Layer  . . . . 47
-     5.2.  Error handling - Framing Layer . . . . . . . . . . . . . . 47
-     5.3.  One Connection Per Domain  . . . . . . . . . . . . . . . . 47
-     5.4.  Fixed vs Variable Length Fields  . . . . . . . . . . . . . 48
-     5.5.  Compression Context(s) . . . . . . . . . . . . . . . . . . 48
-     5.6.  Unidirectional streams . . . . . . . . . . . . . . . . . . 49
-     5.7.  Data Compression . . . . . . . . . . . . . . . . . . . . . 49
-     5.8.  Server Push  . . . . . . . . . . . . . . . . . . . . . . . 49
-   6.  Security Considerations  . . . . . . . . . . . . . . . . . . . 50
-     6.1.  Use of Same-origin constraints . . . . . . . . . . . . . . 50
-     6.2.  HTTP Headers and SPDY Headers  . . . . . . . . . . . . . . 50
-     6.3.  Cross-Protocol Attacks . . . . . . . . . . . . . . . . . . 50
-     6.4.  Server Push Implicit Headers . . . . . . . . . . . . . . . 50
-   7.  Privacy Considerations . . . . . . . . . . . . . . . . . . . . 51
-     7.1.  Long Lived Connections . . . . . . . . . . . . . . . . . . 51
-     7.2.  SETTINGS frame . . . . . . . . . . . . . . . . . . . . . . 51
-   8.  Sub-protocol negotiation . . . . . . . . . . . . . . . . . . . 52
-     8.1.  Supporting scheme negotiation using SETTINGS frame . . . . 52
-   9.  Incompatibilities with SPDY draft #3 . . . . . . . . . . . . . 53
-   10. Requirements Notation  . . . . . . . . . . . . . . . . . . . . 55
-   11. Acknowledgements . . . . . . . . . . . . . . . . . . . . . . . 56
-   12. References . . . . . . . . . . . . . . . . . . . . . . . . . . 57
-     12.1. Normative References . . . . . . . . . . . . . . . . . . . 57
-     12.2. Informative References . . . . . . . . . . . . . . . . . . 58
-   Appendix A.  Changes . . . . . . . . . . . . . . . . . . . . . . . 59
-   Authors' Addresses . . . . . . . . . . . . . . . . . . . . . . . . 60
+     3.3.  Server Push Transactions . . . . . . . . . . . . . . . . . 41
+       3.3.1.  Server implementation  . . . . . . . . . . . . . . . . 42
+       3.3.2.  Client implementation  . . . . . . . . . . . . . . . . 43
+   4.  WebSocket Layering over SPDY . . . . . . . . . . . . . . . . . 45
+     4.1.  Connection Management  . . . . . . . . . . . . . . . . . . 45
+       4.1.1.  Opening Handshake  . . . . . . . . . . . . . . . . . . 45
+       4.1.2.  Closing Handshake  . . . . . . . . . . . . . . . . . . 46
+     4.2.  Bi-directional Communication . . . . . . . . . . . . . . . 47
+       4.2.1.  Frame mapping  . . . . . . . . . . . . . . . . . . . . 47
+   5.  Design Rationale and Notes . . . . . . . . . . . . . . . . . . 49
+     5.1.  Separation of Framing Layer and Application Layer  . . . . 49
+     5.2.  Error handling - Framing Layer . . . . . . . . . . . . . . 49
+     5.3.  One Connection Per Domain  . . . . . . . . . . . . . . . . 49
+     5.4.  Fixed vs Variable Length Fields  . . . . . . . . . . . . . 50
+     5.5.  Compression Context(s) . . . . . . . . . . . . . . . . . . 50
+     5.6.  Unidirectional streams . . . . . . . . . . . . . . . . . . 51
+     5.7.  Data Compression . . . . . . . . . . . . . . . . . . . . . 51
+     5.8.  Server Push  . . . . . . . . . . . . . . . . . . . . . . . 51
+   6.  Security Considerations  . . . . . . . . . . . . . . . . . . . 52
+     6.1.  Use of Same-origin constraints . . . . . . . . . . . . . . 52
+     6.2.  HTTP Headers and SPDY Headers  . . . . . . . . . . . . . . 52
+     6.3.  Cross-Protocol Attacks . . . . . . . . . . . . . . . . . . 52
+     6.4.  Server Push Implicit Headers . . . . . . . . . . . . . . . 52
+   7.  Privacy Considerations . . . . . . . . . . . . . . . . . . . . 53
+     7.1.  Long Lived Connections . . . . . . . . . . . . . . . . . . 53
+     7.2.  SETTINGS frame . . . . . . . . . . . . . . . . . . . . . . 53
+   8.  Sub-protocol negotiation . . . . . . . . . . . . . . . . . . . 54
+     8.1.  Supporting scheme negotiation using SETTINGS frame . . . . 54
+   9.  Incompatibilities with SPDY draft #3 . . . . . . . . . . . . . 55
+   10. Requirements Notation  . . . . . . . . . . . . . . . . . . . . 57
+   11. Acknowledgements . . . . . . . . . . . . . . . . . . . . . . . 58
+   12. References . . . . . . . . . . . . . . . . . . . . . . . . . . 59
+     12.1. Normative References . . . . . . . . . . . . . . . . . . . 59
+     12.2. Informative References . . . . . . . . . . . . . . . . . . 60
+   Appendix A.  Changes . . . . . . . . . . . . . . . . . . . . . . . 61
+   Authors' Addresses . . . . . . . . . . . . . . . . . . . . . . . . 62
 
 
 
@@ -1302,48 +1302,23 @@ Internet-Draft                    SPDY                       August 2012
 
 2.7.9.  WINDOW_UPDATE
 
-   The WINDOW_UPDATE control frame is used to implement per stream and
-   per session flow control in SPDY.  Flow control in SPDY is per hop,
-   that is, only between the two endpoints of a SPDY connection.  If
-   there are one or more intermediaries between the client and the
-   origin server, flow control signals are not explicitly forwarded by
-   the intermediaries.  (However, throttling of data transfer by any
-   recipient may have the effect of indirectly propagating flow control
-   information upstream back to the original sender.)  Flow control only
-   applies to the data portion of data frames.
+   The WINDOW_UPDATE frame (type=0x9) is used to implement flow control.
 
-   Flow control in SPDY is implemented by a data transfer window for
-   each stream and one for the entire session.  The data transfer window
-   is a simple uint32 that indicates how many bytes of data the sender
-   can transmit.  When the session starts, the sender initializes the
-   session window to the initial session window size.  After a stream is
-   created, but before any data frames have been transmitted, the sender
-   initializes the stream window to the initial stream window size.  The
-   window size is a measure of the buffering capability of the
-   recipient.  The sender MUST NOT send a data frame with a data length
-   greater than the session window size or the stream window size.
-   After sending each data frame, the sender decrements both the per
-   stream window size and the session window size by the amount of data
-   transmitted.  When a stream window size becomes less than or equal to
-   0, the sender MUST NOT send data frames for that stream, except for a
-   zero length data frame with the FIN flag set.  Likewise, when the
-   session window size becomes less than or equal to 0, the sender the
-   sender MUST NOT send data frames for that stream, except for a zero
-   length data frame with the FIN flag set.  The recipient can send a
-   WINDOW_UPDATE frame back to notify the sender that it has consumed
-   some data and freed up buffer space to receive more data for the
-   stream or session.
+   Flow control operates at two levels: on each individual stream and on
+   the entire session.
 
+   Both types of flow control are hop by hop; that is, only between the
+   two endpoints.  Intermediaries do not forward WINDOW_UPDATE messages
+   between dependent sessions.  However, throttling of data transfer by
+   any receiver can indirectly cause the propagation of flow control
+   information toward the original sender.
 
-
-
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 24]
-
-Internet-Draft                    SPDY                       August 2012
-
+   Flow control only applies to frames that are identified as being
+   subject to flow control.  Of the frames defined in this document,
+   this includes only DATA frame.  Receivers MUST either buffer or
+   process all other frames, terminate the corresponding stream, or
+   terminate the session.  The stream or session is terminated with a
+   FLOW_CONTROL_ERROR code.
 
   0        1        2        3        4         5        6        7
   +--------+--------+--------+--------+-|-------+--------+--------+--------+
@@ -1355,43 +1330,68 @@ Internet-Draft                    SPDY                       August 2012
   |Delta-Window-Size                  |
   +--------+--------+--------+--------+
 
-   Length: An unsigned 16-bit value representing the number of bytes
-   which follow the frame header.  For WINDOW_UPDATE frames, this value
-   is always 4.
+   The following additional flags are defined for the WINDOW_UPDATE
+   frame:
 
-   Stream-ID: The stream ID that this WINDOW_UPDATE control frame is
-   for.  If the stream ID value is 0, the WINDOW_UPDATE frame applies to
-   the session window.
+   END_FLOW_CONTROL (0x2):  Bit 2 being set indicates that flow control
+      for the identified stream or session has been ended; subsequent
+      frames do not need to be flow controlled.
 
-   Delta-Window-Size: The additional number of bytes that the sender can
-   transmit in addition to existing remaining window size.  The legal
-   range for this field is 1 to 2^31 - 1 (0x7fffffff) bytes.
 
-   The window size as kept by the sender must never exceed 2^31
-   (although it can become negative in one special case).  If a sender
-   receives a WINDOW_UPDATE that causes the window size to exceed this
-   limit, then if the Stream-ID was 0, it MUST send a GOAWAY frame with
-   status code FLOW_CONTROL_ERROR to terminate the session.  And if the
-   Stream-ID references an active stream, it must send a RST_STREAM
-   frame with status code FLOW_CONTROL_ERROR to terminate the stream.
 
-   When a SPDY connection is first established, the default initial
-   window size for all streams is 64KB and the initial window size for
-   the session is 64KB.  An endpoint can use the SETTINGS control frame
-   to adjust the initial window size for the streams in the session.
-   That is, its peer can start out using the 64KB default initial stream
-   window size when sending data frames before receiving a SETTINGS
-   frame.  Because SETTINGS is asynchronous, there may be a race
-   condition if the recipient wants to decrease the initial window size,
-   but its peer immediately sends 64KB on the creation of a new
-   connection, before waiting for the SETTINGS to arrive.  This is one
-   case where the window size kept by the sender will become negative.
-   Once the sender detects this condition, it must stop sending data
-   frames and wait for the recipient to catch up.  The recipient has two
-   choices:
 
-      immediately send RST_STREAM with FLOW_CONTROL_ERROR status code.
+Belshe & Peon           Expires February 2, 2013               [Page 24]
+
+Internet-Draft                    SPDY                       August 2012
 
+
+   The WINDOW_UPDATE frame can be specific to a stream or to the entire
+   session.  In the former case, the frame's stream identifier indicates
+   the affected stream; in the latter, the value "0" indicates that the
+   entire session is the subject of the frame.
+
+   The payload of a WINDOW_UPDATE frame is a 32-bit value indicating the
+   additional number of bytes that the sender can transmit in addition
+   to the existing flow control window.  The legal range for this field
+   is 1 to 2 - 1 (0x7fffffff) bytes; the most significant bit of this
+   value is reserved.
+
+2.7.9.1.  The Flow Control Window
+
+   Flow control in HTTP/2.0 is implemented using a window kept by each
+   sender on every stream.  The flow control window is a simple integer
+   value that indicates how many bytes of data the sender is permitted
+   to transmit; as such, its size is a measure of the buffering
+   capability of the receiver.
+
+   Two flow control windows are applicable; the stream flow control
+   window and the session flow control window.  The sender MUST NOT send
+   a flow controlled frame with a length that exceeds the space
+   available in either of the flow control windows advertised by the
+   receiver.  Frames with zero length with the FINAL flag set (for
+   example, an empty data frame) MAY be sent if there is no available
+   space in either flow control window.
+
+   For flow control calculations, the 8 byte frame header is not
+   counted.
+
+   After sending a flow controlled frame, the sender reduces the space
+   available in both windows by the length of the transmitted frame.
+
+   The receiver of a message sends a WINDOW_UPDATE frame as it consumes
+   data and frees up space in flow control windows.  Separate
+   WINDOW_UPDATE messages are sent for the stream and session level flow
+   control windows.
+
+   A sender that receives a WINDOW_UPDATE frame updates the
+   corresponding window by the amount specified in the frame.
+
+   A sender MUST NOT allow a flow control window to exceed 2 - 1 bytes.
+   If a sender receives a WINDOW_UPDATE that causes a flow control
+   window to exceed this maximum it MUST terminate either the stream or
+   the session, as appropriate.  For streams, the sender sends a
+   RST_STREAM with the error code of FLOW_CONTROL_ERROR code; for the
+   session, a GOAWAY message with a FLOW_CONTROL_ERROR code.
 
 
 
@@ -1401,31 +1401,97 @@ Belshe & Peon           Expires February 2, 2013               [Page 25]
 Internet-Draft                    SPDY                       August 2012
 
 
-      allow the head of line blocking (as there is only one stream for
-      the session and the amount of data in flight is bounded by the
-      default initial window size), and send WINDOW_UPDATE as it
-      consumes data.
+   Flow controlled frames from the sender and WINDOW_UPDATE frames from
+   the receiver are completely asynchronous with respect to each other.
+   This property allows a receiver to aggressively update the window
+   size kept by the sender to prevent streams from stalling.
 
-   In the case of option 2, both sides must compute the stream window
-   size based on the initial stream window size in the SETTINGS.  For
-   example, if the recipient sets the initial stream window size to be
-   16KB, and the sender sends 64KB for a stream immediately on session
-   establishment, the sender will discover its window size is -48KB on
-   receipt of the SETTINGS.  As the recipient consumes the first 16KB,
-   it can send a WINDOW_UPDATE of 16KB back to the sender.  This
-   interaction continues until the sender's window size becomes positive
-   again, and it can resume transmitting data frames.
+2.7.9.2.  Initial Flow Control Window Size
 
-   After the recipient reads in a data frame with FLAG_FIN that marks
-   the end of the data stream, it should not send WINDOW_UPDATE frames
-   for the stream as it consumes the last data frame.  A sender should
-   ignore all the WINDOW_UPDATE frames associated with the stream after
-   it send the last frame for the stream.
+   When a HTTP/2.0 session is first established, new streams are created
+   with an initial flow control window size of 65535 bytes.  The session
+   flow control window is 65536 bytes.  Both endpoints can adjust the
+   initial window size for new streams by including a value for
+   SETTINGS_INITIAL_WINDOW_SIZE in the SETTINGS frame that forms part of
+   the session header.
 
-   The data frames from the sender and the WINDOW_UPDATE frames from the
-   recipient are completely asynchronous with respect to each other.
-   This property allows a recipient to aggressively update the window
-   size kept by the sender to prevent the stream from stalling.
+   Prior to receiving a SETTINGS frame that sets a value for
+   SETTINGS_INITIAL_WINDOW_SIZE, a client can only use the default
+   initial window size when sending flow controlled frames.  Similarly,
+   the session flow control window is set to the default initial window
+   size until a WINDOW_UPDATE message is received.
+
+   A SETTINGS frame can alter the initial flow control window size for
+   all current streams.  When the value of SETTINGS_INITIAL_WINDOW_SIZE
+   changes, a receiver MUST adjust the size of all flow control windows
+   that it maintains by the difference between the new value and the old
+   value.
+
+   A change to SETTINGS_INITIAL_WINDOW_SIZE could cause the available
+   space in a flow control window to become negative.  A sender MUST
+   track the negative flow control window, and MUST NOT send new flow
+   controlled frames until it receives WINDOW_UPDATE messages that cause
+   the flow control window to become positive.
+
+   For example, if the server sets the initial window size to be 16KB,
+   and the client sends 64KB immediately on session establishment, the
+   client will recalculate the available flow control window to be -48KB
+   on receipt of the SETTINGS frame.  The client retains a negative flow
+   control window until WINDOW_UPDATE frames restore the window to being
+   positive, after which the client can resume sending.
+
+2.7.9.3.  Reducing the Stream Window Size
+
+   A receiver that wishes to use a smaller flow control window than the
+   current size can send a new SETTINGS frame.  However, the receiver
+   MUST be prepared to receive data that exceeds this window size, since
+   the sender might send data that exceeds the lower limit prior to
+   processing the SETTINGS frame.
+
+   A receiver has two options for handling streams that exceed flow
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 26]
+
+Internet-Draft                    SPDY                       August 2012
+
+
+   control limits:
+
+   1.  The receiver can immediately send RST_STREAM with
+       FLOW_CONTROL_ERROR error code for the affected streams.
+
+   2.  The receiver can accept the streams and tolerate the resulting
+       head of line blocking, sending WINDOW_UPDATE messages as it
+       consumes data.
+
+   If a receiver decides to accept streams, both sides MUST recompute
+   the available flow control window based on the initial window size
+   sent in the SETTINGS.
+
+2.7.9.4.  Ending Flow Control
+
+   After a receiver reads in a frame that marks the end of a stream (for
+   example, a data stream with a FINAL flag set), it ceases transmission
+   of WINDOW_UPDATE frames.  A sender is not required to maintain the
+   available flow control window for streams that it is no longer
+   sending on.
+
+   Flow control can be disabled for all streams or the session using the
+   SETTINGS_FLOW_CONTROL_OPTIONS setting.  An implementation that does
+   not wish to perform flow control can use this in the initial SETTINGS
+   exchange.
+
+   Flow control can be disabled for an individual stream or the overall
+   session by sending a WINDOW_UPDATE with the END_FLOW_CONTROL flag
+   set.  The payload of a WINDOW_UPDATE frame that has the
+   END_FLOW_CONTROL flag set is ignored.
+
+   Flow control cannot be enabled again once disabled.  Any attempt to
+   re-enable flow control - by sending a WINDOW_UPDATE or by clearing
+   the bits on the SETTINGS_FLOW_CONTROL_OPTIONS setting - MUST be
+   rejected with a FLOW_CONTROL_ERROR error code.
 
 2.7.10.  CREDENTIAL
 
@@ -1439,6 +1505,14 @@ Internet-Draft                    SPDY                       August 2012
    contain at most one client certificate, the client needs a mechanism
    to send additional client certificates to the server.
 
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 27]
+
+Internet-Draft                    SPDY                       August 2012
+
+
    The server is required to maintain a vector of client certificates
    associated with a SPDY session.  When the client needs to send a
    client certificate to the server, it will send a CREDENTIAL frame
@@ -1449,14 +1523,6 @@ Internet-Draft                    SPDY                       August 2012
    handshake, the contents of this certificate must be copied into the
    first slot (index 1) in the CREDENTIAL vector, though it may be
    overwritten by subsequent CREDENTIAL frames.  The server must
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 26]
-
-Internet-Draft                    SPDY                       August 2012
-
-
    exclusively use the CREDENTIAL vector when evaluating the client
    certificates associated with an origin.  The server may change the
    size of this vector by sending a SETTINGS frame with the setting
@@ -1495,6 +1561,14 @@ Internet-Draft                    SPDY                       August 2012
    Proof: Cryptographic proof that the client has possession of the
    private key associated with the certificate.  The format is a TLS
    digitally-signed element
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 28]
+
+Internet-Draft                    SPDY                       August 2012
+
+
    (http://tools.ietf.org/html/rfc5246#section-4.7).  The signature
    algorithm must be the same as that used in the CertificateVerify
    message.  However, since the MD5+SHA1 signature type used in TLS 1.0
@@ -1505,14 +1579,6 @@ Internet-Draft                    SPDY                       August 2012
    SPDY certificate proof" using the empty string as context.  ForRSA
    certificates the signature would be a PKCS#1 v1.5 signature.  For
    ECDSA, it would be an ECDSA-Sig-Value
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 27]
-
-Internet-Draft                    SPDY                       August 2012
-
-
    (http://tools.ietf.org/html/rfc5480#appendix-A).  For a 1024-bit RSA
    key, the CREDENTIAL message would be ~500 bytes.
 
@@ -1550,6 +1616,15 @@ Internet-Draft                    SPDY                       August 2012
    The HeaderBlock compressor (described later) is subject to the
    following constraints:
 
+
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 29]
+
+Internet-Draft                    SPDY                       August 2012
+
+
       TotalHeaderStorageSize : default(16k)
 
       MaxHeaderGroups: default(1)
@@ -1561,14 +1636,6 @@ Internet-Draft                    SPDY                       August 2012
 
    A stream with a HeaderBlock which declares that it is using
    HeaderGroup 'G' would use the following algorithm to interpret its
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 28]
-
-Internet-Draft                    SPDY                       August 2012
-
-
    meta-data.
 
                 def compute_headers(stream):
@@ -1607,6 +1674,13 @@ Internet-Draft                    SPDY                       August 2012
       0x0 (reserved) -- this is not used and is reserved in case a
       token-based delimiter is required in the future.
 
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 30]
+
+Internet-Draft                    SPDY                       August 2012
+
+
       0x1 (Toggle) indicates that the data which follows will be an lru-
       index.  That lru-index, if present in the current header-group
       will be removed from the header group.  If it is not present in
@@ -1617,14 +1691,6 @@ Internet-Draft                    SPDY                       August 2012
 
       0x1 (Clone) indicates that the data which follows will be a key-
       index and a string literal.  The key-index is used to refer to a
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 29]
-
-Internet-Draft                    SPDY                       August 2012
-
-
       pre-existing key, and thus the operation results in the storing of
       the pre-existing key and the new value.  The key-value will be
       appended to the LRU, and the index in the LRU added to the current
@@ -1664,6 +1730,13 @@ Internet-Draft                    SPDY                       August 2012
                   |0|  7 bit-ascii   |00000000|
                   +-|-------+========+--------+
 
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 31]
+
+Internet-Draft                    SPDY                       August 2012
+
+
    The NumOps field encodes one minus the number of operations that
    follow.  Since the field-width is 8 bits, a maximum of 256 ops can be
    represented.  If more than 256 operations are required, simply repeat
@@ -1671,15 +1744,6 @@ Internet-Draft                    SPDY                       August 2012
    that this will be extremely rare.
 
    Detail of an operation with an opcode of 0x1 (Toggle):
-
-
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 30]
-
-Internet-Draft                    SPDY                       August 2012
-
 
                      0        1
                      +--------+--------+
@@ -1713,6 +1777,22 @@ Internet-Draft                    SPDY                       August 2012
 
    Detail of an operation with an opcode of 0x3 (KVSto):
 
+
+
+
+
+
+
+
+
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 32]
+
+Internet-Draft                    SPDY                       August 2012
+
+
                      0        1
                      +--------+--------+
                      |00000011| NumOps |
@@ -1728,14 +1808,6 @@ Internet-Draft                    SPDY                       August 2012
                      +========+========+
 
    Detail of an operation with an opcode of 0x4 (Eref):
-
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 31]
-
-Internet-Draft                    SPDY                       August 2012
-
 
                      0        1
                      +--------+--------+
@@ -1770,6 +1842,13 @@ Internet-Draft                    SPDY                       August 2012
    Compressed Data Format Specification Version 3.3 as part of RFC1950.
    [RFC1950]
 
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 33]
+
+Internet-Draft                    SPDY                       August 2012
+
+
    For each HEADERS compression instance, the initial state is
    initialized using the following dictionary [UDELCOMPRESSION]:
 
@@ -1785,14 +1864,6 @@ Internet-Draft                    SPDY                       August 2012
                   Store(0x1): level(C),index(3),k: "accept-encoding"
                   Store(0x1): level(C),index(3),v: "sdch, bzip, compress"
                   Store(0x1): level(G),index(0),k: ":host"
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 32]
-
-Internet-Draft                    SPDY                       August 2012
-
-
                   Store(0x1): level(G),index(0),v: "www.foo.com"
                   Store(0x1): level(G),index(1),k: "cookie"
                   Store(0x1): level(G),index(1),v: "SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJHBLA"
@@ -1826,6 +1897,14 @@ Internet-Draft                    SPDY                       August 2012
                   HEADERS+PRIORITY 3, stream-group (G)=0
                   Header-block:
                   Store(0x1): level(G),index(2),v: "/index.js"
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 34]
+
+Internet-Draft                    SPDY                       August 2012
+
+
                   Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:44 2012"
 
                   At this point the connection headers table is unchanged:
@@ -1840,14 +1919,6 @@ Internet-Draft                    SPDY                       August 2012
                   2: ":path", "/index.js"
                   3: "date", "Wed Jul 18 11:50:44 2012"
                   Both the path and the date have changed.
-
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 33]
-
-Internet-Draft                    SPDY                       August 2012
-
 
                   Request 2 (on stream 3) would look like the following if forwarded on HTTP/1.1:
                   GET /index.js HTTP/1.1
@@ -1882,6 +1953,14 @@ Internet-Draft                    SPDY                       August 2012
                   2: "user-agent", "blah blah browser version blah blah"
                   3: "accept-encoding", "sdch, bzip, compress"
 
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 35]
+
+Internet-Draft                    SPDY                       August 2012
+
+
                   The stream-group table for group zero looks like this:
                   0: ":host", "www.foo.com"
                   1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;FOOBLA"
@@ -1900,7 +1979,40 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 34]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 36]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1956,7 +2068,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 35]
+Belshe & Peon           Expires February 2, 2013               [Page 37]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2012,7 +2124,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 36]
+Belshe & Peon           Expires February 2, 2013               [Page 38]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2068,7 +2180,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 37]
+Belshe & Peon           Expires February 2, 2013               [Page 39]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2124,7 +2236,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 38]
+Belshe & Peon           Expires February 2, 2013               [Page 40]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2180,7 +2292,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 39]
+Belshe & Peon           Expires February 2, 2013               [Page 41]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2236,7 +2348,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 40]
+Belshe & Peon           Expires February 2, 2013               [Page 42]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2292,7 +2404,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 41]
+Belshe & Peon           Expires February 2, 2013               [Page 43]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2348,7 +2460,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 42]
+Belshe & Peon           Expires February 2, 2013               [Page 44]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2404,7 +2516,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 43]
+Belshe & Peon           Expires February 2, 2013               [Page 45]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2460,7 +2572,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 44]
+Belshe & Peon           Expires February 2, 2013               [Page 46]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2516,7 +2628,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 45]
+Belshe & Peon           Expires February 2, 2013               [Page 47]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2572,7 +2684,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 46]
+Belshe & Peon           Expires February 2, 2013               [Page 48]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2628,7 +2740,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 47]
+Belshe & Peon           Expires February 2, 2013               [Page 49]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2684,7 +2796,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 48]
+Belshe & Peon           Expires February 2, 2013               [Page 50]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2740,7 +2852,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 49]
+Belshe & Peon           Expires February 2, 2013               [Page 51]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2796,7 +2908,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 50]
+Belshe & Peon           Expires February 2, 2013               [Page 52]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2852,7 +2964,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 51]
+Belshe & Peon           Expires February 2, 2013               [Page 53]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2908,7 +3020,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 52]
+Belshe & Peon           Expires February 2, 2013               [Page 54]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2964,7 +3076,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 53]
+Belshe & Peon           Expires February 2, 2013               [Page 55]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3020,7 +3132,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 54]
+Belshe & Peon           Expires February 2, 2013               [Page 56]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3076,7 +3188,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 55]
+Belshe & Peon           Expires February 2, 2013               [Page 57]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3132,7 +3244,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 56]
+Belshe & Peon           Expires February 2, 2013               [Page 58]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3188,7 +3300,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 57]
+Belshe & Peon           Expires February 2, 2013               [Page 59]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3244,7 +3356,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 58]
+Belshe & Peon           Expires February 2, 2013               [Page 60]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3300,7 +3412,7 @@ Appendix A.  Changes
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 59]
+Belshe & Peon           Expires February 2, 2013               [Page 61]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3356,5 +3468,5 @@ Authors' Addresses
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 60]
+Belshe & Peon           Expires February 2, 2013               [Page 62]
 
