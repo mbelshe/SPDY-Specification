@@ -96,9 +96,9 @@ Table of Contents
        2.7.6.  PING . . . . . . . . . . . . . . . . . . . . . . . . . 22
        2.7.7.  GOAWAY . . . . . . . . . . . . . . . . . . . . . . . . 22
        2.7.8.  HEADERS  . . . . . . . . . . . . . . . . . . . . . . . 24
-       2.7.9.  WINDOW_UPDATE  . . . . . . . . . . . . . . . . . . . . 24
-       2.7.10. CREDENTIAL . . . . . . . . . . . . . . . . . . . . . . 26
-       2.7.11. Name/Value Header Block  . . . . . . . . . . . . . . . 28
+       2.7.9.  WINDOW_UPDATE  . . . . . . . . . . . . . . . . . . . . 25
+       2.7.10. CREDENTIAL . . . . . . . . . . . . . . . . . . . . . . 27
+       2.7.11. Name/Value Header Block  . . . . . . . . . . . . . . . 29
    3.  HTTP Layering over SPDY  . . . . . . . . . . . . . . . . . . . 36
      3.1.  Connection Management  . . . . . . . . . . . . . . . . . . 36
        3.1.1.  Use of GOAWAY  . . . . . . . . . . . . . . . . . . . . 36
@@ -653,18 +653,18 @@ Internet-Draft                    SPDY                       August 2012
 2.5.1.  Session Error Handling
 
    A session error is any error which prevents further processing of the
-   framing layer or which corrupts the session compression state.  When
-   a session error occurs, the endpoint encountering the error MAY send
-   a SETTINGS (Section 2.7.5) frame.  Whether or not a SETTINGS
-   (Section 2.7.5) frame is sent, the endpoint encountering the error
-   MUST send a GOAWAY (Section 2.7.7) frame with the stream id of most
-   recently received stream from the remote endpoint, and the error code
-   for why the session is terminating.  After sending the GOAWAY frame,
-   the endpoint MUST close the TCP connection.
+   framing layer or which corrupts any session state.
 
-   Note that the session compression state is dependent upon both
-   endpoints always processing all compressed data.  If an endpoint
-   partially processes a frame containing compressed data without
+   An endpoint that encounters a session error MUST first send a GOAWAY
+   (Section 2.7.7) frame with the stream identifier of the last stream
+   that it successfully received from its peer.  The GOAWAY frame
+   includes an error code that indicates why the session is terminating.
+   After sending the GOAWAY frame, the endpoint MUST close the TCP
+   session.
+
+   It is possible that the GOAWAY will not be reliably received by the
+   receiving endpoint.  In the event of a session error, GOAWAY only
+   provides a best-effort attempt to communicate with the peer about why
 
 
 
@@ -673,15 +673,12 @@ Belshe & Peon           Expires February 2, 2013               [Page 12]
 Internet-Draft                    SPDY                       August 2012
 
 
-   updating compression state properly, future control frames which use
-   compression will be always be errored.  Implementations SHOULD always
-   try to process compressed data so that errors which could be handled
-   as stream errors do not become session errors.
+   the session is being terminated.
 
-   Note that because this GOAWAY is sent during a session error case, it
-   is possible that the GOAWAY will not be reliably received by the
-   receiving endpoint.  It is a best-effort attempt to communicate with
-   the remote about why the session is going down.
+   An endpoint can end a session at any time.  In particular, an
+   endpoint MAY choose to treat a stream error as a session error if the
+   error is recurrent.  Endpoints SHOULD send a GOAWAY frame when ending
+   a session, as long as circumstances permit it.
 
 2.5.2.  Stream Error Handling
 
@@ -720,6 +717,9 @@ Internet-Draft                    SPDY                       August 2012
 
    The following error codes are defined:
 
+   NO_ERROR (0):  The associated condition is not as a result of an
+      error.  For example, a GOAWAY might include this code to indicate
+      graceful shutdown of a connection.
 
 
 
@@ -728,10 +728,6 @@ Belshe & Peon           Expires February 2, 2013               [Page 13]
 
 Internet-Draft                    SPDY                       August 2012
 
-
-   NO_ERROR (0):  The associated condition is not as a result of an
-      error.  For example, a GOAWAY might include this code to indicate
-      graceful shutdown of a connection.
 
    PROTOCOL_ERROR (1):  The endpoint detected an unspecific protocol
       error.  This error is for use when a more specific error code is
@@ -763,6 +759,10 @@ Internet-Draft                    SPDY                       August 2012
    Because TCP provides a single stream of data on which SPDY
    multiplexes multiple logical streams, clients and servers must
    intelligently interleave data messages for concurrent sessions.
+
+
+
+
 
 
 
@@ -1213,18 +1213,18 @@ Internet-Draft                    SPDY                       August 2012
 
 2.7.7.  GOAWAY
 
-   The GOAWAY control frame is a mechanism to tell the remote side of
-   the connection to stop creating streams on this session.  It can be
-   sent from the client or the server.  Once sent, the sender will not
-   respond to any new HEADERS+PRIORITYs on this session.  Recipients of
-   a GOAWAY frame must not send additional streams on this session,
-   although a new session can be established for new streams.  The
-   purpose of this message is to allow an endpoint to gracefully stop
-   accepting new streams (perhaps for a reboot or maintenance), while
-   still finishing processing of previously established streams.
+   The GOAWAY frame (type=0x7) informs the remote peer to stop creating
+   streams on this connection.  It can be sent from the client or the
+   server.  Once sent, the sender will ignore frames sent on new streams
+   for the remainder of the connection.  Receivers of a GOAWAY frame
+   MUST NOT open additional streams on the connection, although a new
+   connection can be established for new streams.  The purpose of this
+   message is to allow an endpoint to gracefully stop accepting new
+   streams (perhaps for a reboot or maintenance), while still finishing
+   processing of previously established streams.
 
-   There is an inherent race condition between an endpoint sending
-   HEADERS+PRIORITY frames and the remote sending a GOAWAY message.  To
+   There is an inherent race condition between an endpoint starting new
+   streams and the remote sending a GOAWAY message.  To deal with this
 
 
 
@@ -1233,13 +1233,13 @@ Belshe & Peon           Expires February 2, 2013               [Page 22]
 Internet-Draft                    SPDY                       August 2012
 
 
-   deal with this case, the GOAWAY contains a last-stream-id indicating
-   the stream-id of the last stream which was created on the sending
-   endpoint in this session.  If the receiver of the GOAWAY sent new
-   HEADERS+PRIORITY frames for sessions after this last-stream-id, they
-   were not processed by the server and the receiver may treat the
-   stream as though it had never been created at all (hence the receiver
-   may want to re-create the stream later on a new session).
+   case, the GOAWAY contains the stream identifier of the last stream
+   which was processed on the sending endpoint in this connection.  If
+   the receiver of the GOAWAY used streams that are newer than the
+   indicated stream identifier, they were not processed by the sender
+   and the receiver may treat the streams as though they had never been
+   created at all (hence the receiver may want to re-create the streams
+   later on a new connection).
 
    Endpoints should always send a GOAWAY message before closing a
    connection so that the remote can know whether a stream has been
@@ -1249,8 +1249,9 @@ Internet-Draft                    SPDY                       August 2012
    server does not send a GOAWAY frame to indicate where it stopped
    working).
 
-   After sending a GOAWAY message, the sender must ignore all HEADERS+
-   PRIORITY frames for new streams.
+   After sending a GOAWAY message, the sender can ignore frames for new
+   streams.
+
 
   0        1        2        3        4         5        6        7
   +--------+--------+--------+--------+-|-------+--------+--------+--------+
@@ -1262,25 +1263,24 @@ Internet-Draft                    SPDY                       August 2012
   |X| Last-Good-Stream-ID(31)         |          Status-Code(32)           | ->
   +-|-------+--------+--------+-------+---------+--------+--------+--------+
 
-   Length: An unsigned 16-bit value representing the number of bytes
-   which follow the frame header.  For PING frames, this value is always
-   4.
+   The GOAWAY frame does not define any type-specific flags.
 
-   Last-good-stream-Id: The last stream id which was replied to (with
-   either a HEADERS or RST_STREAM) by the sender of the GOAWAY message.
-   If no streams were replied to, this value MUST be 0.
+   The GOAWAY frame applies to the connection, not a specific stream.
+   The stream identifier MUST be zero.
 
-   Status: The reason for closing the session.
+   The last stream identifier in the GOAWAY frame contains the highest
+   numbered stream identifier for which the sender of the GOAWAY frame
+   has received frames on and might have taken some action on.  All
+   streams up to and including the identified stream might have been
+   processed in some way.  The last stream identifier is set to 0 if no
+   streams were processed.
 
-      0 - OK.  This is a normal session teardown.
+      Note: In this case, "processed" means that some data from the
+      stream was passed to some higher layer of software that might have
+      taken some action as a result.
 
-      1 - PROTOCOL_ERROR.  This is a generic error, and should only be
-      used if a more specific error is not available.
-
-      2 - INTERNAL_ERROR.  This is a generic error which can be used
-      when the implementation has internally failed, not due to anything
-      in the protocol.
-
+   On streams with lower or equal numbered identifiers that do not close
+   completely prior to the connection being closed, re-attempting
 
 
 
@@ -1288,6 +1288,22 @@ Belshe & Peon           Expires February 2, 2013               [Page 23]
 
 Internet-Draft                    SPDY                       August 2012
 
+
+   requests, transactions, or any protocol activity is not possible
+   (with the exception of idempotent actions like HTTP GET, PUT, or
+   DELETE).  Any protocol activity that uses higher numbered streams can
+   be safely retried using a new connection.
+
+   Activity on streams numbered lower or equal to the last stream
+   identifier might still complete successfully.  The sender of a GOAWAY
+   frame gracefully shut down a connection by sending a GOAWAY frame,
+   maintaining the connection in an open state until all in-progress
+   streams complete.
+
+   The last stream ID MUST be 0 if no streams were acted upon.
+
+   The GOAWAY frame also contains a 32-bit error code (Section 2.5.3)
+   that contains the reason for closing the connection.
 
 2.7.8.  HEADERS
 
@@ -1320,6 +1336,15 @@ Internet-Draft                    SPDY                       August 2012
    The HEADERS frame changes the connection state as defined in
    Section 2.7.11.
 
+
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 24]
+
+Internet-Draft                    SPDY                       August 2012
+
+
 2.7.9.  WINDOW_UPDATE
 
    The WINDOW_UPDATE control frame is used to implement per stream and
@@ -1337,14 +1362,6 @@ Internet-Draft                    SPDY                       August 2012
    is a simple uint32 that indicates how many bytes of data the sender
    can transmit.  When the session starts, the sender initializes the
    session window to the initial session window size.  After a stream is
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 24]
-
-Internet-Draft                    SPDY                       August 2012
-
-
    created, but before any data frames have been transmitted, the sender
    initializes the stream window to the initial stream window size.  The
    window size is a measure of the buffering capability of the
@@ -1376,6 +1393,14 @@ Internet-Draft                    SPDY                       August 2012
    which follow the frame header.  For WINDOW_UPDATE frames, this value
    is always 4.
 
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 25]
+
+Internet-Draft                    SPDY                       August 2012
+
+
    Stream-ID: The stream ID that this WINDOW_UPDATE control frame is
    for.  If the stream ID value is 0, the WINDOW_UPDATE frame applies to
    the session window.
@@ -1393,14 +1418,6 @@ Internet-Draft                    SPDY                       August 2012
    frame with status code FLOW_CONTROL_ERROR to terminate the stream.
 
    When a SPDY connection is first established, the default initial
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 25]
-
-Internet-Draft                    SPDY                       August 2012
-
-
    window size for all streams is 64KB and the initial window size for
    the session is 64KB.  An endpoint can use the SETTINGS control frame
    to adjust the initial window size for the streams in the session.
@@ -1432,6 +1449,14 @@ Internet-Draft                    SPDY                       August 2012
    interaction continues until the sender's window size becomes positive
    again, and it can resume transmitting data frames.
 
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 26]
+
+Internet-Draft                    SPDY                       August 2012
+
+
    After the recipient reads in a data frame with FLAG_FIN that marks
    the end of the data stream, it should not send WINDOW_UPDATE frames
    for the stream as it consumes the last data frame.  A sender should
@@ -1449,14 +1474,6 @@ Internet-Draft                    SPDY                       August 2012
    client certificates to the server.  A SPDY client may decide to send
    requests for resources from different origins on the same SPDY
    session if it decides that that server handles both origins.  For
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 26]
-
-Internet-Draft                    SPDY                       August 2012
-
-
    example if the IP address associated with both hostnames matches and
    the SSL server certificate presented in the initial handshake is
    valid for both hostnames.  However, because the SSL connection can
@@ -1488,6 +1505,14 @@ Internet-Draft                    SPDY                       August 2012
    which resource triggered the client certificate request, in order to
    prompt the user accordingly.
 
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 27]
+
+Internet-Draft                    SPDY                       August 2012
+
+
   0        1        2        3        4         5        6        7
   +--------+--------+--------+--------+-|-------+--------+--------+--------+
   | Length(16)      |    0xa |Flags(8)|X|               0x0                | ->
@@ -1505,14 +1530,6 @@ Internet-Draft                    SPDY                       August 2012
 
    Slot: The index in the server's client certificate vector where this
    certificate should be stored.  If there is already a certificate
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 27]
-
-Internet-Draft                    SPDY                       August 2012
-
-
    stored at this index, it will be overwritten.  The index is one
    based, not zero based; zero is an invalid slot index.
 
@@ -1544,6 +1561,14 @@ Internet-Draft                    SPDY                       August 2012
    receipt of a RST_STREAM frame with INVALID_CREDENTIALS, the client
    should initiate a new stream directly to the requested origin and
    resend the request.  Note, SPDY does not allow the server to request
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 28]
+
+Internet-Draft                    SPDY                       August 2012
+
+
    different client authentication for different resources in the same
    origin.
 
@@ -1561,14 +1586,6 @@ Internet-Draft                    SPDY                       August 2012
    for each defined group.  There is no persistent mapping from
    stream-id to header-group, instead each HeaderBlock includes
    reference to the HeaderGroup that will be used in this particular set
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 28]
-
-Internet-Draft                    SPDY                       August 2012
-
-
    of metadata.
 
    The HeaderBlock compressor (described later) is subject to the
@@ -1600,6 +1617,14 @@ Internet-Draft                    SPDY                       August 2012
    interpret headers with less memory and CPU.
 
    The Name/Value Header Block is found in the HEADERS+PRIORITY,
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 29]
+
+Internet-Draft                    SPDY                       August 2012
+
+
    HEADERS, and PUSH_PROMISE control frames, and shares a common format:
 
                    0        1        2          3..N       N+1..K
@@ -1617,13 +1642,6 @@ Internet-Draft                    SPDY                       August 2012
    group for this set of headers.
 
    Ops: A number of operations.  Operations will be detailed below.
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 29]
-
-Internet-Draft                    SPDY                       August 2012
-
 
    The Opcode field indicates the type of operation.
 
@@ -1655,6 +1673,14 @@ Internet-Draft                    SPDY                       August 2012
       string literals.  The first such string represents key, and the
       second string represents a value.  Unlike KVSto, the Eref does not
       modify the compressor state-- it only specified a key-value which
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 30]
+
+Internet-Draft                    SPDY                       August 2012
+
+
       will be interpreted as being part of the meta-data for the frame
       which includes the HeaderBlock.
 
@@ -1667,19 +1693,6 @@ Internet-Draft                    SPDY                       August 2012
    zero.  Strings in a request are encoded with a different huffman-
    encoder than strings in a response, as the frequency of occurance in
    these differ by quite a bit.
-
-
-
-
-
-
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 30]
-
-Internet-Draft                    SPDY                       August 2012
-
 
                   A string is either:
                   +-|============================|====================|--------+
@@ -1716,6 +1729,14 @@ Internet-Draft                    SPDY                       August 2012
 
    Detail of an operation with an opcode of 0x2 (Clone):
 
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 31]
+
+Internet-Draft                    SPDY                       August 2012
+
+
                      0        1
                      +--------+--------+
                      |00000010| NumOps |
@@ -1729,13 +1750,6 @@ Internet-Draft                    SPDY                       August 2012
                      +--------+--------+========+
                      | Key idx(16)     | String |
                      +--------+--------+========+
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 31]
-
-Internet-Draft                    SPDY                       August 2012
-
 
    Detail of an operation with an opcode of 0x3 (KVSto):
 
@@ -1771,6 +1785,14 @@ Internet-Draft                    SPDY                       August 2012
 
    Each header name must have at least one value.  Header names are
    encoded using the US-ASCII character set [ASCII] and must be all
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 32]
+
+Internet-Draft                    SPDY                       August 2012
+
+
    lower case.  The length of each name must be greater than zero.  A
    recipient of a zero-length name MUST issue a stream error
    (Section 2.5.2) with the status code PROTOCOL_ERROR for the
@@ -1785,14 +1807,6 @@ Internet-Draft                    SPDY                       August 2012
    HEADERS, and PUSH_PROMISE frames used to carry header meta-data.
    This block is always compressed using zlib compression.  Within this
    specification, any reference to 'zlib' is referring to the ZLIB
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 32]
-
-Internet-Draft                    SPDY                       August 2012
-
-
    Compressed Data Format Specification Version 3.3 as part of RFC1950.
    [RFC1950]
 
@@ -1827,6 +1841,14 @@ Internet-Draft                    SPDY                       August 2012
 
                   The stream-group table for group zero looks like this:
                   0: ":host", "www.foo.com"
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 33]
+
+Internet-Draft                    SPDY                       August 2012
+
+
                   1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;BLAJHBLA"
                   2: ":path", "/index.html"
                   3: "date", "Wed Jul 18 11:50:43 2012"
@@ -1841,14 +1863,6 @@ Internet-Draft                    SPDY                       August 2012
 
 
                   Request 2 (for index.js):
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 33]
-
-Internet-Draft                    SPDY                       August 2012
-
-
                   HEADERS+PRIORITY 3, stream-group (G)=0
                   Header-block:
                   Store(0x1): level(G),index(2),v: "/index.js"
@@ -1883,6 +1897,14 @@ Internet-Draft                    SPDY                       August 2012
                   Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:44 PDT 2012"
 
                   Connection level-headers are implied.
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 34]
+
+Internet-Draft                    SPDY                       August 2012
+
+
                   Stream-group level headers are implied.
 
                   For this example, using TaCo (truncate and concatenate) wasn't useful.
@@ -1897,14 +1919,6 @@ Internet-Draft                    SPDY                       August 2012
                   At this point the connection headers table remains unchanged.
                   0: ":method", "GET"
                   1: ":version", "HTTP/1.1"
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 34]
-
-Internet-Draft                    SPDY                       August 2012
-
-
                   2: "user-agent", "blah blah browser version blah blah"
                   3: "accept-encoding", "sdch, bzip, compress"
 
@@ -1921,20 +1935,6 @@ Internet-Draft                    SPDY                       August 2012
                   cookie: SOMELONGSTRINGTHATISMOSTLYOPAQUE;FOOBLA
                   user-agent: blah blah browser version blah blah
                   accept-encoding: sdch, bzip, compress
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
