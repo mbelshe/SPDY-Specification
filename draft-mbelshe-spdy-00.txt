@@ -70,41 +70,41 @@ Table of Contents
      1.2.  Definitions  . . . . . . . . . . . . . . . . . . . . . . .  5
    2.  SPDY Framing Layer . . . . . . . . . . . . . . . . . . . . . .  6
      2.1.  Session (Connections)  . . . . . . . . . . . . . . . . . .  6
-     2.2.  Framing  . . . . . . . . . . . . . . . . . . . . . . . . .  6
-       2.2.1.  Notational Conventions for Framing . . . . . . . . . .  6
-       2.2.2.  Frame Format . . . . . . . . . . . . . . . . . . . . .  8
-     2.3.  Streams  . . . . . . . . . . . . . . . . . . . . . . . . .  8
-       2.3.1.  Stream frames  . . . . . . . . . . . . . . . . . . . .  9
-       2.3.2.  Stream creation  . . . . . . . . . . . . . . . . . . .  9
-       2.3.3.  Stream priority  . . . . . . . . . . . . . . . . . . . 10
-       2.3.4.  Stream headers . . . . . . . . . . . . . . . . . . . . 10
-       2.3.5.  Stream data exchange . . . . . . . . . . . . . . . . . 10
-       2.3.6.  Stream half-close  . . . . . . . . . . . . . . . . . . 10
-       2.3.7.  Stream close . . . . . . . . . . . . . . . . . . . . . 11
-     2.4.  Error Handling . . . . . . . . . . . . . . . . . . . . . . 11
-       2.4.1.  Session Error Handling . . . . . . . . . . . . . . . . 11
-       2.4.2.  Stream Error Handling  . . . . . . . . . . . . . . . . 12
-     2.5.  Data flow  . . . . . . . . . . . . . . . . . . . . . . . . 12
-     2.6.  Frame Types  . . . . . . . . . . . . . . . . . . . . . . . 13
-       2.6.1.  DATA . . . . . . . . . . . . . . . . . . . . . . . . . 13
-       2.6.2.  SYN_STREAM . . . . . . . . . . . . . . . . . . . . . . 14
-       2.6.3.  SYN_REPLY  . . . . . . . . . . . . . . . . . . . . . . 15
-       2.6.4.  RST_STREAM . . . . . . . . . . . . . . . . . . . . . . 16
-       2.6.5.  PUSH_PROMISE . . . . . . . . . . . . . . . . . . . . . 17
-       2.6.6.  SETTINGS . . . . . . . . . . . . . . . . . . . . . . . 18
-       2.6.7.  PING . . . . . . . . . . . . . . . . . . . . . . . . . 21
-       2.6.8.  GOAWAY . . . . . . . . . . . . . . . . . . . . . . . . 22
-       2.6.9.  HEADERS  . . . . . . . . . . . . . . . . . . . . . . . 23
-       2.6.10. WINDOW_UPDATE  . . . . . . . . . . . . . . . . . . . . 24
-       2.6.11. CREDENTIAL . . . . . . . . . . . . . . . . . . . . . . 26
-       2.6.12. Name/Value Header Block  . . . . . . . . . . . . . . . 28
-   3.  HTTP Layering over SPDY  . . . . . . . . . . . . . . . . . . . 36
-     3.1.  Connection Management  . . . . . . . . . . . . . . . . . . 36
-       3.1.1.  Use of GOAWAY  . . . . . . . . . . . . . . . . . . . . 36
-     3.2.  HTTP Request/Response  . . . . . . . . . . . . . . . . . . 37
-       3.2.1.  Request  . . . . . . . . . . . . . . . . . . . . . . . 37
-       3.2.2.  Response . . . . . . . . . . . . . . . . . . . . . . . 38
-       3.2.3.  Authentication . . . . . . . . . . . . . . . . . . . . 39
+     2.2.  Connection Header  . . . . . . . . . . . . . . . . . . . .  6
+     2.3.  Framing  . . . . . . . . . . . . . . . . . . . . . . . . .  7
+       2.3.1.  Notational Conventions for Framing . . . . . . . . . .  7
+       2.3.2.  Frame Format . . . . . . . . . . . . . . . . . . . . .  9
+     2.4.  Streams  . . . . . . . . . . . . . . . . . . . . . . . . .  9
+       2.4.1.  Stream frames  . . . . . . . . . . . . . . . . . . . . 10
+       2.4.2.  Stream creation  . . . . . . . . . . . . . . . . . . . 10
+       2.4.3.  Stream priority  . . . . . . . . . . . . . . . . . . . 11
+       2.4.4.  Stream headers . . . . . . . . . . . . . . . . . . . . 11
+       2.4.5.  Stream data exchange . . . . . . . . . . . . . . . . . 11
+       2.4.6.  Stream half-close  . . . . . . . . . . . . . . . . . . 11
+       2.4.7.  Stream close . . . . . . . . . . . . . . . . . . . . . 12
+     2.5.  Error Handling . . . . . . . . . . . . . . . . . . . . . . 12
+       2.5.1.  Session Error Handling . . . . . . . . . . . . . . . . 12
+       2.5.2.  Stream Error Handling  . . . . . . . . . . . . . . . . 13
+     2.6.  Data flow  . . . . . . . . . . . . . . . . . . . . . . . . 13
+     2.7.  Frame Types  . . . . . . . . . . . . . . . . . . . . . . . 14
+       2.7.1.  DATA . . . . . . . . . . . . . . . . . . . . . . . . . 14
+       2.7.2.  SYN_STREAM . . . . . . . . . . . . . . . . . . . . . . 15
+       2.7.3.  SYN_REPLY  . . . . . . . . . . . . . . . . . . . . . . 16
+       2.7.4.  RST_STREAM . . . . . . . . . . . . . . . . . . . . . . 17
+       2.7.5.  PUSH_PROMISE . . . . . . . . . . . . . . . . . . . . . 18
+       2.7.6.  SETTINGS . . . . . . . . . . . . . . . . . . . . . . . 19
+       2.7.7.  PING . . . . . . . . . . . . . . . . . . . . . . . . . 22
+       2.7.8.  GOAWAY . . . . . . . . . . . . . . . . . . . . . . . . 23
+       2.7.9.  HEADERS  . . . . . . . . . . . . . . . . . . . . . . . 24
+       2.7.10. WINDOW_UPDATE  . . . . . . . . . . . . . . . . . . . . 25
+       2.7.11. CREDENTIAL . . . . . . . . . . . . . . . . . . . . . . 27
+       2.7.12. Name/Value Header Block  . . . . . . . . . . . . . . . 29
+   3.  HTTP Layering over SPDY  . . . . . . . . . . . . . . . . . . . 37
+     3.1.  Connection Management  . . . . . . . . . . . . . . . . . . 37
+       3.1.1.  Use of GOAWAY  . . . . . . . . . . . . . . . . . . . . 37
+     3.2.  HTTP Request/Response  . . . . . . . . . . . . . . . . . . 38
+       3.2.1.  Request  . . . . . . . . . . . . . . . . . . . . . . . 38
+       3.2.2.  Response . . . . . . . . . . . . . . . . . . . . . . . 39
 
 
 
@@ -113,43 +113,43 @@ Belshe & Peon           Expires February 2, 2013                [Page 2]
 Internet-Draft                    SPDY                       August 2012
 
 
-     3.3.  Server Push Transactions . . . . . . . . . . . . . . . . . 40
-       3.3.1.  Server implementation  . . . . . . . . . . . . . . . . 41
-       3.3.2.  Client implementation  . . . . . . . . . . . . . . . . 42
-   4.  WebSocket Layering over SPDY . . . . . . . . . . . . . . . . . 44
-     4.1.  Connection Management  . . . . . . . . . . . . . . . . . . 44
-       4.1.1.  Opening Handshake  . . . . . . . . . . . . . . . . . . 44
-       4.1.2.  Closing Handshake  . . . . . . . . . . . . . . . . . . 45
-     4.2.  Bi-directional Communication . . . . . . . . . . . . . . . 46
-       4.2.1.  Frame mapping  . . . . . . . . . . . . . . . . . . . . 46
-   5.  Design Rationale and Notes . . . . . . . . . . . . . . . . . . 48
-     5.1.  Separation of Framing Layer and Application Layer  . . . . 48
-     5.2.  Error handling - Framing Layer . . . . . . . . . . . . . . 48
-     5.3.  One Connection Per Domain  . . . . . . . . . . . . . . . . 48
-     5.4.  Fixed vs Variable Length Fields  . . . . . . . . . . . . . 49
-     5.5.  Compression Context(s) . . . . . . . . . . . . . . . . . . 49
-     5.6.  Unidirectional streams . . . . . . . . . . . . . . . . . . 50
-     5.7.  Data Compression . . . . . . . . . . . . . . . . . . . . . 50
-     5.8.  Server Push  . . . . . . . . . . . . . . . . . . . . . . . 50
-   6.  Security Considerations  . . . . . . . . . . . . . . . . . . . 51
-     6.1.  Use of Same-origin constraints . . . . . . . . . . . . . . 51
-     6.2.  HTTP Headers and SPDY Headers  . . . . . . . . . . . . . . 51
-     6.3.  Cross-Protocol Attacks . . . . . . . . . . . . . . . . . . 51
-     6.4.  Server Push Implicit Headers . . . . . . . . . . . . . . . 51
-   7.  Privacy Considerations . . . . . . . . . . . . . . . . . . . . 52
-     7.1.  Long Lived Connections . . . . . . . . . . . . . . . . . . 52
-     7.2.  SETTINGS frame . . . . . . . . . . . . . . . . . . . . . . 52
-   8.  Sub-protocol negotiation . . . . . . . . . . . . . . . . . . . 53
-     8.1.  Supporting scheme negotiation using SETTINGS frame . . . . 53
-   9.  Incompatibilities with SPDY draft #3 . . . . . . . . . . . . . 54
-   10. Requirements Notation  . . . . . . . . . . . . . . . . . . . . 56
-   11. Acknowledgements . . . . . . . . . . . . . . . . . . . . . . . 57
-   12. Normative References . . . . . . . . . . . . . . . . . . . . . 58
-   Appendix A.  Changes . . . . . . . . . . . . . . . . . . . . . . . 60
-   Authors' Addresses . . . . . . . . . . . . . . . . . . . . . . . . 61
-
-
-
+       3.2.3.  Authentication . . . . . . . . . . . . . . . . . . . . 40
+     3.3.  Server Push Transactions . . . . . . . . . . . . . . . . . 41
+       3.3.1.  Server implementation  . . . . . . . . . . . . . . . . 42
+       3.3.2.  Client implementation  . . . . . . . . . . . . . . . . 43
+   4.  WebSocket Layering over SPDY . . . . . . . . . . . . . . . . . 45
+     4.1.  Connection Management  . . . . . . . . . . . . . . . . . . 45
+       4.1.1.  Opening Handshake  . . . . . . . . . . . . . . . . . . 45
+       4.1.2.  Closing Handshake  . . . . . . . . . . . . . . . . . . 46
+     4.2.  Bi-directional Communication . . . . . . . . . . . . . . . 47
+       4.2.1.  Frame mapping  . . . . . . . . . . . . . . . . . . . . 47
+   5.  Design Rationale and Notes . . . . . . . . . . . . . . . . . . 49
+     5.1.  Separation of Framing Layer and Application Layer  . . . . 49
+     5.2.  Error handling - Framing Layer . . . . . . . . . . . . . . 49
+     5.3.  One Connection Per Domain  . . . . . . . . . . . . . . . . 49
+     5.4.  Fixed vs Variable Length Fields  . . . . . . . . . . . . . 50
+     5.5.  Compression Context(s) . . . . . . . . . . . . . . . . . . 50
+     5.6.  Unidirectional streams . . . . . . . . . . . . . . . . . . 51
+     5.7.  Data Compression . . . . . . . . . . . . . . . . . . . . . 51
+     5.8.  Server Push  . . . . . . . . . . . . . . . . . . . . . . . 51
+   6.  Security Considerations  . . . . . . . . . . . . . . . . . . . 52
+     6.1.  Use of Same-origin constraints . . . . . . . . . . . . . . 52
+     6.2.  HTTP Headers and SPDY Headers  . . . . . . . . . . . . . . 52
+     6.3.  Cross-Protocol Attacks . . . . . . . . . . . . . . . . . . 52
+     6.4.  Server Push Implicit Headers . . . . . . . . . . . . . . . 52
+   7.  Privacy Considerations . . . . . . . . . . . . . . . . . . . . 53
+     7.1.  Long Lived Connections . . . . . . . . . . . . . . . . . . 53
+     7.2.  SETTINGS frame . . . . . . . . . . . . . . . . . . . . . . 53
+   8.  Sub-protocol negotiation . . . . . . . . . . . . . . . . . . . 54
+     8.1.  Supporting scheme negotiation using SETTINGS frame . . . . 54
+   9.  Incompatibilities with SPDY draft #3 . . . . . . . . . . . . . 55
+   10. Requirements Notation  . . . . . . . . . . . . . . . . . . . . 57
+   11. Acknowledgements . . . . . . . . . . . . . . . . . . . . . . . 58
+   12. References . . . . . . . . . . . . . . . . . . . . . . . . . . 59
+     12.1. Normative References . . . . . . . . . . . . . . . . . . . 59
+     12.2. Informative References . . . . . . . . . . . . . . . . . . 60
+   Appendix A.  Changes . . . . . . . . . . . . . . . . . . . . . . . 61
+   Authors' Addresses . . . . . . . . . . . . . . . . . . . . . . . . 62
 
 
 
@@ -295,12 +295,63 @@ Internet-Draft                    SPDY                       August 2012
    closes the connection.  Servers are encouraged to leave connections
    open for as long as possible, but can terminate idle connections if
    necessary.  When either endpoint closes the transport-level
-   connection, it MUST first send a GOAWAY (Section 2.6.8) frame so that
+   connection, it MUST first send a GOAWAY (Section 2.7.8) frame so that
    the endpoints can reliably determine if requests finished before the
    close.  It is expected that battery-operated clients may have more
    involved heuristics as to when a connection should be closed.
 
-2.2.  Framing
+2.2.  Connection Header
+
+   Upon establishment of a TCP connection and determination that SPDY
+   will be used by both peers to communicate, each endpoint MUST send a
+   connection header as a final confirmation and to establish the
+   default parameters for the SPDY connection.
+
+   The client connection header is a sequence of 25 octets (in hex
+   notation)
+
+     464f4f202a20485454502f322e300d0a0d0a4241520d0a0d0a
+
+   (the string "FOO * HTTP/2.0\r\n\r\nBAR\r\n\r\n") followed by a
+   SETTINGS frame (Section 2.7.6).  The client sends the client
+   connection header immediately upon receipt of a 101 Switching
+   Protocols response (indicating a successful upgrade), or after
+   receiving a TLS Finished message from the server.  If starting an
+   HTTP/2.0 connection with prior knowledge of server support for the
+   protocol, the client connection header is sent upon connection
+   establishment.
+
+      The client connection header is selected so that a large
+      proportion of HTTP/1.1 or HTTP/1.0 servers and intermediaries do
+      not attempt to process further frames.  Note that this does not
+      address the concerns raised in [TALKING].
+
+   The server connection header consists of just a SETTINGS frame
+   (Section 2.7.6) that MUST be the first frame the server sends in the
+   SPDY connection.
+
+
+
+Belshe & Peon           Expires February 2, 2013                [Page 6]
+
+Internet-Draft                    SPDY                       August 2012
+
+
+   To avoid unnecessary latency, clients are permitted to send
+   additional frames to the server immediately after sending the client
+   connection header, without waiting to receive the server connection
+   header.  It is important to note, however, that the server connection
+   header SETTINGS frame might include parameters that necessarily alter
+   how a client is expected to communicate with the server.  Upon
+   receiving the SETTINGS frame, the client is expected to honor any
+   parameters established.
+
+   Clients and servers MUST terminate the TCP connection if either peer
+   does not begin with a valid connection header.  A GOAWAY frame
+   (Section 2.7.8) MAY be omitted if it is clear that the peer is not
+   using SPDY.
+
+2.3.  Framing
 
    Once the connection is established, clients and servers exchange
    framed messages.
@@ -313,7 +364,7 @@ Internet-Draft                    SPDY                       August 2012
    order.  SPDY does not enforce alignment of types in dynamically sized
    frames.
 
-2.2.1.  Notational Conventions for Framing
+2.3.1.  Notational Conventions for Framing
 
    In SPDY, since everything is defined to be in network byte-order, the
    most significant bit of any field is the "leftmost" in any diagram.
@@ -329,18 +380,18 @@ Internet-Draft                    SPDY                       August 2012
       "|" denotes field separation, which may or may not be on a byte
       boundary.  This does not count as a bit
 
-
-
-
-Belshe & Peon           Expires February 2, 2013                [Page 6]
-
-Internet-Draft                    SPDY                       August 2012
-
-
       "->" at the end of a line indicates that the structure is not yet
       fully described
 
       "(N)" indicates that the field is N bits long
+
+
+
+
+Belshe & Peon           Expires February 2, 2013                [Page 7]
+
+Internet-Draft                    SPDY                       August 2012
+
 
       "[Foo]" advises that the field is the Foo field for that frame
 
@@ -388,12 +439,17 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013                [Page 7]
+
+
+
+
+
+Belshe & Peon           Expires February 2, 2013                [Page 8]
 
 Internet-Draft                    SPDY                       August 2012
 
 
-2.2.2.  Frame Format
+2.3.2.  Frame Format
 
   0        1        2        3        4         5        6        7
   +--------+--------+--------+--------+--------+--------+--------+--------+
@@ -408,7 +464,7 @@ Internet-Draft                    SPDY                       August 2012
    Length: An unsigned 16-bit value representing the number of bytes of
    the data field.
 
-   Type: The frame type.  See Frame Types (Section 2.6) for the complete
+   Type: The frame type.  See Frame Types (Section 2.7) for the complete
    list of frames.
 
    Flags: Flags related to this frame.  Flag definitions are dependent
@@ -425,7 +481,7 @@ Internet-Draft                    SPDY                       August 2012
       supported.  However, all implementations MUST be able to receive
       frames of at least 8192 octets in length.
 
-2.3.  Streams
+2.4.  Streams
 
    Streams are independent sequences of bi-directional data divided into
    frames with several properties:
@@ -444,12 +500,12 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013                [Page 8]
+Belshe & Peon           Expires February 2, 2013                [Page 9]
 
 Internet-Draft                    SPDY                       August 2012
 
 
-2.3.1.  Stream frames
+2.4.1.  Stream frames
 
    SPDY defines 3 control frames to manage the lifecycle of a stream:
 
@@ -459,10 +515,10 @@ Internet-Draft                    SPDY                       August 2012
 
       RST_STREAM - Close a stream
 
-2.3.2.  Stream creation
+2.4.2.  Stream creation
 
    A stream is created by sending a control frame with the type set to
-   SYN_STREAM (Section 2.6.2).  If the server is initiating the stream,
+   SYN_STREAM (Section 2.7.2).  If the server is initiating the stream,
    the Stream-ID must be even.  If the client is initiating the stream,
    the Stream-ID must be odd. 0 is not a valid Stream-ID.  Stream-IDs
    from each side of the connection must increase monotonically as new
@@ -474,15 +530,15 @@ Internet-Draft                    SPDY                       August 2012
    The stream-id MUST increase with each new stream.  If an endpoint
    receives a SYN_STREAM with a stream id which is less than any
    previously received SYN_STREAM, it MUST issue a session error
-   (Section 2.4.1) with the status PROTOCOL_ERROR.
+   (Section 2.5.1) with the status PROTOCOL_ERROR.
 
    It is a protocol error to send two SYN_STREAMs with the same
    stream-id.  If a recipient receives a second SYN_STREAM for the same
-   stream, it MUST issue a stream error (Section 2.4.2) with the status
+   stream, it MUST issue a stream error (Section 2.5.2) with the status
    code PROTOCOL_ERROR.
 
    Upon receipt of a SYN_STREAM, the recipient can reject the stream by
-   sending a stream error (Section 2.4.2) with the error code
+   sending a stream error (Section 2.5.2) with the error code
    REFUSED_STREAM.  Note, however, that the creating endpoint may have
    already sent additional frames for that stream which cannot be
    immediately stopped.
@@ -491,7 +547,7 @@ Internet-Draft                    SPDY                       August 2012
    or DATA frames for that stream, without needing to wait for the
    recipient to acknowledge.
 
-2.3.2.1.  Unidirectional streams
+2.4.2.1.  Unidirectional streams
 
    When an endpoint creates a stream that includes an Associated-To-
    Stream-ID, it creates a unidirectional stream which the creating
@@ -500,20 +556,20 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013                [Page 9]
+Belshe & Peon           Expires February 2, 2013               [Page 10]
 
 Internet-Draft                    SPDY                       August 2012
 
 
-   (Section 2.3.6) state.
+   (Section 2.4.6) state.
 
-2.3.2.2.  Bidirectional streams
+2.4.2.2.  Bidirectional streams
 
    SYN_STREAM frames which do not include an Associated-To-Stream-ID are
    bidirectional streams.  Both endpoints can send data on a bi-
    directional stream.
 
-2.3.3.  Stream priority
+2.4.3.  Stream priority
 
    The creator of a stream assigns a priority for that stream.  Priority
    is represented as an integer from 0 to 7. 0 represents the highest
@@ -522,26 +578,26 @@ Internet-Draft                    SPDY                       August 2012
    The sender and recipient SHOULD use best-effort to process streams in
    the order of highest priority to lowest priority.
 
-2.3.4.  Stream headers
+2.4.4.  Stream headers
 
    Streams carry optional sets of name/value pair headers which carry
    metadata about the stream.  After the stream has been created, and as
-   long as the sender is not closed (Section 2.3.7) or half-closed
-   (Section 2.3.6), each side may send HEADERS frame(s) containing the
+   long as the sender is not closed (Section 2.4.7) or half-closed
+   (Section 2.4.6), each side may send HEADERS frame(s) containing the
    header data.  Header data can be sent in multiple HEADERS frames, and
    HEADERS frames may be interleaved with data frames.
 
-2.3.5.  Stream data exchange
+2.4.5.  Stream data exchange
 
    Once a stream is created, it can be used to send arbitrary amounts of
    data.  Generally this means that a series of data frames will be sent
    on the stream until a frame containing the FLAG_FIN flag is set.  The
-   FLAG_FIN can be set on a SYN_STREAM (Section 2.6.2), SYN_REPLY
-   (Section 2.6.3), HEADERS (Section 2.6.9) or a DATA (Section 2.6.1)
+   FLAG_FIN can be set on a SYN_STREAM (Section 2.7.2), SYN_REPLY
+   (Section 2.7.3), HEADERS (Section 2.7.9) or a DATA (Section 2.7.1)
    frame.  Once the FLAG_FIN has been sent, the stream is considered to
    be half-closed.
 
-2.3.6.  Stream half-close
+2.4.6.  Stream half-close
 
    When one side of the stream sends a frame with the FLAG_FIN flag set,
    the stream is half-closed from that endpoint.  The sender of the
@@ -556,12 +612,12 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 10]
+Belshe & Peon           Expires February 2, 2013               [Page 11]
 
 Internet-Draft                    SPDY                       August 2012
 
 
-2.3.7.  Stream close
+2.4.7.  Stream close
 
    There are 3 ways that streams can be terminated:
 
@@ -578,7 +634,7 @@ Internet-Draft                    SPDY                       August 2012
       sender, upon receipt, should stop sending any data on the stream.
       The stream recipient should be aware that there is a race between
       data already in transit from the sender and the time the
-      RST_STREAM is received.  See Stream Error Handling (Section 2.4.2)
+      RST_STREAM is received.  See Stream Error Handling (Section 2.5.2)
 
       TCP connection teardown: If the TCP connection is torn down while
       un-closed streams exist, then the endpoint must assume that the
@@ -587,21 +643,21 @@ Internet-Draft                    SPDY                       August 2012
    If an endpoint receives a data frame after the stream is closed, it
    must send a RST_STREAM to the sender with the status PROTOCOL_ERROR.
 
-2.4.  Error Handling
+2.5.  Error Handling
 
    The SPDY framing layer has only two types of errors, and they are
    always handled consistently.  Any reference in this specification to
-   "issue a session error" refers to Section 2.4.1.  Any reference to
-   "issue a stream error" refers to Section 2.4.2.
+   "issue a session error" refers to Section 2.5.1.  Any reference to
+   "issue a stream error" refers to Section 2.5.2.
 
-2.4.1.  Session Error Handling
+2.5.1.  Session Error Handling
 
    A session error is any error which prevents further processing of the
    framing layer or which corrupts the session compression state.  When
    a session error occurs, the endpoint encountering the error MAY send
-   a SETTINGS (Section 2.6.6) frame.  Whether or not a SETTINGS
-   (Section 2.6.6) frame is sent, the endpoint encountering the error
-   MUST send a GOAWAY (Section 2.6.8) frame with the stream id of most
+   a SETTINGS (Section 2.7.6) frame.  Whether or not a SETTINGS
+   (Section 2.7.6) frame is sent, the endpoint encountering the error
+   MUST send a GOAWAY (Section 2.7.8) frame with the stream id of most
    recently received stream from the remote endpoint, and the error code
    for why the session is terminating.  After sending the GOAWAY frame,
    the endpoint MUST close the TCP connection.
@@ -612,7 +668,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 11]
+Belshe & Peon           Expires February 2, 2013               [Page 12]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -627,11 +683,11 @@ Internet-Draft                    SPDY                       August 2012
    receiving endpoint.  It is a best-effort attempt to communicate with
    the remote about why the session is going down.
 
-2.4.2.  Stream Error Handling
+2.5.2.  Stream Error Handling
 
    A stream error is an error related to a specific stream-id which does
    not affect processing of other streams at the framing layer.  Upon a
-   stream error, the endpoint MUST send a RST_STREAM (Section 2.6.4)
+   stream error, the endpoint MUST send a RST_STREAM (Section 2.7.4)
    frame which contains the stream id of the stream where the error
    occurred and the error status which caused the error.  After sending
    the RST_STREAM, the stream is closed to the sending endpoint.  After
@@ -648,7 +704,7 @@ Internet-Draft                    SPDY                       August 2012
    closed, but the remote sends multiple data frames.  There is no
    reason to send a RST_STREAM for each frame in succession).
 
-2.5.  Data flow
+2.6.  Data flow
 
    Because TCP provides a single stream of data on which SPDY
    multiplexes multiple logical streams, clients and servers must
@@ -668,43 +724,43 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 12]
+Belshe & Peon           Expires February 2, 2013               [Page 13]
 
 Internet-Draft                    SPDY                       August 2012
 
 
-2.6.  Frame Types
+2.7.  Frame Types
 
    +------------------+--------------------------------+
    | Type-field value |           Frame type           |
    +------------------+--------------------------------+
-   |        0x0       |      DATA (Section 2.6.1)      |
+   |        0x0       |      DATA (Section 2.7.1)      |
    |                  |                                |
-   |        0x1       |   SYN_STREAM (Section 2.6.2)   |
+   |        0x1       |   SYN_STREAM (Section 2.7.2)   |
    |                  |                                |
-   |        0x2       |    SYN_REPLY (Section 2.6.3)   |
+   |        0x2       |    SYN_REPLY (Section 2.7.3)   |
    |                  |                                |
-   |        0x3       |   RST_STREAM (Section 2.6.4)   |
+   |        0x3       |   RST_STREAM (Section 2.7.4)   |
    |                  |                                |
-   |        0x5       |  PUSH_PROMISE (Section 2.6.5)  |
+   |        0x5       |  PUSH_PROMISE (Section 2.7.5)  |
    |                  |                                |
-   |        0x4       |    SETTINGS (Section 2.6.6)    |
+   |        0x4       |    SETTINGS (Section 2.7.6)    |
    |                  |                                |
-   |        0x6       |      PING (Section 2.6.7)      |
+   |        0x6       |      PING (Section 2.7.7)      |
    |                  |                                |
-   |        0x7       |     GOAWAY (Section 2.6.8)     |
+   |        0x7       |     GOAWAY (Section 2.7.8)     |
    |                  |                                |
-   |        0x8       |     HEADERS (Section 2.6.9)    |
+   |        0x8       |     HEADERS (Section 2.7.9)    |
    |                  |                                |
-   |        0x9       | WINDOW_UPDATE (Section 2.6.10) |
+   |        0x9       | WINDOW_UPDATE (Section 2.7.10) |
    |                  |                                |
-   |        0xa       |   CREDENTIAL (Section 2.6.11)  |
+   |        0xa       |   CREDENTIAL (Section 2.7.11)  |
    +------------------+--------------------------------+
 
    Shared components of several control frames: Name/Value Header Block
-   (Section 2.6.12)
+   (Section 2.7.12)
 
-2.6.1.  DATA
+2.7.1.  DATA
 
   0        1        2        3        4         5        6        7
   +--------+--------+--------+--------+-|-------+--------+--------+--------+
@@ -724,14 +780,14 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 13]
+Belshe & Peon           Expires February 2, 2013               [Page 14]
 
 Internet-Draft                    SPDY                       August 2012
 
 
       0x01 = FLAG_FIN - signifies that this frame represents the last
       frame to be transmitted on this stream.  See Stream Close
-      (Section 2.3.7) below.
+      (Section 2.4.7) below.
 
       0x02 = MSG_DONE - signifies that this frame represents the last
       frame of a message.  This is relevant for layering of message-
@@ -745,23 +801,23 @@ Internet-Draft                    SPDY                       August 2012
    Data frame processing requirements:
 
       If an endpoint receives a data frame for a stream-id which is not
-      open and the endpoint has not sent a GOAWAY (Section 2.6.8) frame,
-      it MUST issue a stream error (Section 2.4.2) with the error code
+      open and the endpoint has not sent a GOAWAY (Section 2.7.8) frame,
+      it MUST issue a stream error (Section 2.5.2) with the error code
       INVALID_STREAM for the stream-id.
 
       If the endpoint which created the stream receives a data frame
       before receiving a SYN_REPLY on that stream, it is a protocol
-      error, and the recipient MUST issue a stream error (Section 2.4.2)
+      error, and the recipient MUST issue a stream error (Section 2.5.2)
       with the status code PROTOCOL_ERROR for the stream-id.
 
       Implementors note: If an endpoint receives multiple data frames
       for invalid stream-ids, it MAY close the session.
 
-2.6.2.  SYN_STREAM
+2.7.2.  SYN_STREAM
 
    The SYN_STREAM control frame allows the sender to asynchronously
    create a stream between the endpoints.  See Stream Creation
-   (Section 2.3.2)
+   (Section 2.4.2)
 
   0        1        2        3        4         5        6        7
   +--------+--------+--------+--------+-|-------+--------+--------+--------+
@@ -780,7 +836,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 14]
+Belshe & Peon           Expires February 2, 2013               [Page 15]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -789,22 +845,22 @@ Internet-Draft                    SPDY                       August 2012
 
       0x01 = FLAG_FIN - marks this frame as the last frame to be
       transmitted on this stream and puts the sender in the half-closed
-      (Section 2.3.6) state.
+      (Section 2.4.6) state.
 
    Stream-ID: The 31-bit identifier for this stream.  This stream-id
    will be used in frames which are part of this stream.
 
-   Priority: A 31-bit priority (Section 2.3.3) field.
+   Priority: A 31-bit priority (Section 2.4.3) field.
 
    Name/Value Header Block: A set of name/value pairs carried as part of
-   the SYN_STREAM. see Name/Value Header Block (Section 2.6.12).
+   the SYN_STREAM. see Name/Value Header Block (Section 2.7.12).
 
    If an endpoint receives a SYN_STREAM which is larger than the
    implementation supports, it MAY send a RST_STREAM with error code
    FRAME_TOO_LARGE.  All implementations MUST support the minimum size
-   limits defined in the Frame Format section (Section 2.2.2).
+   limits defined in the Frame Format section (Section 2.3.2).
 
-2.6.3.  SYN_REPLY
+2.7.3.  SYN_REPLY
 
    SYN_REPLY indicates the acceptance of a stream creation by the
    recipient of a SYN_STREAM frame.
@@ -827,16 +883,16 @@ Internet-Draft                    SPDY                       August 2012
 
       0x01 = FLAG_FIN - marks this frame as the last frame to be
       transmitted on this stream and puts the sender in the half-closed
-      (Section 2.3.6) state.
+      (Section 2.4.6) state.
 
    Stream-ID: The 31-bit identifier for this stream.
 
    If an endpoint receives multiple SYN_REPLY frames for the same active
-   stream ID, it MUST issue a stream error (Section 2.4.2) with the
+   stream ID, it MUST issue a stream error (Section 2.5.2) with the
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 15]
+Belshe & Peon           Expires February 2, 2013               [Page 16]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -844,14 +900,14 @@ Internet-Draft                    SPDY                       August 2012
    error code STREAM_IN_USE.
 
    Name/Value Header Block: A set of name/value pairs carried as part of
-   the SYN_REPLY. see Name/Value Header Block (Section 2.6.12).
+   the SYN_REPLY. see Name/Value Header Block (Section 2.7.12).
 
    If an endpoint receives a SYN_REPLY which is larger than the
    implementation supports, it MAY send a RST_STREAM with error code
    FRAME_TOO_LARGE.  All implementations MUST support the minimum size
-   limits defined in the Frame Format section (Section 2.2.2).
+   limits defined in the Frame Format section (Section 2.3.2).
 
-2.6.4.  RST_STREAM
+2.7.4.  RST_STREAM
 
    The RST_STREAM frame allows for abnormal termination of a stream.
    When sent by the creator of a stream, it indicates the creator wishes
@@ -892,7 +948,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 16]
+Belshe & Peon           Expires February 2, 2013               [Page 17]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -933,7 +989,7 @@ Internet-Draft                    SPDY                       August 2012
    additional frames for that stream, and the stream moves into the
    closed state.
 
-2.6.5.  PUSH_PROMISE
+2.7.5.  PUSH_PROMISE
 
    The PUSH_PROMISE control frame allows the sender to signal a promise
    to create a stream and serve the referenced resource.  Minimal data
@@ -948,7 +1004,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 17]
+Belshe & Peon           Expires February 2, 2013               [Page 18]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -971,7 +1027,7 @@ Internet-Draft                    SPDY                       August 2012
 
       0x01 = FLAG_FIN - marks this frame as the last frame to be
       transmitted on this stream and puts the sender in the half-closed
-      (Section 2.3.6) state.
+      (Section 2.4.6) state.
 
    Associated-To-Stream-ID: The 31-bit identifier for a stream which
    this stream is associated to.  If this stream is independent of all
@@ -988,14 +1044,14 @@ Internet-Draft                    SPDY                       August 2012
    referred to by the this frame are created in the order referenced.
 
    Name/Value Header Block: A set of name/value pairs carried as part of
-   the PUSH_PROMISE. see Name/Value Header Block (Section 2.6.12).
+   the PUSH_PROMISE. see Name/Value Header Block (Section 2.7.12).
 
    If an endpoint receives a PUSH_PROMISE which is larger than the
    implementation supports, it MAY send a RST_STREAM with error code
    FRAME_TOO_LARGE.  All implementations MUST support the minimum size
-   limits defined in the Frame Format section (Section 2.2.2).
+   limits defined in the Frame Format section (Section 2.3.2).
 
-2.6.6.  SETTINGS
+2.7.6.  SETTINGS
 
    A SETTINGS frame contains a set of id/value pairs for communicating
    configuration data about how the two endpoints may communicate.
@@ -1004,7 +1060,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 18]
+Belshe & Peon           Expires February 2, 2013               [Page 19]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1060,7 +1116,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 19]
+Belshe & Peon           Expires February 2, 2013               [Page 20]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1116,7 +1172,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 20]
+Belshe & Peon           Expires February 2, 2013               [Page 21]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1160,7 +1216,7 @@ Internet-Draft                    SPDY                       August 2012
    state on its next SETTINGS frame, it SHOULD send all 5 settings (1,
    2, 3, 4, and 5 in this example) to the server.
 
-2.6.7.  PING
+2.7.7.  PING
 
    The PING control frame is a mechanism for measuring a minimal round-
    trip time from the sender.  It can be sent from the client or the
@@ -1172,7 +1228,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 21]
+Belshe & Peon           Expires February 2, 2013               [Page 22]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1200,7 +1256,7 @@ Internet-Draft                    SPDY                       August 2012
    it must ignore the PING.  If a client receives an odd numbered PING
    which it did not initiate, it must ignore the PING.
 
-2.6.8.  GOAWAY
+2.7.8.  GOAWAY
 
    The GOAWAY control frame is a mechanism to tell the remote side of
    the connection to stop creating streams on this session.  It can be
@@ -1228,7 +1284,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 22]
+Belshe & Peon           Expires February 2, 2013               [Page 23]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1270,13 +1326,13 @@ Internet-Draft                    SPDY                       August 2012
       when the implementation has internally failed, not due to anything
       in the protocol.
 
-2.6.9.  HEADERS
+2.7.9.  HEADERS
 
    The HEADERS frame augments a group of streams or an individual stream
    with additional metadata by providing an opportunity to send a new
-   Name/Value Header Block (Section 2.6.12) associated with the stream
+   Name/Value Header Block (Section 2.7.12) associated with the stream
 
-   Please see Name/Value Header Block (Section 2.6.12) for further
+   Please see Name/Value Header Block (Section 2.7.12) for further
    details about how it is to be interpreted.
 
    Here is the format of a headers frame and headers block:
@@ -1284,7 +1340,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 23]
+Belshe & Peon           Expires February 2, 2013               [Page 24]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1307,7 +1363,7 @@ Internet-Draft                    SPDY                       August 2012
 
       0x01 = FLAG_FIN - marks this frame as the last frame to be
       transmitted on this stream and puts the sender in the half-closed
-      (Section 2.3.6) state.
+      (Section 2.4.6) state.
 
       0x02 = FLAG_HEADER_END - marks this frame as the end of the
       current header.  Multiple HEADERS frames may be involved in
@@ -1320,9 +1376,9 @@ Internet-Draft                    SPDY                       August 2012
    Stream-ID: The stream this HEADERS block is associated with.
 
    Name/Value Header Block: A set of name/value pairs carried as part of
-   the SYN_STREAM. see Name/Value Header Block (Section 2.6.12).
+   the SYN_STREAM. see Name/Value Header Block (Section 2.7.12).
 
-2.6.10.  WINDOW_UPDATE
+2.7.10.  WINDOW_UPDATE
 
    The WINDOW_UPDATE control frame is used to implement per stream and
    per session flow control in SPDY.  Flow control in SPDY is per hop,
@@ -1340,7 +1396,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 24]
+Belshe & Peon           Expires February 2, 2013               [Page 25]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1396,7 +1452,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 25]
+Belshe & Peon           Expires February 2, 2013               [Page 26]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1444,7 +1500,7 @@ Internet-Draft                    SPDY                       August 2012
    This property allows a recipient to aggressively update the window
    size kept by the sender to prevent the stream from stalling.
 
-2.6.11.  CREDENTIAL
+2.7.11.  CREDENTIAL
 
    The CREDENTIAL control frame is used by the client to send additional
    client certificates to the server.  A SPDY client may decide to send
@@ -1452,7 +1508,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 26]
+Belshe & Peon           Expires February 2, 2013               [Page 27]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1508,7 +1564,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 27]
+Belshe & Peon           Expires February 2, 2013               [Page 28]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1551,11 +1607,11 @@ Internet-Draft                    SPDY                       August 2012
    If the server receives an invalid CREDENTIAL frame, it MUST respond
    with a GOAWAY frame and shutdown the session.
 
-2.6.12.  Name/Value Header Block
+2.7.12.  Name/Value Header Block
 
    A Name/Value Header Block augments the streams or group of streams
-   identified by the SYN_STREAM (Section 2.6.2), HEADERS
-   (Section 2.6.9), or SYN_REPLY (Section 2.6.3) frame stream with
+   identified by the SYN_STREAM (Section 2.7.2), HEADERS
+   (Section 2.7.9), or SYN_REPLY (Section 2.7.3) frame stream with
    additional metadata.
 
    At the group level, a map of token-index to key-pair is maintained
@@ -1564,7 +1620,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 28]
+Belshe & Peon           Expires February 2, 2013               [Page 29]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1620,7 +1676,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 29]
+Belshe & Peon           Expires February 2, 2013               [Page 30]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1676,7 +1732,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 30]
+Belshe & Peon           Expires February 2, 2013               [Page 31]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1732,7 +1788,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 31]
+Belshe & Peon           Expires February 2, 2013               [Page 32]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1773,13 +1829,13 @@ Internet-Draft                    SPDY                       August 2012
    encoded using the US-ASCII character set [ASCII] and must be all
    lower case.  The length of each name must be greater than zero.  A
    recipient of a zero-length name MUST issue a stream error
-   (Section 2.4.2) with the status code PROTOCOL_ERROR for the
+   (Section 2.5.2) with the status code PROTOCOL_ERROR for the
    stream-id.
 
    Duplicate header names are allowed, but discouraged, except when
    encoding a cookie or set-cookie.
 
-2.6.12.1.  Compression
+2.7.12.1.  Compression
 
    The Name/Value Header Block is a section of the SYN_STREAM,
    SYN_REPLY, and HEADERS frames used to carry header meta-data.  This
@@ -1788,7 +1844,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 32]
+Belshe & Peon           Expires February 2, 2013               [Page 33]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1844,7 +1900,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 33]
+Belshe & Peon           Expires February 2, 2013               [Page 34]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1900,7 +1956,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 34]
+Belshe & Peon           Expires February 2, 2013               [Page 35]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1956,7 +2012,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 35]
+Belshe & Peon           Expires February 2, 2013               [Page 36]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2012,7 +2068,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 36]
+Belshe & Peon           Expires February 2, 2013               [Page 37]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2068,7 +2124,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 37]
+Belshe & Peon           Expires February 2, 2013               [Page 38]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2124,7 +2180,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 38]
+Belshe & Peon           Expires February 2, 2013               [Page 39]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2180,7 +2236,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 39]
+Belshe & Peon           Expires February 2, 2013               [Page 40]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2236,7 +2292,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 40]
+Belshe & Peon           Expires February 2, 2013               [Page 41]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2292,7 +2348,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 41]
+Belshe & Peon           Expires February 2, 2013               [Page 42]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2339,7 +2395,7 @@ Internet-Draft                    SPDY                       August 2012
    to arrive.
 
    If a client receives a server push stream with stream-id 0, it MUST
-   issue a session error (Section 2.4.1) with the status code
+   issue a session error (Section 2.5.1) with the status code
    PROTOCOL_ERROR.
 
    When a client receives a SYN_STREAM from the server without a the
@@ -2348,25 +2404,25 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 42]
+Belshe & Peon           Expires February 2, 2013               [Page 43]
 
 Internet-Draft                    SPDY                       August 2012
 
 
    To cancel individual server push streams, the client can issue a
-   stream error (Section 2.4.2) with error code CANCEL.  Upon receipt,
+   stream error (Section 2.5.2) with error code CANCEL.  Upon receipt,
    the server MUST stop sending on this stream immediately (this is an
    Abrupt termination).
 
    To cancel all server push streams related to a request, the client
-   may issue a stream error (Section 2.4.2) with error code CANCEL on
+   may issue a stream error (Section 2.5.2) with error code CANCEL on
    the associated-stream-id.  By cancelling that stream, the server MUST
    immediately stop sending frames for any streams with
    in-association-to for the original stream.
 
    If the server sends a HEADER frame containing duplicate headers with
    a previous HEADERS frame for the same stream, the client must issue a
-   stream error (Section 2.4.2) with error code PROTOCOL ERROR.
+   stream error (Section 2.5.2) with error code PROTOCOL ERROR.
 
    If the server sends a HEADERS frame after sending a data frame for
    the same stream, the client MAY ignore the HEADERS frame.  Ignoring
@@ -2404,7 +2460,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 43]
+Belshe & Peon           Expires February 2, 2013               [Page 44]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2460,7 +2516,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 44]
+Belshe & Peon           Expires February 2, 2013               [Page 45]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2516,7 +2572,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 45]
+Belshe & Peon           Expires February 2, 2013               [Page 46]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2572,7 +2628,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 46]
+Belshe & Peon           Expires February 2, 2013               [Page 47]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2628,7 +2684,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 47]
+Belshe & Peon           Expires February 2, 2013               [Page 48]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2684,7 +2740,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 48]
+Belshe & Peon           Expires February 2, 2013               [Page 49]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2740,7 +2796,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 49]
+Belshe & Peon           Expires February 2, 2013               [Page 50]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2796,7 +2852,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 50]
+Belshe & Peon           Expires February 2, 2013               [Page 51]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2852,7 +2908,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 51]
+Belshe & Peon           Expires February 2, 2013               [Page 52]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2908,7 +2964,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 52]
+Belshe & Peon           Expires February 2, 2013               [Page 53]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2964,7 +3020,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 53]
+Belshe & Peon           Expires February 2, 2013               [Page 54]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3020,7 +3076,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 54]
+Belshe & Peon           Expires February 2, 2013               [Page 55]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3076,7 +3132,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 55]
+Belshe & Peon           Expires February 2, 2013               [Page 56]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3132,7 +3188,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 56]
+Belshe & Peon           Expires February 2, 2013               [Page 57]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3188,12 +3244,14 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 57]
+Belshe & Peon           Expires February 2, 2013               [Page 58]
 
 Internet-Draft                    SPDY                       August 2012
 
 
-12.  Normative References
+12.  References
+
+12.1.  Normative References
 
    [RFC0793]  Postel, J., "Transmission Control Protocol", STD 7,
               RFC 793, September 1981.
@@ -3240,15 +3298,14 @@ Internet-Draft                    SPDY                       August 2012
    [RFC6455]  Fette, I. and A. Melnikov, "The WebSocket Protocol",
               RFC 6455, December 2011.
 
-   [TLSNPN]   Langley, A., "TLS Next Protocol Negotiation",
 
 
-
-Belshe & Peon           Expires February 2, 2013               [Page 58]
+Belshe & Peon           Expires February 2, 2013               [Page 59]
 
 Internet-Draft                    SPDY                       August 2012
 
 
+   [TLSNPN]   Langley, A., "TLS Next Protocol Negotiation",
               <http://tools.ietf.org/html/
               draft-agl-tls-nextprotoneg-01>.
 
@@ -3266,6 +3323,11 @@ Internet-Draft                    SPDY                       August 2012
               Hickson, I., "The WebSocket API",
               <http://www.w3.org/TR/websockets/>.
 
+12.2.  Informative References
+
+   [TALKING]  Huang, L-S., Chen, E., Barth, A., Rescorla, E., and C.
+              Jackson, "Talking to Yourself for Fun and Profit", 2011,
+              <http://w2spconf.com/2011/papers/websocket.pdf>.
 
 
 
@@ -3294,13 +3356,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-
-
-
-
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 59]
+Belshe & Peon           Expires February 2, 2013               [Page 60]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3356,7 +3412,7 @@ Appendix A.  Changes
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 60]
+Belshe & Peon           Expires February 2, 2013               [Page 61]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3412,5 +3468,5 @@ Authors' Addresses
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 61]
+Belshe & Peon           Expires February 2, 2013               [Page 62]
 
