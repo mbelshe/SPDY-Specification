@@ -226,26 +226,26 @@ Table of Contents
      <a href="#section-2.5">2.5</a>.  Error Handling . . . . . . . . . . . . . . . . . . . . . . <a href="#page-12">12</a>
        <a href="#section-2.5.1">2.5.1</a>.  Session Error Handling . . . . . . . . . . . . . . . . <a href="#page-12">12</a>
        <a href="#section-2.5.2">2.5.2</a>.  Stream Error Handling  . . . . . . . . . . . . . . . . <a href="#page-13">13</a>
-     <a href="#section-2.6">2.6</a>.  Data flow  . . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-13">13</a>
-     <a href="#section-2.7">2.7</a>.  Frame Types  . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-14">14</a>
-       <a href="#section-2.7.1">2.7.1</a>.  DATA . . . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-14">14</a>
-       <a href="#section-2.7.2">2.7.2</a>.  HEADERS+PRIORITY . . . . . . . . . . . . . . . . . . . <a href="#page-15">15</a>
-       <a href="#section-2.7.3">2.7.3</a>.  RST_STREAM . . . . . . . . . . . . . . . . . . . . . . <a href="#page-16">16</a>
-       <a href="#section-2.7.4">2.7.4</a>.  PUSH_PROMISE . . . . . . . . . . . . . . . . . . . . . <a href="#page-17">17</a>
-       <a href="#section-2.7.5">2.7.5</a>.  SETTINGS . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-18">18</a>
-       <a href="#section-2.7.6">2.7.6</a>.  PING . . . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-21">21</a>
-       <a href="#section-2.7.7">2.7.7</a>.  GOAWAY . . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-22">22</a>
-       <a href="#section-2.7.8">2.7.8</a>.  HEADERS  . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-23">23</a>
-       <a href="#section-2.7.9">2.7.9</a>.  WINDOW_UPDATE  . . . . . . . . . . . . . . . . . . . . <a href="#page-24">24</a>
-       <a href="#section-2.7.10">2.7.10</a>. CREDENTIAL . . . . . . . . . . . . . . . . . . . . . . <a href="#page-26">26</a>
-       <a href="#section-2.7.11">2.7.11</a>. Name/Value Header Block  . . . . . . . . . . . . . . . <a href="#page-28">28</a>
-   <a href="#section-3">3</a>.  HTTP Layering over SPDY  . . . . . . . . . . . . . . . . . . . <a href="#page-35">35</a>
-     <a href="#section-3.1">3.1</a>.  Connection Management  . . . . . . . . . . . . . . . . . . <a href="#page-35">35</a>
-       <a href="#section-3.1.1">3.1.1</a>.  Use of GOAWAY  . . . . . . . . . . . . . . . . . . . . <a href="#page-35">35</a>
-     <a href="#section-3.2">3.2</a>.  HTTP Request/Response  . . . . . . . . . . . . . . . . . . <a href="#page-36">36</a>
-       <a href="#section-3.2.1">3.2.1</a>.  Request  . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-36">36</a>
-       <a href="#section-3.2.2">3.2.2</a>.  Response . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-37">37</a>
-       <a href="#section-3.2.3">3.2.3</a>.  Authentication . . . . . . . . . . . . . . . . . . . . <a href="#page-38">38</a>
+       <a href="#section-2.5.3">2.5.3</a>.  Error Codes  . . . . . . . . . . . . . . . . . . . . . <a href="#page-13">13</a>
+     <a href="#section-2.6">2.6</a>.  Data flow  . . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-14">14</a>
+     <a href="#section-2.7">2.7</a>.  Frame Types  . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-15">15</a>
+       <a href="#section-2.7.1">2.7.1</a>.  DATA . . . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-15">15</a>
+       <a href="#section-2.7.2">2.7.2</a>.  HEADERS+PRIORITY . . . . . . . . . . . . . . . . . . . <a href="#page-16">16</a>
+       <a href="#section-2.7.3">2.7.3</a>.  RST_STREAM . . . . . . . . . . . . . . . . . . . . . . <a href="#page-17">17</a>
+       <a href="#section-2.7.4">2.7.4</a>.  PUSH_PROMISE . . . . . . . . . . . . . . . . . . . . . <a href="#page-18">18</a>
+       <a href="#section-2.7.5">2.7.5</a>.  SETTINGS . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-19">19</a>
+       <a href="#section-2.7.6">2.7.6</a>.  PING . . . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-22">22</a>
+       <a href="#section-2.7.7">2.7.7</a>.  GOAWAY . . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-23">23</a>
+       <a href="#section-2.7.8">2.7.8</a>.  HEADERS  . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-24">24</a>
+       <a href="#section-2.7.9">2.7.9</a>.  WINDOW_UPDATE  . . . . . . . . . . . . . . . . . . . . <a href="#page-25">25</a>
+       <a href="#section-2.7.10">2.7.10</a>. CREDENTIAL . . . . . . . . . . . . . . . . . . . . . . <a href="#page-27">27</a>
+       <a href="#section-2.7.11">2.7.11</a>. Name/Value Header Block  . . . . . . . . . . . . . . . <a href="#page-29">29</a>
+   <a href="#section-3">3</a>.  HTTP Layering over SPDY  . . . . . . . . . . . . . . . . . . . <a href="#page-36">36</a>
+     <a href="#section-3.1">3.1</a>.  Connection Management  . . . . . . . . . . . . . . . . . . <a href="#page-36">36</a>
+       <a href="#section-3.1.1">3.1.1</a>.  Use of GOAWAY  . . . . . . . . . . . . . . . . . . . . <a href="#page-36">36</a>
+     <a href="#section-3.2">3.2</a>.  HTTP Request/Response  . . . . . . . . . . . . . . . . . . <a href="#page-37">37</a>
+       <a href="#section-3.2.1">3.2.1</a>.  Request  . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-37">37</a>
+       <a href="#section-3.2.2">3.2.2</a>.  Response . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-38">38</a>
 
 
 
@@ -254,43 +254,43 @@ Table of Contents
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
-     <a href="#section-3.3">3.3</a>.  Server Push Transactions . . . . . . . . . . . . . . . . . <a href="#page-39">39</a>
-       <a href="#section-3.3.1">3.3.1</a>.  Server implementation  . . . . . . . . . . . . . . . . <a href="#page-40">40</a>
-       <a href="#section-3.3.2">3.3.2</a>.  Client implementation  . . . . . . . . . . . . . . . . <a href="#page-41">41</a>
-   <a href="#section-4">4</a>.  WebSocket Layering over SPDY . . . . . . . . . . . . . . . . . <a href="#page-43">43</a>
-     <a href="#section-4.1">4.1</a>.  Connection Management  . . . . . . . . . . . . . . . . . . <a href="#page-43">43</a>
-       <a href="#section-4.1.1">4.1.1</a>.  Opening Handshake  . . . . . . . . . . . . . . . . . . <a href="#page-43">43</a>
-       <a href="#section-4.1.2">4.1.2</a>.  Closing Handshake  . . . . . . . . . . . . . . . . . . <a href="#page-44">44</a>
-     <a href="#section-4.2">4.2</a>.  Bi-directional Communication . . . . . . . . . . . . . . . <a href="#page-45">45</a>
-       <a href="#section-4.2.1">4.2.1</a>.  Frame mapping  . . . . . . . . . . . . . . . . . . . . <a href="#page-45">45</a>
-   <a href="#section-5">5</a>.  Design Rationale and Notes . . . . . . . . . . . . . . . . . . <a href="#page-47">47</a>
-     <a href="#section-5.1">5.1</a>.  Separation of Framing Layer and Application Layer  . . . . <a href="#page-47">47</a>
-     <a href="#section-5.2">5.2</a>.  Error handling - Framing Layer . . . . . . . . . . . . . . <a href="#page-47">47</a>
-     <a href="#section-5.3">5.3</a>.  One Connection Per Domain  . . . . . . . . . . . . . . . . <a href="#page-47">47</a>
-     <a href="#section-5.4">5.4</a>.  Fixed vs Variable Length Fields  . . . . . . . . . . . . . <a href="#page-48">48</a>
-     <a href="#section-5.5">5.5</a>.  Compression Context(s) . . . . . . . . . . . . . . . . . . <a href="#page-48">48</a>
-     <a href="#section-5.6">5.6</a>.  Unidirectional streams . . . . . . . . . . . . . . . . . . <a href="#page-49">49</a>
-     <a href="#section-5.7">5.7</a>.  Data Compression . . . . . . . . . . . . . . . . . . . . . <a href="#page-49">49</a>
-     <a href="#section-5.8">5.8</a>.  Server Push  . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-49">49</a>
-   <a href="#section-6">6</a>.  Security Considerations  . . . . . . . . . . . . . . . . . . . <a href="#page-50">50</a>
-     <a href="#section-6.1">6.1</a>.  Use of Same-origin constraints . . . . . . . . . . . . . . <a href="#page-50">50</a>
-     <a href="#section-6.2">6.2</a>.  HTTP Headers and SPDY Headers  . . . . . . . . . . . . . . <a href="#page-50">50</a>
-     <a href="#section-6.3">6.3</a>.  Cross-Protocol Attacks . . . . . . . . . . . . . . . . . . <a href="#page-50">50</a>
-     <a href="#section-6.4">6.4</a>.  Server Push Implicit Headers . . . . . . . . . . . . . . . <a href="#page-50">50</a>
-   <a href="#section-7">7</a>.  Privacy Considerations . . . . . . . . . . . . . . . . . . . . <a href="#page-51">51</a>
-     <a href="#section-7.1">7.1</a>.  Long Lived Connections . . . . . . . . . . . . . . . . . . <a href="#page-51">51</a>
-     <a href="#section-7.2">7.2</a>.  SETTINGS frame . . . . . . . . . . . . . . . . . . . . . . <a href="#page-51">51</a>
-   <a href="#section-8">8</a>.  Sub-protocol negotiation . . . . . . . . . . . . . . . . . . . <a href="#page-52">52</a>
-     <a href="#section-8.1">8.1</a>.  Supporting scheme negotiation using SETTINGS frame . . . . <a href="#page-52">52</a>
-   <a href="#section-9">9</a>.  Incompatibilities with SPDY draft #3 . . . . . . . . . . . . . <a href="#page-53">53</a>
-   <a href="#section-10">10</a>. Requirements Notation  . . . . . . . . . . . . . . . . . . . . <a href="#page-55">55</a>
-   <a href="#section-11">11</a>. Acknowledgements . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-56">56</a>
-   <a href="#section-12">12</a>. References . . . . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-57">57</a>
-     <a href="#section-12.1">12.1</a>. Normative References . . . . . . . . . . . . . . . . . . . <a href="#page-57">57</a>
-     <a href="#section-12.2">12.2</a>. Informative References . . . . . . . . . . . . . . . . . . <a href="#page-58">58</a>
-   <a href="#appendix-A">Appendix A</a>.  Changes . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-59">59</a>
-   Authors' Addresses . . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-60">60</a>
-
+       <a href="#section-3.2.3">3.2.3</a>.  Authentication . . . . . . . . . . . . . . . . . . . . <a href="#page-39">39</a>
+     <a href="#section-3.3">3.3</a>.  Server Push Transactions . . . . . . . . . . . . . . . . . <a href="#page-40">40</a>
+       <a href="#section-3.3.1">3.3.1</a>.  Server implementation  . . . . . . . . . . . . . . . . <a href="#page-41">41</a>
+       <a href="#section-3.3.2">3.3.2</a>.  Client implementation  . . . . . . . . . . . . . . . . <a href="#page-42">42</a>
+   <a href="#section-4">4</a>.  WebSocket Layering over SPDY . . . . . . . . . . . . . . . . . <a href="#page-44">44</a>
+     <a href="#section-4.1">4.1</a>.  Connection Management  . . . . . . . . . . . . . . . . . . <a href="#page-44">44</a>
+       <a href="#section-4.1.1">4.1.1</a>.  Opening Handshake  . . . . . . . . . . . . . . . . . . <a href="#page-44">44</a>
+       <a href="#section-4.1.2">4.1.2</a>.  Closing Handshake  . . . . . . . . . . . . . . . . . . <a href="#page-45">45</a>
+     <a href="#section-4.2">4.2</a>.  Bi-directional Communication . . . . . . . . . . . . . . . <a href="#page-46">46</a>
+       <a href="#section-4.2.1">4.2.1</a>.  Frame mapping  . . . . . . . . . . . . . . . . . . . . <a href="#page-46">46</a>
+   <a href="#section-5">5</a>.  Design Rationale and Notes . . . . . . . . . . . . . . . . . . <a href="#page-48">48</a>
+     <a href="#section-5.1">5.1</a>.  Separation of Framing Layer and Application Layer  . . . . <a href="#page-48">48</a>
+     <a href="#section-5.2">5.2</a>.  Error handling - Framing Layer . . . . . . . . . . . . . . <a href="#page-48">48</a>
+     <a href="#section-5.3">5.3</a>.  One Connection Per Domain  . . . . . . . . . . . . . . . . <a href="#page-48">48</a>
+     <a href="#section-5.4">5.4</a>.  Fixed vs Variable Length Fields  . . . . . . . . . . . . . <a href="#page-49">49</a>
+     <a href="#section-5.5">5.5</a>.  Compression Context(s) . . . . . . . . . . . . . . . . . . <a href="#page-49">49</a>
+     <a href="#section-5.6">5.6</a>.  Unidirectional streams . . . . . . . . . . . . . . . . . . <a href="#page-50">50</a>
+     <a href="#section-5.7">5.7</a>.  Data Compression . . . . . . . . . . . . . . . . . . . . . <a href="#page-50">50</a>
+     <a href="#section-5.8">5.8</a>.  Server Push  . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-50">50</a>
+   <a href="#section-6">6</a>.  Security Considerations  . . . . . . . . . . . . . . . . . . . <a href="#page-51">51</a>
+     <a href="#section-6.1">6.1</a>.  Use of Same-origin constraints . . . . . . . . . . . . . . <a href="#page-51">51</a>
+     <a href="#section-6.2">6.2</a>.  HTTP Headers and SPDY Headers  . . . . . . . . . . . . . . <a href="#page-51">51</a>
+     <a href="#section-6.3">6.3</a>.  Cross-Protocol Attacks . . . . . . . . . . . . . . . . . . <a href="#page-51">51</a>
+     <a href="#section-6.4">6.4</a>.  Server Push Implicit Headers . . . . . . . . . . . . . . . <a href="#page-51">51</a>
+   <a href="#section-7">7</a>.  Privacy Considerations . . . . . . . . . . . . . . . . . . . . <a href="#page-52">52</a>
+     <a href="#section-7.1">7.1</a>.  Long Lived Connections . . . . . . . . . . . . . . . . . . <a href="#page-52">52</a>
+     <a href="#section-7.2">7.2</a>.  SETTINGS frame . . . . . . . . . . . . . . . . . . . . . . <a href="#page-52">52</a>
+   <a href="#section-8">8</a>.  Sub-protocol negotiation . . . . . . . . . . . . . . . . . . . <a href="#page-53">53</a>
+     <a href="#section-8.1">8.1</a>.  Supporting scheme negotiation using SETTINGS frame . . . . <a href="#page-53">53</a>
+   <a href="#section-9">9</a>.  Incompatibilities with SPDY draft #3 . . . . . . . . . . . . . <a href="#page-54">54</a>
+   <a href="#section-10">10</a>. Requirements Notation  . . . . . . . . . . . . . . . . . . . . <a href="#page-56">56</a>
+   <a href="#section-11">11</a>. Acknowledgements . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-57">57</a>
+   <a href="#section-12">12</a>. References . . . . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-58">58</a>
+     <a href="#section-12.1">12.1</a>. Normative References . . . . . . . . . . . . . . . . . . . <a href="#page-58">58</a>
+     <a href="#section-12.2">12.2</a>. Informative References . . . . . . . . . . . . . . . . . . <a href="#page-59">59</a>
+   <a href="#appendix-A">Appendix A</a>.  Changes . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-60">60</a>
+   Authors' Addresses . . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-61">61</a>
 
 
 
@@ -826,24 +826,78 @@ Table of Contents
 
 <span class="h4"><a name="section-2.5.2">2.5.2</a>.  Stream Error Handling</span>
 
-   A stream error is an error related to a specific stream-id which does
-   not affect processing of other streams at the framing layer.  Upon a
-   stream error, the endpoint MUST send a RST_STREAM (<a href="#section-2.7.3">Section 2.7.3</a>)
-   frame which contains the stream id of the stream where the error
-   occurred and the error status which caused the error.  After sending
-   the RST_STREAM, the stream is closed to the sending endpoint.  After
-   sending the RST_STREAM, if the sender receives any frames other than
-   a RST_STREAM for that stream id, it will result in sending additional
-   RST_STREAM frames.  An endpoint MUST NOT send a RST_STREAM in
-   response to an RST_STREAM, as doing so would lead to RST_STREAM
-   loops.  Sending a RST_STREAM does not cause the SPDY session to be
-   closed.
+   A stream error is an error related to a specific stream identifier
+   that does not affect processing of other streams at the framing
+   layer.
 
-   If an endpoint has multiple RST_STREAM frames to send in succession
-   for the same stream-id and the same error code, it MAY coalesce them
-   into a single RST_STREAM frame.  (This can happen if a stream is
-   closed, but the remote sends multiple data frames.  There is no
-   reason to send a RST_STREAM for each frame in succession).
+   An endpoint that detects a stream error sends a RST_STREAM
+   (<a href="#section-2.7.3">Section 2.7.3</a>) frame that contains the stream identifier of the
+   stream where the error occurred.  The RST_STREAM frame includes an
+   error code that indicates the type of error.
+
+   A RST_STREAM is the last frame that an endpoint can send on a stream.
+   The peer that sends the RST_STREAM frame MUST be prepared to receive
+   any frames that were sent or enqueued for sending by the remote peer.
+   These frames can be ignored, except where they modify connection
+   state (such as that for header compression).
+
+   Normally, an endpoint SHOULD NOT send more than one RST_STREAM frame
+   for any stream.  However, an endpoint MAY send additional RST_STREAM
+   frames if it receives frames on a closed stream after more than a
+   round trip time.  This behavior is permitted to deal with misbehaving
+   implementations.
+
+   An endpoint MUST NOT send a RST_STREAM in response to an RST_STREAM
+   frame, to avoid looping.
+
+<span class="h4"><a name="section-2.5.3">2.5.3</a>.  Error Codes</span>
+
+   Error codes are 32-bit fields that are used in RST_STREAM and GOAWAY
+   frames to convey the reasons for the stream or connection error.
+
+   Error codes share a common code space.  Some error codes only apply
+   to specific conditions and have no defined semantics in certain frame
+   types.
+
+   The following error codes are defined:
+
+
+
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 13]</span>
+</pre><pre class='newpage'><a name="page-14" id="page-14" href="#page-14" class="invisible"> </a>
+<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+
+
+   NO_ERROR (0):  The associated condition is not as a result of an
+      error.  For example, a GOAWAY might include this code to indicate
+      graceful shutdown of a connection.
+
+   PROTOCOL_ERROR (1):  The endpoint detected an unspecific protocol
+      error.  This error is for use when a more specific error code is
+      not available.
+
+   INTERNAL_ERROR (2):  The endpoint encountered an unexpected internal
+      error.
+
+   FLOW_CONTROL_ERROR (3):  The endpoint detected that its peer violated
+      the flow control protocol.
+
+   INVALID_STREAM (4):  The endpoint received a frame for an inactive
+      stream.
+
+   STREAM_CLOSED (5):  The endpoint received a frame after a stream was
+      half-closed.
+
+   FRAME_TOO_LARGE (6):  The endpoint received a frame that was larger
+      than the maximum size that it supports.
+
+   REFUSED_STREAM (7):  The endpoint is refusing the stream before
+      processing its payload.
+
+   CANCEL (8):  Used by the creator of a stream to indicate that the
+      stream is no longer needed.
 
 <span class="h3"><a name="section-2.6">2.6</a>.  Data flow</span>
 
@@ -865,8 +919,10 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 13]</span>
-</pre><pre class='newpage'><a name="page-14" id="page-14" href="#page-14" class="invisible"> </a>
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 14]</span>
+</pre><pre class='newpage'><a name="page-15" id="page-15" href="#page-15" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -921,8 +977,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 14]</span>
-</pre><pre class='newpage'><a name="page-15" id="page-15" href="#page-15" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 15]</span>
+</pre><pre class='newpage'><a name="page-16" id="page-16" href="#page-16" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -977,8 +1033,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 15]</span>
-</pre><pre class='newpage'><a name="page-16" id="page-16" href="#page-16" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 16]</span>
+</pre><pre class='newpage'><a name="page-17" id="page-17" href="#page-17" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -1033,8 +1089,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 16]</span>
-</pre><pre class='newpage'><a name="page-17" id="page-17" href="#page-17" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 17]</span>
+</pre><pre class='newpage'><a name="page-18" id="page-18" href="#page-18" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -1089,8 +1145,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 17]</span>
-</pre><pre class='newpage'><a name="page-18" id="page-18" href="#page-18" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 18]</span>
+</pre><pre class='newpage'><a name="page-19" id="page-19" href="#page-19" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -1145,8 +1201,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 18]</span>
-</pre><pre class='newpage'><a name="page-19" id="page-19" href="#page-19" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 19]</span>
+</pre><pre class='newpage'><a name="page-20" id="page-20" href="#page-20" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -1201,8 +1257,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 19]</span>
-</pre><pre class='newpage'><a name="page-20" id="page-20" href="#page-20" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 20]</span>
+</pre><pre class='newpage'><a name="page-21" id="page-21" href="#page-21" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -1257,8 +1313,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 20]</span>
-</pre><pre class='newpage'><a name="page-21" id="page-21" href="#page-21" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 21]</span>
+</pre><pre class='newpage'><a name="page-22" id="page-22" href="#page-22" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -1313,8 +1369,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 21]</span>
-</pre><pre class='newpage'><a name="page-22" id="page-22" href="#page-22" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 22]</span>
+</pre><pre class='newpage'><a name="page-23" id="page-23" href="#page-23" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -1369,8 +1425,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 22]</span>
-</pre><pre class='newpage'><a name="page-23" id="page-23" href="#page-23" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 23]</span>
+</pre><pre class='newpage'><a name="page-24" id="page-24" href="#page-24" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -1425,8 +1481,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 23]</span>
-</pre><pre class='newpage'><a name="page-24" id="page-24" href="#page-24" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 24]</span>
+</pre><pre class='newpage'><a name="page-25" id="page-25" href="#page-25" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -1481,8 +1537,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 24]</span>
-</pre><pre class='newpage'><a name="page-25" id="page-25" href="#page-25" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 25]</span>
+</pre><pre class='newpage'><a name="page-26" id="page-26" href="#page-26" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -1537,8 +1593,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 25]</span>
-</pre><pre class='newpage'><a name="page-26" id="page-26" href="#page-26" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 26]</span>
+</pre><pre class='newpage'><a name="page-27" id="page-27" href="#page-27" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -1593,8 +1649,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 26]</span>
-</pre><pre class='newpage'><a name="page-27" id="page-27" href="#page-27" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 27]</span>
+</pre><pre class='newpage'><a name="page-28" id="page-28" href="#page-28" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -1649,8 +1705,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 27]</span>
-</pre><pre class='newpage'><a name="page-28" id="page-28" href="#page-28" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 28]</span>
+</pre><pre class='newpage'><a name="page-29" id="page-29" href="#page-29" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -1705,8 +1761,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 28]</span>
-</pre><pre class='newpage'><a name="page-29" id="page-29" href="#page-29" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 29]</span>
+</pre><pre class='newpage'><a name="page-30" id="page-30" href="#page-30" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -1761,8 +1817,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 29]</span>
-</pre><pre class='newpage'><a name="page-30" id="page-30" href="#page-30" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 30]</span>
+</pre><pre class='newpage'><a name="page-31" id="page-31" href="#page-31" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -1817,8 +1873,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 30]</span>
-</pre><pre class='newpage'><a name="page-31" id="page-31" href="#page-31" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 31]</span>
+</pre><pre class='newpage'><a name="page-32" id="page-32" href="#page-32" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -1873,8 +1929,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 31]</span>
-</pre><pre class='newpage'><a name="page-32" id="page-32" href="#page-32" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 32]</span>
+</pre><pre class='newpage'><a name="page-33" id="page-33" href="#page-33" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -1929,8 +1985,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 32]</span>
-</pre><pre class='newpage'><a name="page-33" id="page-33" href="#page-33" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 33]</span>
+</pre><pre class='newpage'><a name="page-34" id="page-34" href="#page-34" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -1985,8 +2041,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 33]</span>
-</pre><pre class='newpage'><a name="page-34" id="page-34" href="#page-34" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 34]</span>
+</pre><pre class='newpage'><a name="page-35" id="page-35" href="#page-35" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2041,8 +2097,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 34]</span>
-</pre><pre class='newpage'><a name="page-35" id="page-35" href="#page-35" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 35]</span>
+</pre><pre class='newpage'><a name="page-36" id="page-36" href="#page-36" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2097,8 +2153,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 35]</span>
-</pre><pre class='newpage'><a name="page-36" id="page-36" href="#page-36" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 36]</span>
+</pre><pre class='newpage'><a name="page-37" id="page-37" href="#page-37" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2153,8 +2209,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 36]</span>
-</pre><pre class='newpage'><a name="page-37" id="page-37" href="#page-37" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 37]</span>
+</pre><pre class='newpage'><a name="page-38" id="page-38" href="#page-38" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2209,8 +2265,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 37]</span>
-</pre><pre class='newpage'><a name="page-38" id="page-38" href="#page-38" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 38]</span>
+</pre><pre class='newpage'><a name="page-39" id="page-39" href="#page-39" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2265,8 +2321,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 38]</span>
-</pre><pre class='newpage'><a name="page-39" id="page-39" href="#page-39" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 39]</span>
+</pre><pre class='newpage'><a name="page-40" id="page-40" href="#page-40" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2321,8 +2377,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 39]</span>
-</pre><pre class='newpage'><a name="page-40" id="page-40" href="#page-40" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 40]</span>
+</pre><pre class='newpage'><a name="page-41" id="page-41" href="#page-41" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2377,8 +2433,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 40]</span>
-</pre><pre class='newpage'><a name="page-41" id="page-41" href="#page-41" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 41]</span>
+</pre><pre class='newpage'><a name="page-42" id="page-42" href="#page-42" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2433,8 +2489,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 41]</span>
-</pre><pre class='newpage'><a name="page-42" id="page-42" href="#page-42" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 42]</span>
+</pre><pre class='newpage'><a name="page-43" id="page-43" href="#page-43" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2489,8 +2545,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 42]</span>
-</pre><pre class='newpage'><a name="page-43" id="page-43" href="#page-43" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 43]</span>
+</pre><pre class='newpage'><a name="page-44" id="page-44" href="#page-44" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2545,8 +2601,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 43]</span>
-</pre><pre class='newpage'><a name="page-44" id="page-44" href="#page-44" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 44]</span>
+</pre><pre class='newpage'><a name="page-45" id="page-45" href="#page-45" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2601,8 +2657,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 44]</span>
-</pre><pre class='newpage'><a name="page-45" id="page-45" href="#page-45" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 45]</span>
+</pre><pre class='newpage'><a name="page-46" id="page-46" href="#page-46" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2657,8 +2713,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 45]</span>
-</pre><pre class='newpage'><a name="page-46" id="page-46" href="#page-46" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 46]</span>
+</pre><pre class='newpage'><a name="page-47" id="page-47" href="#page-47" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2713,8 +2769,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 46]</span>
-</pre><pre class='newpage'><a name="page-47" id="page-47" href="#page-47" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 47]</span>
+</pre><pre class='newpage'><a name="page-48" id="page-48" href="#page-48" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2769,8 +2825,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 47]</span>
-</pre><pre class='newpage'><a name="page-48" id="page-48" href="#page-48" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 48]</span>
+</pre><pre class='newpage'><a name="page-49" id="page-49" href="#page-49" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2825,8 +2881,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 48]</span>
-</pre><pre class='newpage'><a name="page-49" id="page-49" href="#page-49" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 49]</span>
+</pre><pre class='newpage'><a name="page-50" id="page-50" href="#page-50" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2881,8 +2937,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 49]</span>
-</pre><pre class='newpage'><a name="page-50" id="page-50" href="#page-50" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 50]</span>
+</pre><pre class='newpage'><a name="page-51" id="page-51" href="#page-51" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2937,8 +2993,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 50]</span>
-</pre><pre class='newpage'><a name="page-51" id="page-51" href="#page-51" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 51]</span>
+</pre><pre class='newpage'><a name="page-52" id="page-52" href="#page-52" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2993,8 +3049,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 51]</span>
-</pre><pre class='newpage'><a name="page-52" id="page-52" href="#page-52" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 52]</span>
+</pre><pre class='newpage'><a name="page-53" id="page-53" href="#page-53" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -3049,8 +3105,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 52]</span>
-</pre><pre class='newpage'><a name="page-53" id="page-53" href="#page-53" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 53]</span>
+</pre><pre class='newpage'><a name="page-54" id="page-54" href="#page-54" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -3105,8 +3161,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 53]</span>
-</pre><pre class='newpage'><a name="page-54" id="page-54" href="#page-54" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 54]</span>
+</pre><pre class='newpage'><a name="page-55" id="page-55" href="#page-55" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -3161,8 +3217,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 54]</span>
-</pre><pre class='newpage'><a name="page-55" id="page-55" href="#page-55" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 55]</span>
+</pre><pre class='newpage'><a name="page-56" id="page-56" href="#page-56" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -3217,8 +3273,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 55]</span>
-</pre><pre class='newpage'><a name="page-56" id="page-56" href="#page-56" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 56]</span>
+</pre><pre class='newpage'><a name="page-57" id="page-57" href="#page-57" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -3273,8 +3329,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 56]</span>
-</pre><pre class='newpage'><a name="page-57" id="page-57" href="#page-57" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 57]</span>
+</pre><pre class='newpage'><a name="page-58" id="page-58" href="#page-58" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -3329,8 +3385,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 57]</span>
-</pre><pre class='newpage'><a name="page-58" id="page-58" href="#page-58" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 58]</span>
+</pre><pre class='newpage'><a name="page-59" id="page-59" href="#page-59" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -3385,8 +3441,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 58]</span>
-</pre><pre class='newpage'><a name="page-59" id="page-59" href="#page-59" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 59]</span>
+</pre><pre class='newpage'><a name="page-60" id="page-60" href="#page-60" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -3441,8 +3497,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 59]</span>
-</pre><pre class='newpage'><a name="page-60" id="page-60" href="#page-60" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 60]</span>
+</pre><pre class='newpage'><a name="page-61" id="page-61" href="#page-61" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -3497,7 +3553,7 @@ Authors' Addresses
 
 
 
-Belshe &amp; Peon           Expires February 2, 2013               [Page 60]
+Belshe &amp; Peon           Expires February 2, 2013               [Page 61]
 </pre><pre class='newpage'>
 
 </pre><br />

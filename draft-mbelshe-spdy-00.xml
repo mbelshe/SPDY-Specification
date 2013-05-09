@@ -350,9 +350,79 @@
           </section>
 
           <section anchor="StreamErrorHandler" title="Stream Error Handling">
-            <t>A stream error is an error related to a specific stream-id which does not affect processing of other streams at the framing layer.  Upon a stream error, the endpoint MUST send a <xref target="RST_STREAM">RST_STREAM</xref> frame which contains the stream id of the stream where the error occurred and the error status which caused the error.  After sending the RST_STREAM, the stream is closed to the sending endpoint.  After sending the RST_STREAM, if the sender receives any frames other than a RST_STREAM for that stream id, it will result in sending additional RST_STREAM frames.  An endpoint MUST NOT send a RST_STREAM in response to an RST_STREAM, as doing so would lead to RST_STREAM loops.  Sending a RST_STREAM does not cause the SPDY session to be closed.</t>
-
-            <t>If an endpoint has multiple RST_STREAM frames to send in succession for the same stream-id and the same error code, it MAY coalesce them into a single RST_STREAM frame.  (This can happen if a stream is closed, but the remote sends multiple data frames.  There is no reason to send a RST_STREAM for each frame in succession).</t>
+            <t>
+              A stream error is an error related to a specific stream identifier that does not affect
+              processing of other streams at the framing layer.
+            </t>
+            <t>
+              An endpoint that detects a stream error sends a <xref
+              target="RST_STREAM">RST_STREAM</xref> frame that contains the stream identifier of the
+              stream where the error occurred.  The RST_STREAM frame includes an error code that
+              indicates the type of error.
+            </t>
+            <t>
+              A RST_STREAM is the last frame that an endpoint can send on a stream.  The peer that
+              sends the RST_STREAM frame MUST be prepared to receive any frames that were sent or
+              enqueued for sending by the remote peer.  These frames can be ignored, except where they
+              modify connection state (such as that for header compression).
+            </t>
+            <t>
+              Normally, an endpoint SHOULD NOT send more than one RST_STREAM frame for any stream. However, an endpoint
+              MAY send additional RST_STREAM frames if it receives frames on a closed stream after
+              more than a round trip time.  This behavior is permitted to deal with misbehaving
+              implementations.
+            </t>
+            <t>
+              An endpoint MUST NOT send a RST_STREAM in response to an RST_STREAM frame, to avoid looping. 
+            </t>
+          </section>
+  
+          <section anchor="ErrorCodes" title="Error Codes">
+            <t>
+              Error codes are 32-bit fields that are used in RST_STREAM and GOAWAY frames to convey
+              the reasons for the stream or connection error.
+            </t>
+  
+            <t>
+              Error codes share a common code space.  Some error codes only apply to specific
+              conditions and have no defined semantics in certain frame types.
+            </t>
+  
+            <t>
+              The following error codes are defined:
+              <list style="hanging">
+                <t hangText="NO_ERROR (0):">
+                  The associated condition is not as a result of an error.  For example, a GOAWAY
+                  might include this code to indicate graceful shutdown of a connection.
+                </t>
+                <t hangText="PROTOCOL_ERROR (1):">
+                  The endpoint detected an unspecific protocol error.  This error is for use when a more
+                  specific error code is not available.
+                </t>
+                <t hangText="INTERNAL_ERROR (2):">
+                  The endpoint encountered an unexpected internal error.
+                </t>
+                <t hangText="FLOW_CONTROL_ERROR (3):">
+                  The endpoint detected that its peer violated the flow control protocol.
+                </t>
+                <t hangText="INVALID_STREAM (4):">
+                  The endpoint received a frame for an inactive stream.
+                </t>
+                <t hangText="STREAM_CLOSED (5):">
+                  The endpoint received a frame after a stream was half-closed.
+                </t>
+                <t hangText="FRAME_TOO_LARGE (6):">
+                  The endpoint received a frame that was larger than the maximum size that it
+                  supports.
+                </t>
+                <t hangText="REFUSED_STREAM (7):">
+                  The endpoint is refusing the stream before processing its payload.
+                </t>
+                <t hangText="CANCEL (8):">
+                  Used by the creator of a stream to indicate that the stream is no longer needed.
+                </t>
+              </list>
+            </t>
           </section>
         </section>
 

@@ -85,26 +85,26 @@ Table of Contents
      2.5.  Error Handling . . . . . . . . . . . . . . . . . . . . . . 12
        2.5.1.  Session Error Handling . . . . . . . . . . . . . . . . 12
        2.5.2.  Stream Error Handling  . . . . . . . . . . . . . . . . 13
-     2.6.  Data flow  . . . . . . . . . . . . . . . . . . . . . . . . 13
-     2.7.  Frame Types  . . . . . . . . . . . . . . . . . . . . . . . 14
-       2.7.1.  DATA . . . . . . . . . . . . . . . . . . . . . . . . . 14
-       2.7.2.  HEADERS+PRIORITY . . . . . . . . . . . . . . . . . . . 15
-       2.7.3.  RST_STREAM . . . . . . . . . . . . . . . . . . . . . . 16
-       2.7.4.  PUSH_PROMISE . . . . . . . . . . . . . . . . . . . . . 17
-       2.7.5.  SETTINGS . . . . . . . . . . . . . . . . . . . . . . . 18
-       2.7.6.  PING . . . . . . . . . . . . . . . . . . . . . . . . . 21
-       2.7.7.  GOAWAY . . . . . . . . . . . . . . . . . . . . . . . . 22
-       2.7.8.  HEADERS  . . . . . . . . . . . . . . . . . . . . . . . 23
-       2.7.9.  WINDOW_UPDATE  . . . . . . . . . . . . . . . . . . . . 24
-       2.7.10. CREDENTIAL . . . . . . . . . . . . . . . . . . . . . . 26
-       2.7.11. Name/Value Header Block  . . . . . . . . . . . . . . . 28
-   3.  HTTP Layering over SPDY  . . . . . . . . . . . . . . . . . . . 35
-     3.1.  Connection Management  . . . . . . . . . . . . . . . . . . 35
-       3.1.1.  Use of GOAWAY  . . . . . . . . . . . . . . . . . . . . 35
-     3.2.  HTTP Request/Response  . . . . . . . . . . . . . . . . . . 36
-       3.2.1.  Request  . . . . . . . . . . . . . . . . . . . . . . . 36
-       3.2.2.  Response . . . . . . . . . . . . . . . . . . . . . . . 37
-       3.2.3.  Authentication . . . . . . . . . . . . . . . . . . . . 38
+       2.5.3.  Error Codes  . . . . . . . . . . . . . . . . . . . . . 13
+     2.6.  Data flow  . . . . . . . . . . . . . . . . . . . . . . . . 14
+     2.7.  Frame Types  . . . . . . . . . . . . . . . . . . . . . . . 15
+       2.7.1.  DATA . . . . . . . . . . . . . . . . . . . . . . . . . 15
+       2.7.2.  HEADERS+PRIORITY . . . . . . . . . . . . . . . . . . . 16
+       2.7.3.  RST_STREAM . . . . . . . . . . . . . . . . . . . . . . 17
+       2.7.4.  PUSH_PROMISE . . . . . . . . . . . . . . . . . . . . . 18
+       2.7.5.  SETTINGS . . . . . . . . . . . . . . . . . . . . . . . 19
+       2.7.6.  PING . . . . . . . . . . . . . . . . . . . . . . . . . 22
+       2.7.7.  GOAWAY . . . . . . . . . . . . . . . . . . . . . . . . 23
+       2.7.8.  HEADERS  . . . . . . . . . . . . . . . . . . . . . . . 24
+       2.7.9.  WINDOW_UPDATE  . . . . . . . . . . . . . . . . . . . . 25
+       2.7.10. CREDENTIAL . . . . . . . . . . . . . . . . . . . . . . 27
+       2.7.11. Name/Value Header Block  . . . . . . . . . . . . . . . 29
+   3.  HTTP Layering over SPDY  . . . . . . . . . . . . . . . . . . . 36
+     3.1.  Connection Management  . . . . . . . . . . . . . . . . . . 36
+       3.1.1.  Use of GOAWAY  . . . . . . . . . . . . . . . . . . . . 36
+     3.2.  HTTP Request/Response  . . . . . . . . . . . . . . . . . . 37
+       3.2.1.  Request  . . . . . . . . . . . . . . . . . . . . . . . 37
+       3.2.2.  Response . . . . . . . . . . . . . . . . . . . . . . . 38
 
 
 
@@ -113,43 +113,43 @@ Belshe & Peon           Expires February 2, 2013                [Page 2]
 Internet-Draft                    SPDY                       August 2012
 
 
-     3.3.  Server Push Transactions . . . . . . . . . . . . . . . . . 39
-       3.3.1.  Server implementation  . . . . . . . . . . . . . . . . 40
-       3.3.2.  Client implementation  . . . . . . . . . . . . . . . . 41
-   4.  WebSocket Layering over SPDY . . . . . . . . . . . . . . . . . 43
-     4.1.  Connection Management  . . . . . . . . . . . . . . . . . . 43
-       4.1.1.  Opening Handshake  . . . . . . . . . . . . . . . . . . 43
-       4.1.2.  Closing Handshake  . . . . . . . . . . . . . . . . . . 44
-     4.2.  Bi-directional Communication . . . . . . . . . . . . . . . 45
-       4.2.1.  Frame mapping  . . . . . . . . . . . . . . . . . . . . 45
-   5.  Design Rationale and Notes . . . . . . . . . . . . . . . . . . 47
-     5.1.  Separation of Framing Layer and Application Layer  . . . . 47
-     5.2.  Error handling - Framing Layer . . . . . . . . . . . . . . 47
-     5.3.  One Connection Per Domain  . . . . . . . . . . . . . . . . 47
-     5.4.  Fixed vs Variable Length Fields  . . . . . . . . . . . . . 48
-     5.5.  Compression Context(s) . . . . . . . . . . . . . . . . . . 48
-     5.6.  Unidirectional streams . . . . . . . . . . . . . . . . . . 49
-     5.7.  Data Compression . . . . . . . . . . . . . . . . . . . . . 49
-     5.8.  Server Push  . . . . . . . . . . . . . . . . . . . . . . . 49
-   6.  Security Considerations  . . . . . . . . . . . . . . . . . . . 50
-     6.1.  Use of Same-origin constraints . . . . . . . . . . . . . . 50
-     6.2.  HTTP Headers and SPDY Headers  . . . . . . . . . . . . . . 50
-     6.3.  Cross-Protocol Attacks . . . . . . . . . . . . . . . . . . 50
-     6.4.  Server Push Implicit Headers . . . . . . . . . . . . . . . 50
-   7.  Privacy Considerations . . . . . . . . . . . . . . . . . . . . 51
-     7.1.  Long Lived Connections . . . . . . . . . . . . . . . . . . 51
-     7.2.  SETTINGS frame . . . . . . . . . . . . . . . . . . . . . . 51
-   8.  Sub-protocol negotiation . . . . . . . . . . . . . . . . . . . 52
-     8.1.  Supporting scheme negotiation using SETTINGS frame . . . . 52
-   9.  Incompatibilities with SPDY draft #3 . . . . . . . . . . . . . 53
-   10. Requirements Notation  . . . . . . . . . . . . . . . . . . . . 55
-   11. Acknowledgements . . . . . . . . . . . . . . . . . . . . . . . 56
-   12. References . . . . . . . . . . . . . . . . . . . . . . . . . . 57
-     12.1. Normative References . . . . . . . . . . . . . . . . . . . 57
-     12.2. Informative References . . . . . . . . . . . . . . . . . . 58
-   Appendix A.  Changes . . . . . . . . . . . . . . . . . . . . . . . 59
-   Authors' Addresses . . . . . . . . . . . . . . . . . . . . . . . . 60
-
+       3.2.3.  Authentication . . . . . . . . . . . . . . . . . . . . 39
+     3.3.  Server Push Transactions . . . . . . . . . . . . . . . . . 40
+       3.3.1.  Server implementation  . . . . . . . . . . . . . . . . 41
+       3.3.2.  Client implementation  . . . . . . . . . . . . . . . . 42
+   4.  WebSocket Layering over SPDY . . . . . . . . . . . . . . . . . 44
+     4.1.  Connection Management  . . . . . . . . . . . . . . . . . . 44
+       4.1.1.  Opening Handshake  . . . . . . . . . . . . . . . . . . 44
+       4.1.2.  Closing Handshake  . . . . . . . . . . . . . . . . . . 45
+     4.2.  Bi-directional Communication . . . . . . . . . . . . . . . 46
+       4.2.1.  Frame mapping  . . . . . . . . . . . . . . . . . . . . 46
+   5.  Design Rationale and Notes . . . . . . . . . . . . . . . . . . 48
+     5.1.  Separation of Framing Layer and Application Layer  . . . . 48
+     5.2.  Error handling - Framing Layer . . . . . . . . . . . . . . 48
+     5.3.  One Connection Per Domain  . . . . . . . . . . . . . . . . 48
+     5.4.  Fixed vs Variable Length Fields  . . . . . . . . . . . . . 49
+     5.5.  Compression Context(s) . . . . . . . . . . . . . . . . . . 49
+     5.6.  Unidirectional streams . . . . . . . . . . . . . . . . . . 50
+     5.7.  Data Compression . . . . . . . . . . . . . . . . . . . . . 50
+     5.8.  Server Push  . . . . . . . . . . . . . . . . . . . . . . . 50
+   6.  Security Considerations  . . . . . . . . . . . . . . . . . . . 51
+     6.1.  Use of Same-origin constraints . . . . . . . . . . . . . . 51
+     6.2.  HTTP Headers and SPDY Headers  . . . . . . . . . . . . . . 51
+     6.3.  Cross-Protocol Attacks . . . . . . . . . . . . . . . . . . 51
+     6.4.  Server Push Implicit Headers . . . . . . . . . . . . . . . 51
+   7.  Privacy Considerations . . . . . . . . . . . . . . . . . . . . 52
+     7.1.  Long Lived Connections . . . . . . . . . . . . . . . . . . 52
+     7.2.  SETTINGS frame . . . . . . . . . . . . . . . . . . . . . . 52
+   8.  Sub-protocol negotiation . . . . . . . . . . . . . . . . . . . 53
+     8.1.  Supporting scheme negotiation using SETTINGS frame . . . . 53
+   9.  Incompatibilities with SPDY draft #3 . . . . . . . . . . . . . 54
+   10. Requirements Notation  . . . . . . . . . . . . . . . . . . . . 56
+   11. Acknowledgements . . . . . . . . . . . . . . . . . . . . . . . 57
+   12. References . . . . . . . . . . . . . . . . . . . . . . . . . . 58
+     12.1. Normative References . . . . . . . . . . . . . . . . . . . 58
+     12.2. Informative References . . . . . . . . . . . . . . . . . . 59
+   Appendix A.  Changes . . . . . . . . . . . . . . . . . . . . . . . 60
+   Authors' Addresses . . . . . . . . . . . . . . . . . . . . . . . . 61
 
 
 
@@ -685,24 +685,78 @@ Internet-Draft                    SPDY                       August 2012
 
 2.5.2.  Stream Error Handling
 
-   A stream error is an error related to a specific stream-id which does
-   not affect processing of other streams at the framing layer.  Upon a
-   stream error, the endpoint MUST send a RST_STREAM (Section 2.7.3)
-   frame which contains the stream id of the stream where the error
-   occurred and the error status which caused the error.  After sending
-   the RST_STREAM, the stream is closed to the sending endpoint.  After
-   sending the RST_STREAM, if the sender receives any frames other than
-   a RST_STREAM for that stream id, it will result in sending additional
-   RST_STREAM frames.  An endpoint MUST NOT send a RST_STREAM in
-   response to an RST_STREAM, as doing so would lead to RST_STREAM
-   loops.  Sending a RST_STREAM does not cause the SPDY session to be
-   closed.
+   A stream error is an error related to a specific stream identifier
+   that does not affect processing of other streams at the framing
+   layer.
 
-   If an endpoint has multiple RST_STREAM frames to send in succession
-   for the same stream-id and the same error code, it MAY coalesce them
-   into a single RST_STREAM frame.  (This can happen if a stream is
-   closed, but the remote sends multiple data frames.  There is no
-   reason to send a RST_STREAM for each frame in succession).
+   An endpoint that detects a stream error sends a RST_STREAM
+   (Section 2.7.3) frame that contains the stream identifier of the
+   stream where the error occurred.  The RST_STREAM frame includes an
+   error code that indicates the type of error.
+
+   A RST_STREAM is the last frame that an endpoint can send on a stream.
+   The peer that sends the RST_STREAM frame MUST be prepared to receive
+   any frames that were sent or enqueued for sending by the remote peer.
+   These frames can be ignored, except where they modify connection
+   state (such as that for header compression).
+
+   Normally, an endpoint SHOULD NOT send more than one RST_STREAM frame
+   for any stream.  However, an endpoint MAY send additional RST_STREAM
+   frames if it receives frames on a closed stream after more than a
+   round trip time.  This behavior is permitted to deal with misbehaving
+   implementations.
+
+   An endpoint MUST NOT send a RST_STREAM in response to an RST_STREAM
+   frame, to avoid looping.
+
+2.5.3.  Error Codes
+
+   Error codes are 32-bit fields that are used in RST_STREAM and GOAWAY
+   frames to convey the reasons for the stream or connection error.
+
+   Error codes share a common code space.  Some error codes only apply
+   to specific conditions and have no defined semantics in certain frame
+   types.
+
+   The following error codes are defined:
+
+
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 13]
+
+Internet-Draft                    SPDY                       August 2012
+
+
+   NO_ERROR (0):  The associated condition is not as a result of an
+      error.  For example, a GOAWAY might include this code to indicate
+      graceful shutdown of a connection.
+
+   PROTOCOL_ERROR (1):  The endpoint detected an unspecific protocol
+      error.  This error is for use when a more specific error code is
+      not available.
+
+   INTERNAL_ERROR (2):  The endpoint encountered an unexpected internal
+      error.
+
+   FLOW_CONTROL_ERROR (3):  The endpoint detected that its peer violated
+      the flow control protocol.
+
+   INVALID_STREAM (4):  The endpoint received a frame for an inactive
+      stream.
+
+   STREAM_CLOSED (5):  The endpoint received a frame after a stream was
+      half-closed.
+
+   FRAME_TOO_LARGE (6):  The endpoint received a frame that was larger
+      than the maximum size that it supports.
+
+   REFUSED_STREAM (7):  The endpoint is refusing the stream before
+      processing its payload.
+
+   CANCEL (8):  Used by the creator of a stream to indicate that the
+      stream is no longer needed.
 
 2.6.  Data flow
 
@@ -724,7 +778,9 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 13]
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 14]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -780,7 +836,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 14]
+Belshe & Peon           Expires February 2, 2013               [Page 15]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -836,7 +892,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 15]
+Belshe & Peon           Expires February 2, 2013               [Page 16]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -892,7 +948,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 16]
+Belshe & Peon           Expires February 2, 2013               [Page 17]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -948,7 +1004,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 17]
+Belshe & Peon           Expires February 2, 2013               [Page 18]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1004,7 +1060,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 18]
+Belshe & Peon           Expires February 2, 2013               [Page 19]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1060,7 +1116,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 19]
+Belshe & Peon           Expires February 2, 2013               [Page 20]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1116,7 +1172,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 20]
+Belshe & Peon           Expires February 2, 2013               [Page 21]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1172,7 +1228,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 21]
+Belshe & Peon           Expires February 2, 2013               [Page 22]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1228,7 +1284,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 22]
+Belshe & Peon           Expires February 2, 2013               [Page 23]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1284,7 +1340,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 23]
+Belshe & Peon           Expires February 2, 2013               [Page 24]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1340,7 +1396,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 24]
+Belshe & Peon           Expires February 2, 2013               [Page 25]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1396,7 +1452,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 25]
+Belshe & Peon           Expires February 2, 2013               [Page 26]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1452,7 +1508,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 26]
+Belshe & Peon           Expires February 2, 2013               [Page 27]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1508,7 +1564,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 27]
+Belshe & Peon           Expires February 2, 2013               [Page 28]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1564,7 +1620,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 28]
+Belshe & Peon           Expires February 2, 2013               [Page 29]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1620,7 +1676,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 29]
+Belshe & Peon           Expires February 2, 2013               [Page 30]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1676,7 +1732,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 30]
+Belshe & Peon           Expires February 2, 2013               [Page 31]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1732,7 +1788,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 31]
+Belshe & Peon           Expires February 2, 2013               [Page 32]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1788,7 +1844,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 32]
+Belshe & Peon           Expires February 2, 2013               [Page 33]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1844,7 +1900,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 33]
+Belshe & Peon           Expires February 2, 2013               [Page 34]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1900,7 +1956,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 34]
+Belshe & Peon           Expires February 2, 2013               [Page 35]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -1956,7 +2012,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 35]
+Belshe & Peon           Expires February 2, 2013               [Page 36]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2012,7 +2068,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 36]
+Belshe & Peon           Expires February 2, 2013               [Page 37]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2068,7 +2124,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 37]
+Belshe & Peon           Expires February 2, 2013               [Page 38]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2124,7 +2180,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 38]
+Belshe & Peon           Expires February 2, 2013               [Page 39]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2180,7 +2236,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 39]
+Belshe & Peon           Expires February 2, 2013               [Page 40]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2236,7 +2292,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 40]
+Belshe & Peon           Expires February 2, 2013               [Page 41]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2292,7 +2348,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 41]
+Belshe & Peon           Expires February 2, 2013               [Page 42]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2348,7 +2404,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 42]
+Belshe & Peon           Expires February 2, 2013               [Page 43]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2404,7 +2460,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 43]
+Belshe & Peon           Expires February 2, 2013               [Page 44]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2460,7 +2516,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 44]
+Belshe & Peon           Expires February 2, 2013               [Page 45]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2516,7 +2572,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 45]
+Belshe & Peon           Expires February 2, 2013               [Page 46]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2572,7 +2628,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 46]
+Belshe & Peon           Expires February 2, 2013               [Page 47]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2628,7 +2684,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 47]
+Belshe & Peon           Expires February 2, 2013               [Page 48]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2684,7 +2740,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 48]
+Belshe & Peon           Expires February 2, 2013               [Page 49]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2740,7 +2796,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 49]
+Belshe & Peon           Expires February 2, 2013               [Page 50]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2796,7 +2852,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 50]
+Belshe & Peon           Expires February 2, 2013               [Page 51]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2852,7 +2908,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 51]
+Belshe & Peon           Expires February 2, 2013               [Page 52]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2908,7 +2964,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 52]
+Belshe & Peon           Expires February 2, 2013               [Page 53]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -2964,7 +3020,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 53]
+Belshe & Peon           Expires February 2, 2013               [Page 54]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3020,7 +3076,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 54]
+Belshe & Peon           Expires February 2, 2013               [Page 55]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3076,7 +3132,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 55]
+Belshe & Peon           Expires February 2, 2013               [Page 56]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3132,7 +3188,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 56]
+Belshe & Peon           Expires February 2, 2013               [Page 57]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3188,7 +3244,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 57]
+Belshe & Peon           Expires February 2, 2013               [Page 58]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3244,7 +3300,7 @@ Internet-Draft                    SPDY                       August 2012
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 58]
+Belshe & Peon           Expires February 2, 2013               [Page 59]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3300,7 +3356,7 @@ Appendix A.  Changes
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 59]
+Belshe & Peon           Expires February 2, 2013               [Page 60]
 
 Internet-Draft                    SPDY                       August 2012
 
@@ -3356,5 +3412,5 @@ Authors' Addresses
 
 
 
-Belshe & Peon           Expires February 2, 2013               [Page 60]
+Belshe & Peon           Expires February 2, 2013               [Page 61]
 
