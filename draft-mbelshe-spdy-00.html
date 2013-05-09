@@ -238,8 +238,8 @@ Table of Contents
        <a href="#section-2.7.8">2.7.8</a>.  GOAWAY . . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-23">23</a>
        <a href="#section-2.7.9">2.7.9</a>.  HEADERS  . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-24">24</a>
        <a href="#section-2.7.10">2.7.10</a>. WINDOW_UPDATE  . . . . . . . . . . . . . . . . . . . . <a href="#page-25">25</a>
-       <a href="#section-2.7.11">2.7.11</a>. CREDENTIAL . . . . . . . . . . . . . . . . . . . . . . <a href="#page-27">27</a>
-       <a href="#section-2.7.12">2.7.12</a>. Name/Value Header Block  . . . . . . . . . . . . . . . <a href="#page-29">29</a>
+       <a href="#section-2.7.11">2.7.11</a>. CREDENTIAL . . . . . . . . . . . . . . . . . . . . . . <a href="#page-28">28</a>
+       <a href="#section-2.7.12">2.7.12</a>. Name/Value Header Block  . . . . . . . . . . . . . . . <a href="#page-30">30</a>
    <a href="#section-3">3</a>.  HTTP Layering over SPDY  . . . . . . . . . . . . . . . . . . . <a href="#page-37">37</a>
      <a href="#section-3.1">3.1</a>.  Connection Management  . . . . . . . . . . . . . . . . . . <a href="#page-37">37</a>
        <a href="#section-3.1.1">3.1.1</a>.  Use of GOAWAY  . . . . . . . . . . . . . . . . . . . . <a href="#page-37">37</a>
@@ -594,7 +594,7 @@ Table of Contents
 
   0        1        2        3        4         5        6        7
   +--------+--------+--------+--------+--------+--------+--------+--------+
-  | Length(16)      |Type(8) |Flags(8)| Num-of-Entries-or-Stream-ID-or-ID | -&gt;
+  | Length(16)      |Type(8) |Flags(8)|             Stream-ID             | -&gt;
   +--------+--------+--------+--------+--------+--------+--------+--------+
 
   8..N
@@ -613,6 +613,10 @@ Table of Contents
 
    Data: data associated with this control frame.  The format of this
    data is controlled by the frame type.
+
+   Stream-ID: A 31-bit stream identifier (see <a href="#section-2.4.2">Section 2.4.2</a>).  A value 0
+   is reserved for frames that are associated with the session as a
+   whole as opposed to an individual stream.
 
    Frame processing requirements:
 
@@ -633,10 +637,6 @@ Table of Contents
 
       Streams can concurrently send data interleaved with other streams.
 
-      Streams may be cancelled.
-
-
-
 
 
 
@@ -645,6 +645,8 @@ Table of Contents
 </pre><pre class='newpage'><a name="page-10" id="page-10" href="#page-10" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
+
+      Streams may be cancelled.
 
 <span class="h4"><a name="section-2.4.1">2.4.1</a>.  Stream frames</span>
 
@@ -692,8 +694,6 @@ Table of Contents
 
    When an endpoint creates a stream that includes an Associated-To-
    Stream-ID, it creates a unidirectional stream which the creating
-   endpoint can use to send frames, but the receiving endpoint cannot.
-   The receiving endpoint is implicitly already in the half-closed
 
 
 
@@ -702,6 +702,8 @@ Table of Contents
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
+   endpoint can use to send frames, but the receiving endpoint cannot.
+   The receiving endpoint is implicitly already in the half-closed
    (<a href="#section-2.4.6">Section 2.4.6</a>) state.
 
 <span class="h5"><a name="section-2.4.2.2">2.4.2.2</a>.  Bidirectional streams</span>
@@ -748,8 +750,6 @@ Table of Contents
    If an endpoint receives a data frame after the stream is half-closed
    from the sender (e.g. the endpoint has already received a prior frame
    for the stream with the FIN flag set), it MUST send a RST_STREAM to
-   the sender with the status STREAM_ALREADY_CLOSED.
-
 
 
 
@@ -757,6 +757,8 @@ Table of Contents
 </pre><pre class='newpage'><a name="page-12" id="page-12" href="#page-12" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
+
+   the sender with the status STREAM_ALREADY_CLOSED.
 
 <span class="h4"><a name="section-2.4.7">2.4.7</a>.  Stream close</span>
 
@@ -804,8 +806,6 @@ Table of Contents
    the endpoint MUST close the TCP connection.
 
    Note that the session compression state is dependent upon both
-   endpoints always processing all compressed data.  If an endpoint
-   partially processes a frame containing compressed data without
 
 
 
@@ -814,6 +814,8 @@ Table of Contents
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
+   endpoints always processing all compressed data.  If an endpoint
+   partially processes a frame containing compressed data without
    updating compression state properly, future control frames which use
    compression will be always be errored.  Implementations SHOULD always
    try to process compressed data so that errors which could be handled
@@ -850,8 +852,6 @@ Table of Contents
    Because TCP provides a single stream of data on which SPDY
    multiplexes multiple logical streams, clients and servers must
    intelligently interleave data messages for concurrent sessions.
-
-
 
 
 
@@ -1221,7 +1221,7 @@ Table of Contents
 
   0        1        2        3        4         5        6        7
   +--------+--------+--------+--------+-|-------+--------+--------+--------+
-  | Length(16)      |    0x4 |Flags(8)|X|Number-of-Entries(31)             | -&gt;
+  | Length(16)      |    0x4 |Flags(8)|X|               0x0                | -&gt;
   +--------+--------+--------+--------+-|-------+--------+--------+--------+
 
   8..N
@@ -1376,26 +1376,28 @@ Table of Contents
 
   0        1        2        3        4         5        6        7
   +--------+--------+--------+--------+-|-------+--------+--------+--------+
-  | Length(16)      |    0x6 |XXXXXXXX|X| ID(31)                           |
+  | Length(16)      |    0x6 |FLAGS(8)|X|               0x0                |
   +--------+--------+--------+--------+-|-------+--------+--------+--------+
 
    Length: An unsigned 16-bit value representing the number of bytes
-   which follow the frame header.  For PING frames, this value is always
-   0.
+   which follow the frame header.  For PING frames, this dictates the
+   length of the arbitrary, variable-length sequence of octets.
 
-   ID: A unique ID for this ping, represented as an unsigned 32 bit
-   value.  When the client initiates a ping, it must use an odd numbered
-   ID.  When the server initiates a ping, it must use an even numbered
-   ping.  Use of odd/even IDs is required in order to avoid accidental
-   looping on PINGs (where each side initiates an identical PING at the
-   same time).
+   PING frames consist of an arbitrary, variable-length sequence of
+   octets.  Receivers of a PING send a response PING frame with the PONG
+   flag set and precisely the same sequence of octets back to the sender
+   as soon as possible.
 
-   Note: If a sender uses all possible PING ids (e.g. has sent all 2^31
-   possible IDs), it can wrap and start re-using IDs.
+   Processing of PING frames SHOULD be performed with the highest
+   priority if there are additional frames waiting to be processed.
 
-   If a server receives an even numbered PING which it did not initiate,
-   it must ignore the PING.  If a client receives an odd numbered PING
-   which it did not initiate, it must ignore the PING.
+   Stream ID: Always set to 0
+
+   The PING frame defines one type-specific flag:
+
+   PONG (0x2):  Bit 2 being set indicates that this PING frame is a PING
+      response.  An endpoint MUST set this flag in PING responses.  An
+      endpoint MUST NOT respond to PING frames containing this flag.
 
 <span class="h4"><a name="section-2.7.8">2.7.8</a>.  GOAWAY</span>
 
@@ -1420,8 +1422,6 @@ Table of Contents
    to re-create the stream later on a new session).
 
    Endpoints should always send a GOAWAY message before closing a
-   connection so that the remote can know whether a stream has been
-   partially processed or not.  (For example, if an HTTP client sends a
 
 
 
@@ -1430,6 +1430,8 @@ Table of Contents
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
+   connection so that the remote can know whether a stream has been
+   partially processed or not.  (For example, if an HTTP client sends a
    POST at the same time that a server closes a connection, the client
    cannot know if the server started to process that POST request if the
    server does not send a GOAWAY frame to indicate where it stopped
@@ -1440,13 +1442,13 @@ Table of Contents
 
   0        1        2        3        4         5        6        7
   +--------+--------+--------+--------+-|-------+--------+--------+--------+
-  | Length(16)      |    0x7 |Flags(8)|X| Last-Good-Stream-ID(31)          | -&gt;
+  | Length(16)      |    0x7 |Flags(8)|X|               0x0                | -&gt;
   +--------+--------+--------+--------+-|-------+--------+--------+--------+
 
-  8        9        10       11
-  +--------+--------+--------+--------+
-  |          Status-Code(32)          |
-  +--------+--------+--------+--------+
+  8        9        10       11      12        13       14       15
+  +-|-------+--------+--------+-------+---------+--------+--------+--------+
+  |X| Last-Good-Stream-ID(31)         |          Status-Code(32)           | -&gt;
+  +-|-------+--------+--------+-------+---------+--------+--------+--------+
 
    Length: An unsigned 16-bit value representing the number of bytes
    which follow the frame header.  For PING frames, this value is always
@@ -1476,8 +1478,6 @@ Table of Contents
    Please see Name/Value Header Block (<a href="#section-2.7.12">Section 2.7.12</a>) for further
    details about how it is to be interpreted.
 
-   Here is the format of a headers frame and headers block:
-
 
 
 
@@ -1485,6 +1485,8 @@ Table of Contents
 </pre><pre class='newpage'><a name="page-25" id="page-25" href="#page-25" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
+
+   Here is the format of a headers frame and headers block:
 
   0        1        2        3         4        5        6        7
   +--------+--------+--------+--------+-|-------+--------+--------+--------+
@@ -1532,8 +1534,6 @@ Table of Contents
    applies to the data portion of data frames.
 
    Flow control in SPDY is implemented by a data transfer window for
-   each stream and one for the entire session.  The data transfer window
-   is a simple uint32 that indicates how many bytes of data the sender
 
 
 
@@ -1542,6 +1542,8 @@ Table of Contents
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
+   each stream and one for the entire session.  The data transfer window
+   is a simple uint32 that indicates how many bytes of data the sender
    can transmit.  When the session starts, the sender initializes the
    session window to the initial session window size.  After a stream is
    created, but before any data frames have been transmitted, the sender
@@ -1588,8 +1590,6 @@ Table of Contents
    receives a WINDOW_UPDATE that causes the window size to exceed this
    limit, then if the Stream-ID was 0, it MUST send a GOAWAY frame with
    status code FLOW_CONTROL_ERROR to terminate the session.  And if the
-   Stream-ID references an active stream, it must send a RST_STREAM
-   frame with status code FLOW_CONTROL_ERROR to terminate the stream.
 
 
 
@@ -1597,6 +1597,9 @@ Table of Contents
 </pre><pre class='newpage'><a name="page-27" id="page-27" href="#page-27" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
+
+   Stream-ID references an active stream, it must send a RST_STREAM
+   frame with status code FLOW_CONTROL_ERROR to terminate the stream.
 
    When a SPDY connection is first established, the default initial
    window size for all streams is 64KB and the initial window size for
@@ -1641,11 +1644,8 @@ Table of Contents
    This property allows a recipient to aggressively update the window
    size kept by the sender to prevent the stream from stalling.
 
-<span class="h4"><a name="section-2.7.11">2.7.11</a>.  CREDENTIAL</span>
 
-   The CREDENTIAL control frame is used by the client to send additional
-   client certificates to the server.  A SPDY client may decide to send
-   requests for resources from different origins on the same SPDY
+
 
 
 
@@ -1654,6 +1654,11 @@ Table of Contents
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
+<span class="h4"><a name="section-2.7.11">2.7.11</a>.  CREDENTIAL</span>
+
+   The CREDENTIAL control frame is used by the client to send additional
+   client certificates to the server.  A SPDY client may decide to send
+   requests for resources from different origins on the same SPDY
    session if it decides that that server handles both origins.  For
    example if the IP address associated with both hostnames matches and
    the SSL server certificate presented in the initial handshake is
@@ -1686,9 +1691,28 @@ Table of Contents
    which resource triggered the client certificate request, in order to
    prompt the user accordingly.
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 28]</span>
+</pre><pre class='newpage'><a name="page-29" id="page-29" href="#page-29" class="invisible"> </a>
+<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+
+
   0        1        2        3        4         5        6        7
   +--------+--------+--------+--------+-|-------+--------+--------+--------+
-  | Length(16)      |    0xa |Flags(8)|X| Num-of-Entires(31)               | -&gt;
+  | Length(16)      |    0xa |Flags(8)|X|               0x0                | -&gt;
   +--------+--------+--------+--------+-|-------+--------+--------+--------+
 
   8        9        10       11        12
@@ -1702,14 +1726,6 @@ Table of Contents
   +--------+--------+========+
 
    Slot: The index in the server's client certificate vector where this
-
-
-
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 28]</span>
-</pre><pre class='newpage'><a name="page-29" id="page-29" href="#page-29" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
-
-
    certificate should be stored.  If there is already a certificate
    stored at this index, it will be overwritten.  The index is one
    based, not zero based; zero is an invalid slot index.
@@ -1742,6 +1758,14 @@ Table of Contents
    receipt of a RST_STREAM frame with INVALID_CREDENTIALS, the client
    should initiate a new stream directly to the requested origin and
    resend the request.  Note, SPDY does not allow the server to request
+
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 29]</span>
+</pre><pre class='newpage'><a name="page-30" id="page-30" href="#page-30" class="invisible"> </a>
+<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+
+
    different client authentication for different resources in the same
    origin.
 
@@ -1758,14 +1782,6 @@ Table of Contents
    At the group level, a map of token-index to key-pair is maintained
    for each defined group.  There is no persistent mapping from
    stream-id to header-group, instead each HeaderBlock includes
-
-
-
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 29]</span>
-</pre><pre class='newpage'><a name="page-30" id="page-30" href="#page-30" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
-
-
    reference to the HeaderGroup that will be used in this particular set
    of metadata.
 
@@ -1798,6 +1814,14 @@ Table of Contents
    interpret headers with less memory and CPU.
 
    The Name/Value Header Block is found in the SYN_STREAM, SYN_REPLY and
+
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 30]</span>
+</pre><pre class='newpage'><a name="page-31" id="page-31" href="#page-31" class="invisible"> </a>
+<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+
+
    HEADERS control frames, and shares a common format:
 
                    0        1        2          3..N       N+1..K
@@ -1813,14 +1837,6 @@ Table of Contents
 
    HG: (Header Group) An 8 bit unsigned integer specifying the header
    group for this set of headers.
-
-
-
-
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 30]</span>
-</pre><pre class='newpage'><a name="page-31" id="page-31" href="#page-31" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
-
 
    Ops: A number of operations.  Operations will be detailed below.
 
@@ -1854,6 +1870,14 @@ Table of Contents
       string literals.  The first such string represents key, and the
       second string represents a value.  Unlike KVSto, the Eref does not
       modify the compressor state-- it only specified a key-value which
+
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 31]</span>
+</pre><pre class='newpage'><a name="page-32" id="page-32" href="#page-32" class="invisible"> </a>
+<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+
+
       will be interpreted as being part of the meta-data for the frame
       which includes the HeaderBlock.
 
@@ -1866,17 +1890,6 @@ Table of Contents
    zero.  Strings in a request are encoded with a different huffman-
    encoder than strings in a response, as the frequency of occurance in
    these differ by quite a bit.
-
-
-
-
-
-
-
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 31]</span>
-</pre><pre class='newpage'><a name="page-32" id="page-32" href="#page-32" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
-
 
                   A string is either:
                   +-|============================|====================|--------+
@@ -1913,6 +1926,14 @@ Table of Contents
 
    Detail of an operation with an opcode of 0x2 (Clone):
 
+
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 32]</span>
+</pre><pre class='newpage'><a name="page-33" id="page-33" href="#page-33" class="invisible"> </a>
+<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+
+
                      0        1
                      +--------+--------+
                      |00000010| NumOps |
@@ -1926,13 +1947,6 @@ Table of Contents
                      +--------+--------+========+
                      | Key idx(16)     | String |
                      +--------+--------+========+
-
-
-
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 32]</span>
-</pre><pre class='newpage'><a name="page-33" id="page-33" href="#page-33" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
-
 
    Detail of an operation with an opcode of 0x3 (KVSto):
 
@@ -1968,6 +1982,14 @@ Table of Contents
 
    Each header name must have at least one value.  Header names are
    encoded using the US-ASCII character set [<a href="#ref-ASCII" title='"US-ASCII. Coded Character Set - 7-Bit American Standard Code for Information Interchange. Standard ANSI X3.4-1986, ANSI, 1986."'>ASCII</a>] and must be all
+
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 33]</span>
+</pre><pre class='newpage'><a name="page-34" id="page-34" href="#page-34" class="invisible"> </a>
+<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+
+
    lower case.  The length of each name must be greater than zero.  A
    recipient of a zero-length name MUST issue a stream error
    (<a href="#section-2.5.2">Section 2.5.2</a>) with the status code PROTOCOL_ERROR for the
@@ -1982,14 +2004,6 @@ Table of Contents
    SYN_REPLY, and HEADERS frames used to carry header meta-data.  This
    block is always compressed using zlib compression.  Within this
    specification, any reference to 'zlib' is referring to the ZLIB
-
-
-
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 33]</span>
-</pre><pre class='newpage'><a name="page-34" id="page-34" href="#page-34" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
-
-
    Compressed Data Format Specification Version 3.3 as part of <a href="./rfcmarkup?rfc=1950">RFC1950</a>.
    [<a href="./rfcmarkup?rfc=1950" title='"ZLIB Compressed Data Format Specification version 3.3"'>RFC1950</a>]
 
@@ -2024,6 +2038,14 @@ Table of Contents
 
                   The stream-group table for group zero looks like this:
                   0: ":host", "www.foo.com"
+
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 34]</span>
+</pre><pre class='newpage'><a name="page-35" id="page-35" href="#page-35" class="invisible"> </a>
+<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+
+
                   1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;BLAJHBLA"
                   2: ":path", "/index.html"
                   3: "date", "Wed Jul 18 11:50:43 2012"
@@ -2038,14 +2060,6 @@ Table of Contents
 
 
                   Request 2 (for index.js):
-
-
-
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 34]</span>
-</pre><pre class='newpage'><a name="page-35" id="page-35" href="#page-35" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
-
-
                   SYN_STREAM 3, stream-group (G)=0
                   Header-block:
                   Store(0x1): level(G),index(2),v: "/index.js"
@@ -2080,6 +2094,14 @@ Table of Contents
                   Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:44 PDT 2012"
 
                   Connection level-headers are implied.
+
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 35]</span>
+</pre><pre class='newpage'><a name="page-36" id="page-36" href="#page-36" class="invisible"> </a>
+<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+
+
                   Stream-group level headers are implied.
 
                   For this example, using TaCo (truncate and concatenate) wasn't useful.
@@ -2094,14 +2116,6 @@ Table of Contents
                   At this point the connection headers table remains unchanged.
                   0: ":method", "GET"
                   1: ":version", "HTTP/1.1"
-
-
-
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 35]</span>
-</pre><pre class='newpage'><a name="page-36" id="page-36" href="#page-36" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
-
-
                   2: "user-agent", "blah blah browser version blah blah"
                   3: "accept-encoding", "sdch, bzip, compress"
 
@@ -2118,20 +2132,6 @@ Table of Contents
                   cookie: SOMELONGSTRINGTHATISMOSTLYOPAQUE;FOOBLA
                   user-agent: blah blah browser version blah blah
                   accept-encoding: sdch, bzip, compress
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
