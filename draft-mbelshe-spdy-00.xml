@@ -197,7 +197,7 @@
               <artwork>
   0        1        2        3        4         5        6        7
   +--------+--------+--------+--------+--------+--------+--------+--------+
-  | Length(16)      |Type(8) |Flags(8)| Num-of-Entries-or-Stream-ID-or-ID | -&gt;
+  | Length(16)      |Type(8) |Flags(8)|             Stream-ID             | -&gt;
   +--------+--------+--------+--------+--------+--------+--------+--------+
 
   8..N
@@ -213,6 +213,12 @@
             <t>Flags: Flags related to this frame. Flag definitions are dependent upon the frame type.</t>
 
             <t>Data: data associated with this control frame. The format of this data is controlled by the frame type.</t>
+
+            <t>
+              Stream-ID: A 31-bit stream identifier (see <xref target="StreamCreation"/>).  A value 0 is
+              reserved for frames that are associated with the session as a 
+              whole as opposed to an individual stream.
+            </t>
 
             <t>Frame processing requirements:
               <list>
@@ -523,7 +529,7 @@
               <artwork>
   0        1        2        3        4         5        6        7
   +--------+--------+--------+--------+-|-------+--------+--------+--------+
-  | Length(16)      |    0x4 |Flags(8)|X|Number-of-Entries(31)             | -&gt;
+  | Length(16)      |    0x4 |Flags(8)|X|               0x0                | -&gt;
   +--------+--------+--------+--------+-|-------+--------+--------+--------+
 
   8..N
@@ -592,19 +598,37 @@
               <artwork>
   0        1        2        3        4         5        6        7
   +--------+--------+--------+--------+-|-------+--------+--------+--------+
-  | Length(16)      |    0x6 |XXXXXXXX|X| ID(31)                           |
+  | Length(16)      |    0x6 |FLAGS(8)|X|               0x0                |
   +--------+--------+--------+--------+-|-------+--------+--------+--------+
               </artwork>
             </figure>
 
-            <t>Length: An unsigned 16-bit value representing the number of bytes which follow the frame header.  For PING frames, this value is always 0.</t>
+            <t>Length: An unsigned 16-bit value representing the number of bytes which follow the frame header.  For PING frames, this dictates the length of the arbitrary, variable-length sequence of octets.</t>
 
-            <t>ID: A unique ID for this ping, represented as an unsigned 32 bit value.  When the client initiates a ping, it must use an odd numbered ID.  When the server initiates a ping, it must use an even numbered ping.  Use of odd/even IDs is required in order to avoid accidental looping on PINGs (where each side initiates an identical PING at the same time).</t>
+            <t>
+              PING frames consist of an arbitrary, variable-length sequence of 
+              octets. Receivers of a PING send a response PING frame with the PONG
+              flag set and precisely the same sequence of octets back to the 
+              sender as soon as possible.
+            </t>
+            
+            <t>
+              Processing of PING frames SHOULD be performed with the highest
+              priority if there are additional frames waiting to be processed.
+            </t>  
 
-            <t>Note: If a sender uses all possible PING ids (e.g. has sent all 2^31 possible IDs), it can wrap and start re-using IDs.</t>
+            <t>Stream ID: Always set to 0</t>
 
-            <t>If a server receives an even numbered PING which it did not initiate, it must ignore the PING.
-              If a client receives an odd numbered PING which it did not initiate, it must ignore the PING.</t>
+            <t>
+              The PING frame defines one type-specific flag:
+              <list style="hanging">
+                <t hangText="PONG (0x2):">
+                  Bit 2 being set indicates that this PING frame is a PING response.  An endpoint MUST
+                  set this flag in PING responses.  An endpoint MUST NOT respond to PING frames
+                  containing this flag.
+                </t>
+              </list>
+            </t>
           </section>
 
           <section anchor="GOAWAY" title="GOAWAY">
@@ -619,13 +643,13 @@
               <artwork>
   0        1        2        3        4         5        6        7     
   +--------+--------+--------+--------+-|-------+--------+--------+--------+
-  | Length(16)      |    0x7 |Flags(8)|X| Last-Good-Stream-ID(31)          | -&gt;
+  | Length(16)      |    0x7 |Flags(8)|X|               0x0                | -&gt;
   +--------+--------+--------+--------+-|-------+--------+--------+--------+
 
-  8        9        10       11
-  +--------+--------+--------+--------+
-  |          Status-Code(32)          |
-  +--------+--------+--------+--------+
+  8        9        10       11      12        13       14       15
+  +-|-------+--------+--------+-------+---------+--------+--------+--------+
+  |X| Last-Good-Stream-ID(31)         |          Status-Code(32)           | -&gt;
+  +-|-------+--------+--------+-------+---------+--------+--------+--------+
               </artwork>
             </figure>
 
@@ -727,7 +751,7 @@
               <artwork>
   0        1        2        3        4         5        6        7
   +--------+--------+--------+--------+-|-------+--------+--------+--------+
-  | Length(16)      |    0xa |Flags(8)|X| Num-of-Entires(31)               | -&gt;
+  | Length(16)      |    0xa |Flags(8)|X|               0x0                | -&gt;
   +--------+--------+--------+--------+-|-------+--------+--------+--------+
 
   8        9        10       11        12
