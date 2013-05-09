@@ -342,17 +342,103 @@
           <t>The SPDY framing layer has only two types of errors, and they are always handled consistently.  Any reference in this specification to "issue a session error" refers to <xref target="SessionErrorHandler"></xref>.  Any reference to "issue a stream error" refers to <xref target="StreamErrorHandler"></xref>.</t>
 
           <section anchor="SessionErrorHandler" title="Session Error Handling">
-            <t>A session error is any error which prevents further processing of the framing layer or which corrupts the session compression state.  When a session error occurs, the endpoint encountering the error MAY send a <xref target="SETTINGS">SETTINGS</xref> frame. Whether or not a <xref target="SETTINGS">SETTINGS</xref> frame is sent, the endpoint encountering the error MUST send a <xref target="GOAWAY">GOAWAY</xref> frame with the stream id of most recently received stream from the remote endpoint, and the error code for why the session is terminating.  After sending the GOAWAY frame, the endpoint MUST close the TCP connection.</t>
-
-            <t>Note that the session compression state is dependent upon both endpoints always processing all compressed data.  If an endpoint partially processes a frame containing compressed data without updating compression state properly, future control frames which use compression will be always be errored.  Implementations SHOULD always try to process compressed data so that errors which could be handled as stream errors do not become session errors.</t>
-
-            <t>Note that because this GOAWAY is sent during a session error case, it is possible that the GOAWAY will not be reliably received by the receiving endpoint.  It is a best-effort attempt to communicate with the remote about why the session is going down.</t>
+            <t>
+              A session error is any error which prevents further processing of the framing layer or
+              which corrupts any session state.
+            </t>
+            <t>
+              An endpoint that encounters a session error MUST first send a <xref
+              target="GOAWAY">GOAWAY</xref> frame with the stream identifier of the last stream that
+              it successfully received from its peer.  The GOAWAY frame includes an error code that
+              indicates why the session is terminating.  After sending the GOAWAY frame, the endpoint
+              MUST close the TCP session.
+            </t>
+            <t>
+              It is possible that the GOAWAY will not be reliably received by the receiving endpoint.
+              In the event of a session error, GOAWAY only provides a best-effort attempt to
+              communicate with the peer about why the session is being terminated.
+            </t>
+            <t>
+              An endpoint can end a session at any time.  In particular, an endpoint MAY choose to
+              treat a stream error as a session error if the error is recurrent.  Endpoints SHOULD
+              send a GOAWAY frame when ending a session, as long as circumstances permit it.
+            </t>
           </section>
 
           <section anchor="StreamErrorHandler" title="Stream Error Handling">
-            <t>A stream error is an error related to a specific stream-id which does not affect processing of other streams at the framing layer.  Upon a stream error, the endpoint MUST send a <xref target="RST_STREAM">RST_STREAM</xref> frame which contains the stream id of the stream where the error occurred and the error status which caused the error.  After sending the RST_STREAM, the stream is closed to the sending endpoint.  After sending the RST_STREAM, if the sender receives any frames other than a RST_STREAM for that stream id, it will result in sending additional RST_STREAM frames.  An endpoint MUST NOT send a RST_STREAM in response to an RST_STREAM, as doing so would lead to RST_STREAM loops.  Sending a RST_STREAM does not cause the SPDY session to be closed.</t>
-
-            <t>If an endpoint has multiple RST_STREAM frames to send in succession for the same stream-id and the same error code, it MAY coalesce them into a single RST_STREAM frame.  (This can happen if a stream is closed, but the remote sends multiple data frames.  There is no reason to send a RST_STREAM for each frame in succession).</t>
+            <t>
+              A stream error is an error related to a specific stream identifier that does not affect
+              processing of other streams at the framing layer.
+            </t>
+            <t>
+              An endpoint that detects a stream error sends a <xref
+              target="RST_STREAM">RST_STREAM</xref> frame that contains the stream identifier of the
+              stream where the error occurred.  The RST_STREAM frame includes an error code that
+              indicates the type of error.
+            </t>
+            <t>
+              A RST_STREAM is the last frame that an endpoint can send on a stream.  The peer that
+              sends the RST_STREAM frame MUST be prepared to receive any frames that were sent or
+              enqueued for sending by the remote peer.  These frames can be ignored, except where they
+              modify connection state (such as that for header compression).
+            </t>
+            <t>
+              Normally, an endpoint SHOULD NOT send more than one RST_STREAM frame for any stream. However, an endpoint
+              MAY send additional RST_STREAM frames if it receives frames on a closed stream after
+              more than a round trip time.  This behavior is permitted to deal with misbehaving
+              implementations.
+            </t>
+            <t>
+              An endpoint MUST NOT send a RST_STREAM in response to an RST_STREAM frame, to avoid looping. 
+            </t>
+          </section>
+  
+          <section anchor="ErrorCodes" title="Error Codes">
+            <t>
+              Error codes are 32-bit fields that are used in RST_STREAM and GOAWAY frames to convey
+              the reasons for the stream or connection error.
+            </t>
+  
+            <t>
+              Error codes share a common code space.  Some error codes only apply to specific
+              conditions and have no defined semantics in certain frame types.
+            </t>
+  
+            <t>
+              The following error codes are defined:
+              <list style="hanging">
+                <t hangText="NO_ERROR (0):">
+                  The associated condition is not as a result of an error.  For example, a GOAWAY
+                  might include this code to indicate graceful shutdown of a connection.
+                </t>
+                <t hangText="PROTOCOL_ERROR (1):">
+                  The endpoint detected an unspecific protocol error.  This error is for use when a more
+                  specific error code is not available.
+                </t>
+                <t hangText="INTERNAL_ERROR (2):">
+                  The endpoint encountered an unexpected internal error.
+                </t>
+                <t hangText="FLOW_CONTROL_ERROR (3):">
+                  The endpoint detected that its peer violated the flow control protocol.
+                </t>
+                <t hangText="INVALID_STREAM (4):">
+                  The endpoint received a frame for an inactive stream.
+                </t>
+                <t hangText="STREAM_CLOSED (5):">
+                  The endpoint received a frame after a stream was half-closed.
+                </t>
+                <t hangText="FRAME_TOO_LARGE (6):">
+                  The endpoint received a frame that was larger than the maximum size that it
+                  supports.
+                </t>
+                <t hangText="REFUSED_STREAM (7):">
+                  The endpoint is refusing the stream before processing its payload.
+                </t>
+                <t hangText="CANCEL (8):">
+                  Used by the creator of a stream to indicate that the stream is no longer needed.
+                </t>
+              </list>
+            </t>
           </section>
         </section>
 
@@ -457,7 +543,13 @@
           </section>
 
           <section anchor="RST_STREAM" title="RST_STREAM">
-            <t>The RST_STREAM frame allows for abnormal termination of a stream.  When sent by the creator of a stream, it indicates the creator wishes to cancel the stream.  When sent by the recipient of a stream, it indicates an error or that the recipient did not want to accept the stream, so the stream should be closed.</t>
+            <t>
+              The RST_STREAM frame (type=0x3) allows for abnormal termination of a stream.  When sent by
+              the initiator of a stream, it indicates that they wish to cancel the stream.  When
+              sent by the receiver of a stream, it indicates that either the 
+              receiver is rejecting the stream, requesting that the stream be 
+              cancelled or that an error condition has occurred. 
+            </t>
             <figure>
               <artwork>
   0        1        2        3        4         5        6        7
@@ -467,33 +559,38 @@
 
   8        9        10       11
   +--------+--------+--------+--------+
-  | Status-Code(32)                   |
+  |            Error-Code(32)         |
   +--------+--------+--------+--------+
               </artwork>
             </figure>
 
-            <t>Length: An unsigned 16-bit value representing the number of bytes which follow the frame header. For RST_STREAM frames, this value is always 4.</t>
-
-            <t>Flags: Flags related to this frame. RST_STREAM does not define any flags.  This value must be 0.</t>
-
-            <t>Stream-ID: The 31-bit identifier for this stream.</t>
-
-            <t>Status code: (32 bits) An indicator for why the stream is being terminated.The following status codes are defined:
-              <list>
-                <t>1 - PROTOCOL_ERROR. This is a generic error, and should only be used if a more specific error is not available.</t>
-                <t>2 - INVALID_STREAM. This is returned when a frame is received for a stream which is not active.</t>
-                <t>3 - REFUSED_STREAM.  Indicates that the stream was refused before any processing has been done on the stream.</t>
-                <t>4 - UNSUPPORTED_VERSION.  Indicates that the recipient of a stream does not support the SPDY version requested.</t>
-                <t>5 - CANCEL.  Used by the creator of a stream to indicate that the stream is no longer needed.</t>
-                <t>6 - INTERNAL_ERROR.  This is a generic error which can be used when the implementation has internally failed, not due to anything in the protocol.</t>
-                <t>7 - FLOW_CONTROL_ERROR.  The endpoint detected that its peer violated the flow control protocol.</t>
-                <t>10 - INVALID_CREDENTIALS.  The server received a request for a resource whose origin does not have valid credentials in the client certificate vector.</t>
-                <t>11 - FRAME_TOO_LARGE.  The endpoint received a frame which this implementation could not support.  If FRAME_TOO_LARGE is sent for a HEADERS+PRIORITY, HEADERS, or PUSH_PROMISE frame without fully processing the compressed portion of those frames, then the compression state will be out-of-sync with the other endpoint.  In this case, senders of FRAME_TOO_LARGE MUST close the session.</t>
-                <t>Note:  0 is not a valid status code for a RST_STREAM.</t>
-              </list>
+            <t>
+              The RST_STREAM frame contains a single unsigned, 
+              32-bit integer identifying the <xref target="ErrorCodes">error code</xref>.  
+              The error code indicates why the stream is being terminated.
             </t>
-
-            <t>After receiving a RST_STREAM on a stream, the recipient must not send additional frames for that stream, and the stream moves into the closed state.</t>
+            
+            <t>
+              No type-flags are defined.
+            </t>
+  
+            <t>
+              The RST_STREAM frame fully terminates the referenced stream
+              and causes it to enter the closed state. After receiving a 
+              RST_STREAM on a stream, the receiver MUST NOT send additional 
+              frames for that stream. However, after sending the RST_STREAM, 
+              the sending endpoint MUST be prepared to receive and process 
+              additional frames sent on the stream that might have been sent 
+              by the peer prior to the arrival of the RST_STREAM.
+            </t>
+  
+            <t>
+              RST_STREAM frames MUST be associated with a stream. If a 
+              RST_STREAM frame is received whose stream 
+              identifier field is 0x0 the recipient MUST respond with a 
+              <xref target="SessionErrorHandler">session error</xref> of type 
+              PROTOCOL_ERROR.
+            </t>
           </section>
 
           <section anchor="PUSH_PROMISE" title="PUSH_PROMISE">
@@ -641,13 +738,39 @@
           </section>
 
           <section anchor="GOAWAY" title="GOAWAY">
-            <t>The GOAWAY control frame is a mechanism to tell the remote side of the connection to stop creating streams on this session.  It can be sent from the client or the server. Once sent, the sender will not respond to any new HEADERS+PRIORITYs on this session. Recipients of a GOAWAY frame must not send additional streams on this session, although a new session can be established for new streams.  The purpose of this message is to allow an endpoint to gracefully stop accepting new streams (perhaps for a reboot or maintenance), while still finishing processing of previously established streams.</t>
-
-            <t>There is an inherent race condition between an endpoint sending HEADERS+PRIORITY frames and the remote sending a GOAWAY message.  To deal with this case, the GOAWAY contains a last-stream-id indicating the stream-id of the last stream which was created on the sending endpoint in this session.  If the receiver of the GOAWAY sent new HEADERS+PRIORITY frames for sessions after this last-stream-id, they were not processed by the server and the receiver may treat the stream as though it had never been created at all (hence the receiver may want to re-create the stream later on a new session).</t>
-
-            <t>Endpoints should always send a GOAWAY message before closing a connection so that the remote can know whether a stream has been partially processed or not.  (For example, if an HTTP client sends a POST at the same time that a server closes a connection, the client cannot know if the server started to process that POST request if the server does not send a GOAWAY frame to indicate where it stopped working).</t>
-
-            <t>After sending a GOAWAY message, the sender must ignore all HEADERS+PRIORITY frames for new streams.</t>
+            <t>
+              The GOAWAY frame (type=0x7) informs the remote peer to stop creating
+              streams on this connection.  It can be sent from the client or the server. Once sent, the
+              sender will ignore frames sent on new streams for the remainder of the
+              connection. Receivers of a GOAWAY frame MUST NOT open additional streams on the connection,
+              although a new connection can be established for new streams.  The purpose of this message
+              is to allow an endpoint to gracefully stop accepting new streams (perhaps for a reboot
+              or maintenance), while still finishing processing of previously established streams.
+            </t>
+            <t>
+              There is an inherent race condition between an endpoint starting new streams and the
+              remote sending a GOAWAY message.  To deal with this case, the GOAWAY contains the stream
+              identifier of the last stream which was processed on the sending endpoint in this
+              connection.  If the receiver of the GOAWAY used streams that are newer than the indicated
+              stream identifier, they were not processed by the sender and the receiver may treat the
+              streams as though they had never been created at all (hence the receiver may want to
+              re-create the streams later on a new connection).
+            </t>
+            <t>
+              Endpoints should always send a GOAWAY message before closing a connection so that the
+              remote can know whether a stream has been partially processed or not.  (For example, if
+              an HTTP client sends a POST at the same time that a server closes a connection, the
+              client cannot know if the server started to process that POST request if the server does
+              not send a GOAWAY frame to indicate where it stopped working).
+            </t>
+  
+            <t>
+              After sending a GOAWAY message, the sender can ignore frames for new streams.
+            </t>
+            <t>
+              <cref>Issue: connection state that is established by those "ignored" messages cannot be
+              ignored without the state in the two peers becoming unsynchronized.</cref>
+            </t>
             <figure>
               <artwork>
   0        1        2        3        4         5        6        7     
@@ -661,17 +784,45 @@
   +-|-------+--------+--------+-------+---------+--------+--------+--------+
               </artwork>
             </figure>
-
-            <t>Length: An unsigned 16-bit value representing the number of bytes which follow the frame header.  For PING frames, this value is always 4.</t>
-
-            <t>Last-good-stream-Id: The last stream id which was replied to (with either a HEADERS or RST_STREAM) by the sender of the GOAWAY message.  If no streams were replied to, this value MUST be 0.</t>
-
-            <t>Status: The reason for closing the session.
+            <t>
+              The GOAWAY frame does not define any type-specific flags.
+            </t>
+            <t>
+              The GOAWAY frame applies to the connection, not a specific stream.  The stream identifier
+              MUST be zero.
+            </t>
+            <t>
+              The last stream identifier in the GOAWAY frame contains the highest numbered stream
+              identifier for which the sender of the GOAWAY frame has received frames on and might
+              have taken some action on.  All streams up to and including the identified stream might
+              have been processed in some way.  The last stream identifier is set to 0 if no streams
+              were processed.
               <list>
-                <t>0 - OK. This is a normal session teardown.</t>
-                <t>1 - PROTOCOL_ERROR. This is a generic error, and should only be used if a more specific error is not available.</t>
-                <t>2 - INTERNAL_ERROR. This is a generic error which can be used when the implementation has internally failed, not due to anything in the protocol.</t>
+                <t>
+                  Note: In this case, "processed" means that some data from the stream was passed to
+                  some higher layer of software that might have taken some action as a result.
+                </t>
               </list>
+            </t>
+            <t>
+              On streams with lower or equal numbered identifiers that do not close completely prior
+              to the connection being closed, re-attempting requests, transactions, or any protocol
+              activity is not possible (with the exception of idempotent actions like HTTP GET, PUT,
+              or DELETE).  Any protocol activity that uses higher numbered streams can be safely
+              retried using a new connection.
+            </t>
+            <t>
+              Activity on streams numbered lower or equal to the last stream identifier might still complete
+              successfully.  The sender of a GOAWAY frame gracefully shut down a connection by sending
+              a GOAWAY frame, maintaining the connection in an open state until all in-progress
+              streams complete.
+            </t>
+            <t>
+              The last stream ID MUST be 0 if no streams were acted upon.
+            </t>
+            <t>
+              The GOAWAY frame also contains a 32-bit <xref target="ErrorCodes">error code</xref> that
+              contains the reason for closing the connection.
             </t>
           </section>
 

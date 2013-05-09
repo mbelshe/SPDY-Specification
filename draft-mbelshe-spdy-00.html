@@ -226,26 +226,26 @@ Table of Contents
      <a href="#section-2.5">2.5</a>.  Error Handling . . . . . . . . . . . . . . . . . . . . . . <a href="#page-12">12</a>
        <a href="#section-2.5.1">2.5.1</a>.  Session Error Handling . . . . . . . . . . . . . . . . <a href="#page-12">12</a>
        <a href="#section-2.5.2">2.5.2</a>.  Stream Error Handling  . . . . . . . . . . . . . . . . <a href="#page-13">13</a>
-     <a href="#section-2.6">2.6</a>.  Data flow  . . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-13">13</a>
-     <a href="#section-2.7">2.7</a>.  Frame Types  . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-14">14</a>
-       <a href="#section-2.7.1">2.7.1</a>.  DATA . . . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-14">14</a>
-       <a href="#section-2.7.2">2.7.2</a>.  HEADERS+PRIORITY . . . . . . . . . . . . . . . . . . . <a href="#page-15">15</a>
-       <a href="#section-2.7.3">2.7.3</a>.  RST_STREAM . . . . . . . . . . . . . . . . . . . . . . <a href="#page-16">16</a>
-       <a href="#section-2.7.4">2.7.4</a>.  PUSH_PROMISE . . . . . . . . . . . . . . . . . . . . . <a href="#page-17">17</a>
-       <a href="#section-2.7.5">2.7.5</a>.  SETTINGS . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-18">18</a>
-       <a href="#section-2.7.6">2.7.6</a>.  PING . . . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-21">21</a>
+       <a href="#section-2.5.3">2.5.3</a>.  Error Codes  . . . . . . . . . . . . . . . . . . . . . <a href="#page-13">13</a>
+     <a href="#section-2.6">2.6</a>.  Data flow  . . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-14">14</a>
+     <a href="#section-2.7">2.7</a>.  Frame Types  . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-15">15</a>
+       <a href="#section-2.7.1">2.7.1</a>.  DATA . . . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-15">15</a>
+       <a href="#section-2.7.2">2.7.2</a>.  HEADERS+PRIORITY . . . . . . . . . . . . . . . . . . . <a href="#page-16">16</a>
+       <a href="#section-2.7.3">2.7.3</a>.  RST_STREAM . . . . . . . . . . . . . . . . . . . . . . <a href="#page-17">17</a>
+       <a href="#section-2.7.4">2.7.4</a>.  PUSH_PROMISE . . . . . . . . . . . . . . . . . . . . . <a href="#page-18">18</a>
+       <a href="#section-2.7.5">2.7.5</a>.  SETTINGS . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-19">19</a>
+       <a href="#section-2.7.6">2.7.6</a>.  PING . . . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-22">22</a>
        <a href="#section-2.7.7">2.7.7</a>.  GOAWAY . . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-22">22</a>
-       <a href="#section-2.7.8">2.7.8</a>.  HEADERS  . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-23">23</a>
-       <a href="#section-2.7.9">2.7.9</a>.  WINDOW_UPDATE  . . . . . . . . . . . . . . . . . . . . <a href="#page-24">24</a>
-       <a href="#section-2.7.10">2.7.10</a>. CREDENTIAL . . . . . . . . . . . . . . . . . . . . . . <a href="#page-26">26</a>
-       <a href="#section-2.7.11">2.7.11</a>. Name/Value Header Block  . . . . . . . . . . . . . . . <a href="#page-28">28</a>
-   <a href="#section-3">3</a>.  HTTP Layering over SPDY  . . . . . . . . . . . . . . . . . . . <a href="#page-35">35</a>
-     <a href="#section-3.1">3.1</a>.  Connection Management  . . . . . . . . . . . . . . . . . . <a href="#page-35">35</a>
-       <a href="#section-3.1.1">3.1.1</a>.  Use of GOAWAY  . . . . . . . . . . . . . . . . . . . . <a href="#page-35">35</a>
-     <a href="#section-3.2">3.2</a>.  HTTP Request/Response  . . . . . . . . . . . . . . . . . . <a href="#page-36">36</a>
-       <a href="#section-3.2.1">3.2.1</a>.  Request  . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-36">36</a>
-       <a href="#section-3.2.2">3.2.2</a>.  Response . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-37">37</a>
-       <a href="#section-3.2.3">3.2.3</a>.  Authentication . . . . . . . . . . . . . . . . . . . . <a href="#page-38">38</a>
+       <a href="#section-2.7.8">2.7.8</a>.  HEADERS  . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-24">24</a>
+       <a href="#section-2.7.9">2.7.9</a>.  WINDOW_UPDATE  . . . . . . . . . . . . . . . . . . . . <a href="#page-25">25</a>
+       <a href="#section-2.7.10">2.7.10</a>. CREDENTIAL . . . . . . . . . . . . . . . . . . . . . . <a href="#page-27">27</a>
+       <a href="#section-2.7.11">2.7.11</a>. Name/Value Header Block  . . . . . . . . . . . . . . . <a href="#page-29">29</a>
+   <a href="#section-3">3</a>.  HTTP Layering over SPDY  . . . . . . . . . . . . . . . . . . . <a href="#page-36">36</a>
+     <a href="#section-3.1">3.1</a>.  Connection Management  . . . . . . . . . . . . . . . . . . <a href="#page-36">36</a>
+       <a href="#section-3.1.1">3.1.1</a>.  Use of GOAWAY  . . . . . . . . . . . . . . . . . . . . <a href="#page-36">36</a>
+     <a href="#section-3.2">3.2</a>.  HTTP Request/Response  . . . . . . . . . . . . . . . . . . <a href="#page-37">37</a>
+       <a href="#section-3.2.1">3.2.1</a>.  Request  . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-37">37</a>
+       <a href="#section-3.2.2">3.2.2</a>.  Response . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-38">38</a>
 
 
 
@@ -254,43 +254,43 @@ Table of Contents
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
-     <a href="#section-3.3">3.3</a>.  Server Push Transactions . . . . . . . . . . . . . . . . . <a href="#page-39">39</a>
-       <a href="#section-3.3.1">3.3.1</a>.  Server implementation  . . . . . . . . . . . . . . . . <a href="#page-40">40</a>
-       <a href="#section-3.3.2">3.3.2</a>.  Client implementation  . . . . . . . . . . . . . . . . <a href="#page-41">41</a>
-   <a href="#section-4">4</a>.  WebSocket Layering over SPDY . . . . . . . . . . . . . . . . . <a href="#page-43">43</a>
-     <a href="#section-4.1">4.1</a>.  Connection Management  . . . . . . . . . . . . . . . . . . <a href="#page-43">43</a>
-       <a href="#section-4.1.1">4.1.1</a>.  Opening Handshake  . . . . . . . . . . . . . . . . . . <a href="#page-43">43</a>
-       <a href="#section-4.1.2">4.1.2</a>.  Closing Handshake  . . . . . . . . . . . . . . . . . . <a href="#page-44">44</a>
-     <a href="#section-4.2">4.2</a>.  Bi-directional Communication . . . . . . . . . . . . . . . <a href="#page-45">45</a>
-       <a href="#section-4.2.1">4.2.1</a>.  Frame mapping  . . . . . . . . . . . . . . . . . . . . <a href="#page-45">45</a>
-   <a href="#section-5">5</a>.  Design Rationale and Notes . . . . . . . . . . . . . . . . . . <a href="#page-47">47</a>
-     <a href="#section-5.1">5.1</a>.  Separation of Framing Layer and Application Layer  . . . . <a href="#page-47">47</a>
-     <a href="#section-5.2">5.2</a>.  Error handling - Framing Layer . . . . . . . . . . . . . . <a href="#page-47">47</a>
-     <a href="#section-5.3">5.3</a>.  One Connection Per Domain  . . . . . . . . . . . . . . . . <a href="#page-47">47</a>
-     <a href="#section-5.4">5.4</a>.  Fixed vs Variable Length Fields  . . . . . . . . . . . . . <a href="#page-48">48</a>
-     <a href="#section-5.5">5.5</a>.  Compression Context(s) . . . . . . . . . . . . . . . . . . <a href="#page-48">48</a>
-     <a href="#section-5.6">5.6</a>.  Unidirectional streams . . . . . . . . . . . . . . . . . . <a href="#page-49">49</a>
-     <a href="#section-5.7">5.7</a>.  Data Compression . . . . . . . . . . . . . . . . . . . . . <a href="#page-49">49</a>
-     <a href="#section-5.8">5.8</a>.  Server Push  . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-49">49</a>
-   <a href="#section-6">6</a>.  Security Considerations  . . . . . . . . . . . . . . . . . . . <a href="#page-50">50</a>
-     <a href="#section-6.1">6.1</a>.  Use of Same-origin constraints . . . . . . . . . . . . . . <a href="#page-50">50</a>
-     <a href="#section-6.2">6.2</a>.  HTTP Headers and SPDY Headers  . . . . . . . . . . . . . . <a href="#page-50">50</a>
-     <a href="#section-6.3">6.3</a>.  Cross-Protocol Attacks . . . . . . . . . . . . . . . . . . <a href="#page-50">50</a>
-     <a href="#section-6.4">6.4</a>.  Server Push Implicit Headers . . . . . . . . . . . . . . . <a href="#page-50">50</a>
-   <a href="#section-7">7</a>.  Privacy Considerations . . . . . . . . . . . . . . . . . . . . <a href="#page-51">51</a>
-     <a href="#section-7.1">7.1</a>.  Long Lived Connections . . . . . . . . . . . . . . . . . . <a href="#page-51">51</a>
-     <a href="#section-7.2">7.2</a>.  SETTINGS frame . . . . . . . . . . . . . . . . . . . . . . <a href="#page-51">51</a>
-   <a href="#section-8">8</a>.  Sub-protocol negotiation . . . . . . . . . . . . . . . . . . . <a href="#page-52">52</a>
-     <a href="#section-8.1">8.1</a>.  Supporting scheme negotiation using SETTINGS frame . . . . <a href="#page-52">52</a>
-   <a href="#section-9">9</a>.  Incompatibilities with SPDY draft #3 . . . . . . . . . . . . . <a href="#page-53">53</a>
-   <a href="#section-10">10</a>. Requirements Notation  . . . . . . . . . . . . . . . . . . . . <a href="#page-55">55</a>
-   <a href="#section-11">11</a>. Acknowledgements . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-56">56</a>
-   <a href="#section-12">12</a>. References . . . . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-57">57</a>
-     <a href="#section-12.1">12.1</a>. Normative References . . . . . . . . . . . . . . . . . . . <a href="#page-57">57</a>
-     <a href="#section-12.2">12.2</a>. Informative References . . . . . . . . . . . . . . . . . . <a href="#page-58">58</a>
-   <a href="#appendix-A">Appendix A</a>.  Changes . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-59">59</a>
-   Authors' Addresses . . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-60">60</a>
-
+       <a href="#section-3.2.3">3.2.3</a>.  Authentication . . . . . . . . . . . . . . . . . . . . <a href="#page-39">39</a>
+     <a href="#section-3.3">3.3</a>.  Server Push Transactions . . . . . . . . . . . . . . . . . <a href="#page-40">40</a>
+       <a href="#section-3.3.1">3.3.1</a>.  Server implementation  . . . . . . . . . . . . . . . . <a href="#page-41">41</a>
+       <a href="#section-3.3.2">3.3.2</a>.  Client implementation  . . . . . . . . . . . . . . . . <a href="#page-42">42</a>
+   <a href="#section-4">4</a>.  WebSocket Layering over SPDY . . . . . . . . . . . . . . . . . <a href="#page-44">44</a>
+     <a href="#section-4.1">4.1</a>.  Connection Management  . . . . . . . . . . . . . . . . . . <a href="#page-44">44</a>
+       <a href="#section-4.1.1">4.1.1</a>.  Opening Handshake  . . . . . . . . . . . . . . . . . . <a href="#page-44">44</a>
+       <a href="#section-4.1.2">4.1.2</a>.  Closing Handshake  . . . . . . . . . . . . . . . . . . <a href="#page-45">45</a>
+     <a href="#section-4.2">4.2</a>.  Bi-directional Communication . . . . . . . . . . . . . . . <a href="#page-46">46</a>
+       <a href="#section-4.2.1">4.2.1</a>.  Frame mapping  . . . . . . . . . . . . . . . . . . . . <a href="#page-46">46</a>
+   <a href="#section-5">5</a>.  Design Rationale and Notes . . . . . . . . . . . . . . . . . . <a href="#page-48">48</a>
+     <a href="#section-5.1">5.1</a>.  Separation of Framing Layer and Application Layer  . . . . <a href="#page-48">48</a>
+     <a href="#section-5.2">5.2</a>.  Error handling - Framing Layer . . . . . . . . . . . . . . <a href="#page-48">48</a>
+     <a href="#section-5.3">5.3</a>.  One Connection Per Domain  . . . . . . . . . . . . . . . . <a href="#page-48">48</a>
+     <a href="#section-5.4">5.4</a>.  Fixed vs Variable Length Fields  . . . . . . . . . . . . . <a href="#page-49">49</a>
+     <a href="#section-5.5">5.5</a>.  Compression Context(s) . . . . . . . . . . . . . . . . . . <a href="#page-49">49</a>
+     <a href="#section-5.6">5.6</a>.  Unidirectional streams . . . . . . . . . . . . . . . . . . <a href="#page-50">50</a>
+     <a href="#section-5.7">5.7</a>.  Data Compression . . . . . . . . . . . . . . . . . . . . . <a href="#page-50">50</a>
+     <a href="#section-5.8">5.8</a>.  Server Push  . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-50">50</a>
+   <a href="#section-6">6</a>.  Security Considerations  . . . . . . . . . . . . . . . . . . . <a href="#page-51">51</a>
+     <a href="#section-6.1">6.1</a>.  Use of Same-origin constraints . . . . . . . . . . . . . . <a href="#page-51">51</a>
+     <a href="#section-6.2">6.2</a>.  HTTP Headers and SPDY Headers  . . . . . . . . . . . . . . <a href="#page-51">51</a>
+     <a href="#section-6.3">6.3</a>.  Cross-Protocol Attacks . . . . . . . . . . . . . . . . . . <a href="#page-51">51</a>
+     <a href="#section-6.4">6.4</a>.  Server Push Implicit Headers . . . . . . . . . . . . . . . <a href="#page-51">51</a>
+   <a href="#section-7">7</a>.  Privacy Considerations . . . . . . . . . . . . . . . . . . . . <a href="#page-52">52</a>
+     <a href="#section-7.1">7.1</a>.  Long Lived Connections . . . . . . . . . . . . . . . . . . <a href="#page-52">52</a>
+     <a href="#section-7.2">7.2</a>.  SETTINGS frame . . . . . . . . . . . . . . . . . . . . . . <a href="#page-52">52</a>
+   <a href="#section-8">8</a>.  Sub-protocol negotiation . . . . . . . . . . . . . . . . . . . <a href="#page-53">53</a>
+     <a href="#section-8.1">8.1</a>.  Supporting scheme negotiation using SETTINGS frame . . . . <a href="#page-53">53</a>
+   <a href="#section-9">9</a>.  Incompatibilities with SPDY draft #3 . . . . . . . . . . . . . <a href="#page-54">54</a>
+   <a href="#section-10">10</a>. Requirements Notation  . . . . . . . . . . . . . . . . . . . . <a href="#page-56">56</a>
+   <a href="#section-11">11</a>. Acknowledgements . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-57">57</a>
+   <a href="#section-12">12</a>. References . . . . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-58">58</a>
+     <a href="#section-12.1">12.1</a>. Normative References . . . . . . . . . . . . . . . . . . . <a href="#page-58">58</a>
+     <a href="#section-12.2">12.2</a>. Informative References . . . . . . . . . . . . . . . . . . <a href="#page-59">59</a>
+   <a href="#appendix-A">Appendix A</a>.  Changes . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-60">60</a>
+   Authors' Addresses . . . . . . . . . . . . . . . . . . . . . . . . <a href="#page-61">61</a>
 
 
 
@@ -794,18 +794,18 @@ Table of Contents
 <span class="h4"><a name="section-2.5.1">2.5.1</a>.  Session Error Handling</span>
 
    A session error is any error which prevents further processing of the
-   framing layer or which corrupts the session compression state.  When
-   a session error occurs, the endpoint encountering the error MAY send
-   a SETTINGS (<a href="#section-2.7.5">Section 2.7.5</a>) frame.  Whether or not a SETTINGS
-   (<a href="#section-2.7.5">Section 2.7.5</a>) frame is sent, the endpoint encountering the error
-   MUST send a GOAWAY (<a href="#section-2.7.7">Section 2.7.7</a>) frame with the stream id of most
-   recently received stream from the remote endpoint, and the error code
-   for why the session is terminating.  After sending the GOAWAY frame,
-   the endpoint MUST close the TCP connection.
+   framing layer or which corrupts any session state.
 
-   Note that the session compression state is dependent upon both
-   endpoints always processing all compressed data.  If an endpoint
-   partially processes a frame containing compressed data without
+   An endpoint that encounters a session error MUST first send a GOAWAY
+   (<a href="#section-2.7.7">Section 2.7.7</a>) frame with the stream identifier of the last stream
+   that it successfully received from its peer.  The GOAWAY frame
+   includes an error code that indicates why the session is terminating.
+   After sending the GOAWAY frame, the endpoint MUST close the TCP
+   session.
+
+   It is possible that the GOAWAY will not be reliably received by the
+   receiving endpoint.  In the event of a session error, GOAWAY only
+   provides a best-effort attempt to communicate with the peer about why
 
 
 
@@ -814,36 +814,86 @@ Table of Contents
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
-   updating compression state properly, future control frames which use
-   compression will be always be errored.  Implementations SHOULD always
-   try to process compressed data so that errors which could be handled
-   as stream errors do not become session errors.
+   the session is being terminated.
 
-   Note that because this GOAWAY is sent during a session error case, it
-   is possible that the GOAWAY will not be reliably received by the
-   receiving endpoint.  It is a best-effort attempt to communicate with
-   the remote about why the session is going down.
+   An endpoint can end a session at any time.  In particular, an
+   endpoint MAY choose to treat a stream error as a session error if the
+   error is recurrent.  Endpoints SHOULD send a GOAWAY frame when ending
+   a session, as long as circumstances permit it.
 
 <span class="h4"><a name="section-2.5.2">2.5.2</a>.  Stream Error Handling</span>
 
-   A stream error is an error related to a specific stream-id which does
-   not affect processing of other streams at the framing layer.  Upon a
-   stream error, the endpoint MUST send a RST_STREAM (<a href="#section-2.7.3">Section 2.7.3</a>)
-   frame which contains the stream id of the stream where the error
-   occurred and the error status which caused the error.  After sending
-   the RST_STREAM, the stream is closed to the sending endpoint.  After
-   sending the RST_STREAM, if the sender receives any frames other than
-   a RST_STREAM for that stream id, it will result in sending additional
-   RST_STREAM frames.  An endpoint MUST NOT send a RST_STREAM in
-   response to an RST_STREAM, as doing so would lead to RST_STREAM
-   loops.  Sending a RST_STREAM does not cause the SPDY session to be
-   closed.
+   A stream error is an error related to a specific stream identifier
+   that does not affect processing of other streams at the framing
+   layer.
 
-   If an endpoint has multiple RST_STREAM frames to send in succession
-   for the same stream-id and the same error code, it MAY coalesce them
-   into a single RST_STREAM frame.  (This can happen if a stream is
-   closed, but the remote sends multiple data frames.  There is no
-   reason to send a RST_STREAM for each frame in succession).
+   An endpoint that detects a stream error sends a RST_STREAM
+   (<a href="#section-2.7.3">Section 2.7.3</a>) frame that contains the stream identifier of the
+   stream where the error occurred.  The RST_STREAM frame includes an
+   error code that indicates the type of error.
+
+   A RST_STREAM is the last frame that an endpoint can send on a stream.
+   The peer that sends the RST_STREAM frame MUST be prepared to receive
+   any frames that were sent or enqueued for sending by the remote peer.
+   These frames can be ignored, except where they modify connection
+   state (such as that for header compression).
+
+   Normally, an endpoint SHOULD NOT send more than one RST_STREAM frame
+   for any stream.  However, an endpoint MAY send additional RST_STREAM
+   frames if it receives frames on a closed stream after more than a
+   round trip time.  This behavior is permitted to deal with misbehaving
+   implementations.
+
+   An endpoint MUST NOT send a RST_STREAM in response to an RST_STREAM
+   frame, to avoid looping.
+
+<span class="h4"><a name="section-2.5.3">2.5.3</a>.  Error Codes</span>
+
+   Error codes are 32-bit fields that are used in RST_STREAM and GOAWAY
+   frames to convey the reasons for the stream or connection error.
+
+   Error codes share a common code space.  Some error codes only apply
+   to specific conditions and have no defined semantics in certain frame
+   types.
+
+   The following error codes are defined:
+
+   NO_ERROR (0):  The associated condition is not as a result of an
+      error.  For example, a GOAWAY might include this code to indicate
+      graceful shutdown of a connection.
+
+
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 13]</span>
+</pre><pre class='newpage'><a name="page-14" id="page-14" href="#page-14" class="invisible"> </a>
+<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+
+
+   PROTOCOL_ERROR (1):  The endpoint detected an unspecific protocol
+      error.  This error is for use when a more specific error code is
+      not available.
+
+   INTERNAL_ERROR (2):  The endpoint encountered an unexpected internal
+      error.
+
+   FLOW_CONTROL_ERROR (3):  The endpoint detected that its peer violated
+      the flow control protocol.
+
+   INVALID_STREAM (4):  The endpoint received a frame for an inactive
+      stream.
+
+   STREAM_CLOSED (5):  The endpoint received a frame after a stream was
+      half-closed.
+
+   FRAME_TOO_LARGE (6):  The endpoint received a frame that was larger
+      than the maximum size that it supports.
+
+   REFUSED_STREAM (7):  The endpoint is refusing the stream before
+      processing its payload.
+
+   CANCEL (8):  Used by the creator of a stream to indicate that the
+      stream is no longer needed.
 
 <span class="h3"><a name="section-2.6">2.6</a>.  Data flow</span>
 
@@ -865,8 +915,14 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 13]</span>
-</pre><pre class='newpage'><a name="page-14" id="page-14" href="#page-14" class="invisible"> </a>
+
+
+
+
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 14]</span>
+</pre><pre class='newpage'><a name="page-15" id="page-15" href="#page-15" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -921,8 +977,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 14]</span>
-</pre><pre class='newpage'><a name="page-15" id="page-15" href="#page-15" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 15]</span>
+</pre><pre class='newpage'><a name="page-16" id="page-16" href="#page-16" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -977,8 +1033,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 15]</span>
-</pre><pre class='newpage'><a name="page-16" id="page-16" href="#page-16" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 16]</span>
+</pre><pre class='newpage'><a name="page-17" id="page-17" href="#page-17" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -992,11 +1048,12 @@ Table of Contents
 
 <span class="h4"><a name="section-2.7.3">2.7.3</a>.  RST_STREAM</span>
 
-   The RST_STREAM frame allows for abnormal termination of a stream.
-   When sent by the creator of a stream, it indicates the creator wishes
-   to cancel the stream.  When sent by the recipient of a stream, it
-   indicates an error or that the recipient did not want to accept the
-   stream, so the stream should be closed.
+   The RST_STREAM frame (type=0x3) allows for abnormal termination of a
+   stream.  When sent by the initiator of a stream, it indicates that
+   they wish to cancel the stream.  When sent by the receiver of a
+   stream, it indicates that either the receiver is rejecting the
+   stream, requesting that the stream be cancelled or that an error
+   condition has occurred.
 
   0        1        2        3        4         5        6        7
   +--------+--------+--------+--------+-|-------+--------+--------+--------+
@@ -1005,68 +1062,37 @@ Table of Contents
 
   8        9        10       11
   +--------+--------+--------+--------+
-  | Status-Code(32)                   |
+  |            Error-Code(32)         |
   +--------+--------+--------+--------+
 
-   Length: An unsigned 16-bit value representing the number of bytes
-   which follow the frame header.  For RST_STREAM frames, this value is
-   always 4.
+   The RST_STREAM frame contains a single unsigned, 32-bit integer
+   identifying the error code (<a href="#section-2.5.3">Section 2.5.3</a>).  The error code indicates
+   why the stream is being terminated.
 
-   Flags: Flags related to this frame.  RST_STREAM does not define any
-   flags.  This value must be 0.
+   No type-flags are defined.
 
-   Stream-ID: The 31-bit identifier for this stream.
+   The RST_STREAM frame fully terminates the referenced stream and
+   causes it to enter the closed state.  After receiving a RST_STREAM on
+   a stream, the receiver MUST NOT send additional frames for that
+   stream.  However, after sending the RST_STREAM, the sending endpoint
+   MUST be prepared to receive and process additional frames sent on the
+   stream that might have been sent by the peer prior to the arrival of
+   the RST_STREAM.
 
-   Status code: (32 bits) An indicator for why the stream is being
-   terminated.The following status codes are defined:
-
-      1 - PROTOCOL_ERROR.  This is a generic error, and should only be
-      used if a more specific error is not available.
-
-      2 - INVALID_STREAM.  This is returned when a frame is received for
-      a stream which is not active.
-
-      3 - REFUSED_STREAM.  Indicates that the stream was refused before
-      any processing has been done on the stream.
+   RST_STREAM frames MUST be associated with a stream.  If a RST_STREAM
+   frame is received whose stream identifier field is 0x0 the recipient
+   MUST respond with a session error (<a href="#section-2.5.1">Section 2.5.1</a>) of type
+   PROTOCOL_ERROR.
 
 
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 16]</span>
-</pre><pre class='newpage'><a name="page-17" id="page-17" href="#page-17" class="invisible"> </a>
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 17]</span>
+</pre><pre class='newpage'><a name="page-18" id="page-18" href="#page-18" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
-
-      4 - UNSUPPORTED_VERSION.  Indicates that the recipient of a stream
-      does not support the SPDY version requested.
-
-      5 - CANCEL.  Used by the creator of a stream to indicate that the
-      stream is no longer needed.
-
-      6 - INTERNAL_ERROR.  This is a generic error which can be used
-      when the implementation has internally failed, not due to anything
-      in the protocol.
-
-      7 - FLOW_CONTROL_ERROR.  The endpoint detected that its peer
-      violated the flow control protocol.
-
-      10 - INVALID_CREDENTIALS.  The server received a request for a
-      resource whose origin does not have valid credentials in the
-      client certificate vector.
-
-      11 - FRAME_TOO_LARGE.  The endpoint received a frame which this
-      implementation could not support.  If FRAME_TOO_LARGE is sent for
-      a HEADERS+PRIORITY, HEADERS, or PUSH_PROMISE frame without fully
-      processing the compressed portion of those frames, then the
-      compression state will be out-of-sync with the other endpoint.  In
-      this case, senders of FRAME_TOO_LARGE MUST close the session.
-
-      Note: 0 is not a valid status code for a RST_STREAM.
-
-   After receiving a RST_STREAM on a stream, the recipient must not send
-   additional frames for that stream, and the stream moves into the
-   closed state.
 
 <span class="h4"><a name="section-2.7.4">2.7.4</a>.  PUSH_PROMISE</span>
 
@@ -1086,14 +1112,6 @@ Table of Contents
   +-|-------+--------+--------+--------+=========================+
 
    Length: An unsigned 16-bit value representing the number of bytes
-
-
-
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 17]</span>
-</pre><pre class='newpage'><a name="page-18" id="page-18" href="#page-18" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
-
-
    which follow the frame header.  For PUSH_PROMISE frames, this is 4
    bytes plus the length of the Name/Value Header Block.
 
@@ -1125,6 +1143,13 @@ Table of Contents
    FRAME_TOO_LARGE.  All implementations MUST support the minimum size
    limits defined in the Frame Format section (<a href="#section-2.3.2">Section 2.3.2</a>).
 
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 18]</span>
+</pre><pre class='newpage'><a name="page-19" id="page-19" href="#page-19" class="invisible"> </a>
+<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+
+
 <span class="h4"><a name="section-2.7.5">2.7.5</a>.  SETTINGS</span>
 
    A SETTINGS frame contains a set of id/value pairs for communicating
@@ -1142,14 +1167,6 @@ Table of Contents
    the persisted settings on future connections to the same origin AND
    IP address and TCP port.  Clients MUST NOT request servers to use the
    persistence features of the SETTINGS frames, and servers MUST ignore
-
-
-
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 18]</span>
-</pre><pre class='newpage'><a name="page-19" id="page-19" href="#page-19" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
-
-
    persistence related flags sent by a client.
 
   0        1        2        3        4         5        6        7
@@ -1182,6 +1199,13 @@ Table of Contents
 
    Each ID/value pair is as follows:
 
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 19]</span>
+</pre><pre class='newpage'><a name="page-20" id="page-20" href="#page-20" class="invisible"> </a>
+<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+
+
                   0        1        2        3        4        5        6        7
                   +--------+--------+--------+--------+--------+--------+--------+--------+
                   |Flags(8)| ID(24)                   | Value(32)                         |
@@ -1198,14 +1222,6 @@ Table of Contents
       FLAG_SETTINGS_PERSISTED (0x2): When set, the sender is notifying
       the recipient that this ID/Value pair was previously sent to the
       sender by the recipient with the FLAG_SETTINGS_PERSIST_VALUE, and
-
-
-
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 19]</span>
-</pre><pre class='newpage'><a name="page-20" id="page-20" href="#page-20" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
-
-
       the sender is returning it.  Because persistence is only
       implemented on the client, this flag is only sent by the client.
 
@@ -1237,6 +1253,15 @@ Table of Contents
       5 - SETTINGS_CURRENT_CWND allows the sender to inform the remote
       endpoint of the current TCP CWND value.
 
+
+
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 20]</span>
+</pre><pre class='newpage'><a name="page-21" id="page-21" href="#page-21" class="invisible"> </a>
+<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+
+
       6 - SETTINGS_DOWNLOAD_RETRANS_RATE allows the sender to inform the
       remote endpoint the retransmission rate (bytes retransmitted /
       total bytes transmitted).
@@ -1253,14 +1278,6 @@ Table of Contents
       remote endpoint supporting overlayering protocol schemes.  The
       corresponding value must be a 32-bit value, and which contains
       flags as follows:
-
-
-
-
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 20]</span>
-</pre><pre class='newpage'><a name="page-21" id="page-21" href="#page-21" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
-
 
          bit 0: http
 
@@ -1290,6 +1307,17 @@ Table of Contents
    state on its next SETTINGS frame, it SHOULD send all 5 settings (1,
    2, 3, 4, and 5 in this example) to the server.
 
+
+
+
+
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 21]</span>
+</pre><pre class='newpage'><a name="page-22" id="page-22" href="#page-22" class="invisible"> </a>
+<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+
+
 <span class="h4"><a name="section-2.7.6">2.7.6</a>.  PING</span>
 
    The PING control frame is a mechanism for measuring a minimal round-
@@ -1310,14 +1338,6 @@ Table of Contents
 
    PING frames consist of an arbitrary, variable-length sequence of
    octets.  Receivers of a PING send a response PING frame with the PONG
-
-
-
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 21]</span>
-</pre><pre class='newpage'><a name="page-22" id="page-22" href="#page-22" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
-
-
    flag set and precisely the same sequence of octets back to the sender
    as soon as possible.
 
@@ -1334,25 +1354,33 @@ Table of Contents
 
 <span class="h4"><a name="section-2.7.7">2.7.7</a>.  GOAWAY</span>
 
-   The GOAWAY control frame is a mechanism to tell the remote side of
-   the connection to stop creating streams on this session.  It can be
-   sent from the client or the server.  Once sent, the sender will not
-   respond to any new HEADERS+PRIORITYs on this session.  Recipients of
-   a GOAWAY frame must not send additional streams on this session,
-   although a new session can be established for new streams.  The
-   purpose of this message is to allow an endpoint to gracefully stop
-   accepting new streams (perhaps for a reboot or maintenance), while
-   still finishing processing of previously established streams.
+   The GOAWAY frame (type=0x7) informs the remote peer to stop creating
+   streams on this connection.  It can be sent from the client or the
+   server.  Once sent, the sender will ignore frames sent on new streams
+   for the remainder of the connection.  Receivers of a GOAWAY frame
+   MUST NOT open additional streams on the connection, although a new
+   connection can be established for new streams.  The purpose of this
+   message is to allow an endpoint to gracefully stop accepting new
+   streams (perhaps for a reboot or maintenance), while still finishing
+   processing of previously established streams.
 
-   There is an inherent race condition between an endpoint sending
-   HEADERS+PRIORITY frames and the remote sending a GOAWAY message.  To
-   deal with this case, the GOAWAY contains a last-stream-id indicating
-   the stream-id of the last stream which was created on the sending
-   endpoint in this session.  If the receiver of the GOAWAY sent new
-   HEADERS+PRIORITY frames for sessions after this last-stream-id, they
-   were not processed by the server and the receiver may treat the
-   stream as though it had never been created at all (hence the receiver
-   may want to re-create the stream later on a new session).
+   There is an inherent race condition between an endpoint starting new
+   streams and the remote sending a GOAWAY message.  To deal with this
+
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 22]</span>
+</pre><pre class='newpage'><a name="page-23" id="page-23" href="#page-23" class="invisible"> </a>
+<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+
+
+   case, the GOAWAY contains the stream identifier of the last stream
+   which was processed on the sending endpoint in this connection.  If
+   the receiver of the GOAWAY used streams that are newer than the
+   indicated stream identifier, they were not processed by the sender
+   and the receiver may treat the streams as though they had never been
+   created at all (hence the receiver may want to re-create the streams
+   later on a new connection).
 
    Endpoints should always send a GOAWAY message before closing a
    connection so that the remote can know whether a stream has been
@@ -1362,16 +1390,8 @@ Table of Contents
    server does not send a GOAWAY frame to indicate where it stopped
    working).
 
-   After sending a GOAWAY message, the sender must ignore all HEADERS+
-   PRIORITY frames for new streams.
-
-
-
-
-
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 22]</span>
-</pre><pre class='newpage'><a name="page-23" id="page-23" href="#page-23" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+   After sending a GOAWAY message, the sender can ignore frames for new
+   streams.
 
 
   0        1        2        3        4         5        6        7
@@ -1384,24 +1404,47 @@ Table of Contents
   |X| Last-Good-Stream-ID(31)         |          Status-Code(32)           | -&gt;
   +-|-------+--------+--------+-------+---------+--------+--------+--------+
 
-   Length: An unsigned 16-bit value representing the number of bytes
-   which follow the frame header.  For PING frames, this value is always
-   4.
+   The GOAWAY frame does not define any type-specific flags.
 
-   Last-good-stream-Id: The last stream id which was replied to (with
-   either a HEADERS or RST_STREAM) by the sender of the GOAWAY message.
-   If no streams were replied to, this value MUST be 0.
+   The GOAWAY frame applies to the connection, not a specific stream.
+   The stream identifier MUST be zero.
 
-   Status: The reason for closing the session.
+   The last stream identifier in the GOAWAY frame contains the highest
+   numbered stream identifier for which the sender of the GOAWAY frame
+   has received frames on and might have taken some action on.  All
+   streams up to and including the identified stream might have been
+   processed in some way.  The last stream identifier is set to 0 if no
+   streams were processed.
 
-      0 - OK.  This is a normal session teardown.
+      Note: In this case, "processed" means that some data from the
+      stream was passed to some higher layer of software that might have
+      taken some action as a result.
 
-      1 - PROTOCOL_ERROR.  This is a generic error, and should only be
-      used if a more specific error is not available.
+   On streams with lower or equal numbered identifiers that do not close
+   completely prior to the connection being closed, re-attempting
 
-      2 - INTERNAL_ERROR.  This is a generic error which can be used
-      when the implementation has internally failed, not due to anything
-      in the protocol.
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 23]</span>
+</pre><pre class='newpage'><a name="page-24" id="page-24" href="#page-24" class="invisible"> </a>
+<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+
+
+   requests, transactions, or any protocol activity is not possible
+   (with the exception of idempotent actions like HTTP GET, PUT, or
+   DELETE).  Any protocol activity that uses higher numbered streams can
+   be safely retried using a new connection.
+
+   Activity on streams numbered lower or equal to the last stream
+   identifier might still complete successfully.  The sender of a GOAWAY
+   frame gracefully shut down a connection by sending a GOAWAY frame,
+   maintaining the connection in an open state until all in-progress
+   streams complete.
+
+   The last stream ID MUST be 0 if no streams were acted upon.
+
+   The GOAWAY frame also contains a 32-bit error code (<a href="#section-2.5.3">Section 2.5.3</a>)
+   that contains the reason for closing the connection.
 
 <span class="h4"><a name="section-2.7.8">2.7.8</a>.  HEADERS</span>
 
@@ -1423,13 +1466,6 @@ Table of Contents
 
    The HEADERS frame does not define any type-specific flags.
 
-
-
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 23]</span>
-</pre><pre class='newpage'><a name="page-24" id="page-24" href="#page-24" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
-
-
    The body of a HEADERS frame contains a Headers Block
    (<a href="#section-2.7.11">Section 2.7.11</a>).
 
@@ -1440,6 +1476,15 @@ Table of Contents
 
    The HEADERS frame changes the connection state as defined in
    <a href="#section-2.7.11">Section 2.7.11</a>.
+
+
+
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 24]</span>
+</pre><pre class='newpage'><a name="page-25" id="page-25" href="#page-25" class="invisible"> </a>
+<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+
 
 <span class="h4"><a name="section-2.7.9">2.7.9</a>.  WINDOW_UPDATE</span>
 
@@ -1475,17 +1520,6 @@ Table of Contents
    some data and freed up buffer space to receive more data for the
    stream or session.
 
-
-
-
-
-
-
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 24]</span>
-</pre><pre class='newpage'><a name="page-25" id="page-25" href="#page-25" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
-
-
   0        1        2        3        4         5        6        7
   +--------+--------+--------+--------+-|-------+--------+--------+--------+
   | Length(16)      |    0x9 |Flags(8)|X| Stream-ID(31)                    | -&gt;
@@ -1499,6 +1533,14 @@ Table of Contents
    Length: An unsigned 16-bit value representing the number of bytes
    which follow the frame header.  For WINDOW_UPDATE frames, this value
    is always 4.
+
+
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 25]</span>
+</pre><pre class='newpage'><a name="page-26" id="page-26" href="#page-26" class="invisible"> </a>
+<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+
 
    Stream-ID: The stream ID that this WINDOW_UPDATE control frame is
    for.  If the stream ID value is 0, the WINDOW_UPDATE frame applies to
@@ -1533,15 +1575,6 @@ Table of Contents
 
       immediately send RST_STREAM with FLOW_CONTROL_ERROR status code.
 
-
-
-
-
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 25]</span>
-</pre><pre class='newpage'><a name="page-26" id="page-26" href="#page-26" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
-
-
       allow the head of line blocking (as there is only one stream for
       the session and the amount of data in flight is bounded by the
       default initial window size), and send WINDOW_UPDATE as it
@@ -1556,6 +1589,14 @@ Table of Contents
    it can send a WINDOW_UPDATE of 16KB back to the sender.  This
    interaction continues until the sender's window size becomes positive
    again, and it can resume transmitting data frames.
+
+
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 26]</span>
+</pre><pre class='newpage'><a name="page-27" id="page-27" href="#page-27" class="invisible"> </a>
+<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+
 
    After the recipient reads in a data frame with FLAG_FIN that marks
    the end of the data stream, it should not send WINDOW_UPDATE frames
@@ -1590,14 +1631,6 @@ Table of Contents
    handshake, the contents of this certificate must be copied into the
    first slot (index 1) in the CREDENTIAL vector, though it may be
    overwritten by subsequent CREDENTIAL frames.  The server must
-
-
-
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 26]</span>
-</pre><pre class='newpage'><a name="page-27" id="page-27" href="#page-27" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
-
-
    exclusively use the CREDENTIAL vector when evaluating the client
    certificates associated with an origin.  The server may change the
    size of this vector by sending a SETTINGS frame with the setting
@@ -1612,6 +1645,14 @@ Table of Contents
    certificate request comes in, the browser is unable to determine
    which resource triggered the client certificate request, in order to
    prompt the user accordingly.
+
+
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 27]</span>
+</pre><pre class='newpage'><a name="page-28" id="page-28" href="#page-28" class="invisible"> </a>
+<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+
 
   0        1        2        3        4         5        6        7
   +--------+--------+--------+--------+-|-------+--------+--------+--------+
@@ -1646,14 +1687,6 @@ Table of Contents
    SPDY certificate proof" using the empty string as context.  ForRSA
    certificates the signature would be a PKCS#1 v1.5 signature.  For
    ECDSA, it would be an ECDSA-Sig-Value
-
-
-
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 27]</span>
-</pre><pre class='newpage'><a name="page-28" id="page-28" href="#page-28" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
-
-
    (<a href="http://tools.ietf.org/html/rfc5480#appendix-A">http://tools.ietf.org/html/rfc5480#appendix-A</a>).  For a 1024-bit RSA
    key, the CREDENTIAL message would be ~500 bytes.
 
@@ -1669,6 +1702,14 @@ Table of Contents
    receipt of a RST_STREAM frame with INVALID_CREDENTIALS, the client
    should initiate a new stream directly to the requested origin and
    resend the request.  Note, SPDY does not allow the server to request
+
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 28]</span>
+</pre><pre class='newpage'><a name="page-29" id="page-29" href="#page-29" class="invisible"> </a>
+<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+
+
    different client authentication for different resources in the same
    origin.
 
@@ -1702,14 +1743,6 @@ Table of Contents
 
    A stream with a HeaderBlock which declares that it is using
    HeaderGroup 'G' would use the following algorithm to interpret its
-
-
-
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 28]</span>
-</pre><pre class='newpage'><a name="page-29" id="page-29" href="#page-29" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
-
-
    meta-data.
 
                 def compute_headers(stream):
@@ -1725,6 +1758,14 @@ Table of Contents
    interpret headers with less memory and CPU.
 
    The Name/Value Header Block is found in the HEADERS+PRIORITY,
+
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 29]</span>
+</pre><pre class='newpage'><a name="page-30" id="page-30" href="#page-30" class="invisible"> </a>
+<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+
+
    HEADERS, and PUSH_PROMISE control frames, and shares a common format:
 
                    0        1        2          3..N       N+1..K
@@ -1758,14 +1799,6 @@ Table of Contents
 
       0x1 (Clone) indicates that the data which follows will be a key-
       index and a string literal.  The key-index is used to refer to a
-
-
-
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 29]</span>
-</pre><pre class='newpage'><a name="page-30" id="page-30" href="#page-30" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
-
-
       pre-existing key, and thus the operation results in the storing of
       the pre-existing key and the new value.  The key-value will be
       appended to the LRU, and the index in the LRU added to the current
@@ -1781,6 +1814,14 @@ Table of Contents
       string literals.  The first such string represents key, and the
       second string represents a value.  Unlike KVSto, the Eref does not
       modify the compressor state-- it only specified a key-value which
+
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 30]</span>
+</pre><pre class='newpage'><a name="page-31" id="page-31" href="#page-31" class="invisible"> </a>
+<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+
+
       will be interpreted as being part of the meta-data for the frame
       which includes the HeaderBlock.
 
@@ -1813,15 +1854,6 @@ Table of Contents
 
    Detail of an operation with an opcode of 0x1 (Toggle):
 
-
-
-
-
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 30]</span>
-</pre><pre class='newpage'><a name="page-31" id="page-31" href="#page-31" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
-
-
                      0        1
                      +--------+--------+
                      |00000001| NumOps |
@@ -1837,6 +1869,14 @@ Table of Contents
                      +--------+--------+
 
    Detail of an operation with an opcode of 0x2 (Clone):
+
+
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 31]</span>
+</pre><pre class='newpage'><a name="page-32" id="page-32" href="#page-32" class="invisible"> </a>
+<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+
 
                      0        1
                      +--------+--------+
@@ -1870,14 +1910,6 @@ Table of Contents
 
    Detail of an operation with an opcode of 0x4 (Eref):
 
-
-
-
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 31]</span>
-</pre><pre class='newpage'><a name="page-32" id="page-32" href="#page-32" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
-
-
                      0        1
                      +--------+--------+
                      |00000100| NumOps |
@@ -1894,6 +1926,14 @@ Table of Contents
 
    Each header name must have at least one value.  Header names are
    encoded using the US-ASCII character set [<a href="#ref-ASCII" title='"US-ASCII. Coded Character Set - 7-Bit American Standard Code for Information Interchange. Standard ANSI X3.4-1986, ANSI, 1986."'>ASCII</a>] and must be all
+
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 32]</span>
+</pre><pre class='newpage'><a name="page-33" id="page-33" href="#page-33" class="invisible"> </a>
+<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+
+
    lower case.  The length of each name must be greater than zero.  A
    recipient of a zero-length name MUST issue a stream error
    (<a href="#section-2.5.2">Section 2.5.2</a>) with the status code PROTOCOL_ERROR for the
@@ -1926,14 +1966,6 @@ Table of Contents
                   Store(0x1): level(C),index(3),k: "accept-encoding"
                   Store(0x1): level(C),index(3),v: "sdch, bzip, compress"
                   Store(0x1): level(G),index(0),k: ":host"
-
-
-
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 32]</span>
-</pre><pre class='newpage'><a name="page-33" id="page-33" href="#page-33" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
-
-
                   Store(0x1): level(G),index(0),v: "www.foo.com"
                   Store(0x1): level(G),index(1),k: "cookie"
                   Store(0x1): level(G),index(1),v: "SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJHBLA"
@@ -1950,6 +1982,14 @@ Table of Contents
 
                   The stream-group table for group zero looks like this:
                   0: ":host", "www.foo.com"
+
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 33]</span>
+</pre><pre class='newpage'><a name="page-34" id="page-34" href="#page-34" class="invisible"> </a>
+<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+
+
                   1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;BLAJHBLA"
                   2: ":path", "/index.html"
                   3: "date", "Wed Jul 18 11:50:43 2012"
@@ -1982,14 +2022,6 @@ Table of Contents
                   3: "date", "Wed Jul 18 11:50:44 2012"
                   Both the path and the date have changed.
 
-
-
-
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 33]</span>
-</pre><pre class='newpage'><a name="page-34" id="page-34" href="#page-34" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
-
-
                   Request 2 (on stream 3) would look like the following if forwarded on HTTP/1.1:
                   GET /index.js HTTP/1.1
                   host: www.foo.com
@@ -2006,6 +2038,14 @@ Table of Contents
                   Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:44 PDT 2012"
 
                   Connection level-headers are implied.
+
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 34]</span>
+</pre><pre class='newpage'><a name="page-35" id="page-35" href="#page-35" class="invisible"> </a>
+<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+
+
                   Stream-group level headers are implied.
 
                   For this example, using TaCo (truncate and concatenate) wasn't useful.
@@ -2041,8 +2081,24 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 34]</span>
-</pre><pre class='newpage'><a name="page-35" id="page-35" href="#page-35" class="invisible"> </a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 35]</span>
+</pre><pre class='newpage'><a name="page-36" id="page-36" href="#page-36" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2097,8 +2153,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 35]</span>
-</pre><pre class='newpage'><a name="page-36" id="page-36" href="#page-36" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 36]</span>
+</pre><pre class='newpage'><a name="page-37" id="page-37" href="#page-37" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2153,8 +2209,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 36]</span>
-</pre><pre class='newpage'><a name="page-37" id="page-37" href="#page-37" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 37]</span>
+</pre><pre class='newpage'><a name="page-38" id="page-38" href="#page-38" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2209,8 +2265,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 37]</span>
-</pre><pre class='newpage'><a name="page-38" id="page-38" href="#page-38" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 38]</span>
+</pre><pre class='newpage'><a name="page-39" id="page-39" href="#page-39" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2265,8 +2321,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 38]</span>
-</pre><pre class='newpage'><a name="page-39" id="page-39" href="#page-39" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 39]</span>
+</pre><pre class='newpage'><a name="page-40" id="page-40" href="#page-40" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2321,8 +2377,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 39]</span>
-</pre><pre class='newpage'><a name="page-40" id="page-40" href="#page-40" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 40]</span>
+</pre><pre class='newpage'><a name="page-41" id="page-41" href="#page-41" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2377,8 +2433,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 40]</span>
-</pre><pre class='newpage'><a name="page-41" id="page-41" href="#page-41" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 41]</span>
+</pre><pre class='newpage'><a name="page-42" id="page-42" href="#page-42" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2433,8 +2489,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 41]</span>
-</pre><pre class='newpage'><a name="page-42" id="page-42" href="#page-42" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 42]</span>
+</pre><pre class='newpage'><a name="page-43" id="page-43" href="#page-43" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2489,8 +2545,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 42]</span>
-</pre><pre class='newpage'><a name="page-43" id="page-43" href="#page-43" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 43]</span>
+</pre><pre class='newpage'><a name="page-44" id="page-44" href="#page-44" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2545,8 +2601,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 43]</span>
-</pre><pre class='newpage'><a name="page-44" id="page-44" href="#page-44" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 44]</span>
+</pre><pre class='newpage'><a name="page-45" id="page-45" href="#page-45" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2601,8 +2657,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 44]</span>
-</pre><pre class='newpage'><a name="page-45" id="page-45" href="#page-45" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 45]</span>
+</pre><pre class='newpage'><a name="page-46" id="page-46" href="#page-46" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2657,8 +2713,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 45]</span>
-</pre><pre class='newpage'><a name="page-46" id="page-46" href="#page-46" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 46]</span>
+</pre><pre class='newpage'><a name="page-47" id="page-47" href="#page-47" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2713,8 +2769,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 46]</span>
-</pre><pre class='newpage'><a name="page-47" id="page-47" href="#page-47" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 47]</span>
+</pre><pre class='newpage'><a name="page-48" id="page-48" href="#page-48" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2769,8 +2825,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 47]</span>
-</pre><pre class='newpage'><a name="page-48" id="page-48" href="#page-48" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 48]</span>
+</pre><pre class='newpage'><a name="page-49" id="page-49" href="#page-49" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2825,8 +2881,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 48]</span>
-</pre><pre class='newpage'><a name="page-49" id="page-49" href="#page-49" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 49]</span>
+</pre><pre class='newpage'><a name="page-50" id="page-50" href="#page-50" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2881,8 +2937,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 49]</span>
-</pre><pre class='newpage'><a name="page-50" id="page-50" href="#page-50" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 50]</span>
+</pre><pre class='newpage'><a name="page-51" id="page-51" href="#page-51" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2937,8 +2993,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 50]</span>
-</pre><pre class='newpage'><a name="page-51" id="page-51" href="#page-51" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 51]</span>
+</pre><pre class='newpage'><a name="page-52" id="page-52" href="#page-52" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -2993,8 +3049,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 51]</span>
-</pre><pre class='newpage'><a name="page-52" id="page-52" href="#page-52" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 52]</span>
+</pre><pre class='newpage'><a name="page-53" id="page-53" href="#page-53" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -3049,8 +3105,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 52]</span>
-</pre><pre class='newpage'><a name="page-53" id="page-53" href="#page-53" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 53]</span>
+</pre><pre class='newpage'><a name="page-54" id="page-54" href="#page-54" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -3105,8 +3161,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 53]</span>
-</pre><pre class='newpage'><a name="page-54" id="page-54" href="#page-54" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 54]</span>
+</pre><pre class='newpage'><a name="page-55" id="page-55" href="#page-55" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -3161,8 +3217,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 54]</span>
-</pre><pre class='newpage'><a name="page-55" id="page-55" href="#page-55" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 55]</span>
+</pre><pre class='newpage'><a name="page-56" id="page-56" href="#page-56" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -3217,8 +3273,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 55]</span>
-</pre><pre class='newpage'><a name="page-56" id="page-56" href="#page-56" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 56]</span>
+</pre><pre class='newpage'><a name="page-57" id="page-57" href="#page-57" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -3273,8 +3329,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 56]</span>
-</pre><pre class='newpage'><a name="page-57" id="page-57" href="#page-57" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 57]</span>
+</pre><pre class='newpage'><a name="page-58" id="page-58" href="#page-58" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -3329,8 +3385,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 57]</span>
-</pre><pre class='newpage'><a name="page-58" id="page-58" href="#page-58" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 58]</span>
+</pre><pre class='newpage'><a name="page-59" id="page-59" href="#page-59" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -3385,8 +3441,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 58]</span>
-</pre><pre class='newpage'><a name="page-59" id="page-59" href="#page-59" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 59]</span>
+</pre><pre class='newpage'><a name="page-60" id="page-60" href="#page-60" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -3441,8 +3497,8 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 59]</span>
-</pre><pre class='newpage'><a name="page-60" id="page-60" href="#page-60" class="invisible"> </a>
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 60]</span>
+</pre><pre class='newpage'><a name="page-61" id="page-61" href="#page-61" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -3497,7 +3553,7 @@ Authors' Addresses
 
 
 
-Belshe &amp; Peon           Expires February 2, 2013               [Page 60]
+Belshe &amp; Peon           Expires February 2, 2013               [Page 61]
 </pre><pre class='newpage'>
 
 </pre><br />
