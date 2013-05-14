@@ -351,7 +351,17 @@
       </section>
 
       <section title="Error Handling">
-        <t>The SPDY framing layer has only two types of errors, and they are always handled consistently.  Any reference in this specification to "issue a connection error" refers to <xref target="ConnectionErrorHandler"></xref>.  Any reference to "issue a stream error" refers to <xref target="StreamErrorHandler"></xref>.</t>
+        <t>
+          HTTP/2.0 framing permits two classes of error: 
+          <list style="symbols">
+            <t>
+              An error condition that renders the entire connection unusable is a connection error.
+            </t>
+            <t>
+              An error in an individual stream is a stream error.
+            </t>
+          </list>
+        </t>
 
         <section anchor="ConnectionErrorHandler" title="Connection Error Handling">
           <t>
@@ -867,7 +877,7 @@
           <t>
             The HEADERS frame is associated with an existing stream. If 
             a HEADERS frame is received with a stream identifier of 0x0, 
-            the receipient MUST respond with a 
+            the recipient MUST respond with a 
             <xref target="StreamErrorHandler">stream error</xref> of type
             PROTOCOL_ERROR.
           </t>
