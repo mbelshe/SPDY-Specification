@@ -465,8 +465,8 @@
           <c> 0x0</c> <c> <xref target="DATA">DATA</xref></c>
           <c> 0x1</c> <c> <xref target="HEADERS_PRIORITY">HEADERS+PRIORITY</xref></c>
           <c> 0x3</c> <c> <xref target="RST_STREAM">RST_STREAM</xref></c>
-          <c> 0x5</c> <c> <xref target="PUSH_PROMISE">PUSH_PROMISE</xref></c>
           <c> 0x4</c> <c> <xref target="SETTINGS">SETTINGS</xref></c>
+          <c> 0x5</c> <c> <xref target="PUSH_PROMISE">PUSH_PROMISE</xref></c>
           <c> 0x6</c> <c> <xref target="PING">PING</xref></c>
           <c> 0x7</c> <c> <xref target="GOAWAY">GOAWAY</xref></c>
           <c> 0x8</c> <c> <xref target="HEADERS">HEADERS</xref></c>
@@ -605,40 +605,6 @@
           </t>
         </section>
 
-        <section anchor="PUSH_PROMISE" title="PUSH_PROMISE">
-          <t>The PUSH_PROMISE control frame allows the sender to signal a promise to create a stream and serve the referenced resource. Minimal data allowing the receiver to understand which resource(s) are to be pushed are to be included.</t>
-          <figure>
-            <artwork>
-0        1        2        3        4         5        6        7
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-| Length(16)      |    0x5 |Flags(8)|X| Associated-To-Stream-ID(31)      | -&gt;
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-
-8        9        10       11       12,13,14..N
-+-|-------+--------+--------+--------+=========================+
-|X| Promised-Stream-ID(31)           | Name/Value Header Block |
-+-|-------+--------+--------+--------+=========================+
-            </artwork>
-          </figure>
-
-          <t>Length: An unsigned 16-bit value representing the number of bytes which follow the frame header.  For PUSH_PROMISE frames, this is 4 bytes plus the length of the Name/Value Header Block.</t>
-
-          <t>Flags: Flags related to this frame. Valid flags are:
-            <list>
-              <t>0x01 = FLAG_FIN - marks this frame as the last frame to be transmitted on this stream and puts the sender in the <xref target="StreamHalfClose">half-closed</xref> state.</t>
-            </list>
-          </t>
-
-          <t>Associated-To-Stream-ID: The 31-bit identifier for a stream which this stream is associated to.  If this stream is independent of all other streams, it should be 0.</t>
-
-          <t>Promised-Stream-ID: The 31-bit identifier indicating the stream-id on which the resource will be pushed. If multiple headers are indicated within the Name/Value Header Block, each subsequent resource as indicated in the Header Block will increment the Promised-Stream-Id by two. The Promised-Stream-ID is subject to the same rules as any other stream-id-- when defined and transmitted, the Promised-Stream-ID MUST be part of a monotonically increasing sequence of stream-ids. There is no requirement that the streams referred to by the this frame are created in the order referenced.</t>
-
-          <t>Name/Value Header Block:  A set of name/value pairs carried as part of the PUSH_PROMISE.  <xref target="HeaderBlock">see Name/Value Header Block</xref>.</t>
-
-          <t>If an endpoint receives a PUSH_PROMISE which is larger than the implementation supports, it MAY send a RST_STREAM with error code FRAME_TOO_LARGE.  All implementations MUST support the minimum size limits defined in <xref target="FrameFormat">the Frame Format section</xref>.</t>
-
-        </section>
-
         <section anchor="SETTINGS" title="SETTINGS">
           <t>A SETTINGS frame contains a set of id/value pairs for communicating configuration data about how the two endpoints may communicate. SETTINGS frames can be sent at any time by either endpoint, are optionally sent, and are fully asynchronous.  When the server is the sender, the sender can request that configuration data be persisted by the client across SPDY connections and returned to the server in future communications.</t>
 
@@ -708,6 +674,40 @@
           <t>The message is intentionally extensible for future information which may improve client-server communications. The sender does not need to send every type of ID/value. It must only send those for which it has accurate values to convey. When multiple ID/value pairs are sent, they should be sent in order of lowest id to highest id.  A single SETTINGS frame MUST not contain multiple values for the same ID.  If the recipient of a SETTINGS frame discovers multiple values for the same ID, it MUST ignore all values except the first one.</t>
 
           <t>A server may send multiple SETTINGS frames containing different ID/Value pairs.  When the same ID/Value is sent twice, the most recent value overrides any previously sent values.  If the server sends IDs 1, 2, and 3 with the FLAG_SETTINGS_PERSIST_VALUE in a first SETTINGS frame, and then sends IDs 4 and 5 with the FLAG_SETTINGS_PERSIST_VALUE, when the client returns the persisted state on its next SETTINGS frame, it SHOULD send all 5 settings (1, 2, 3, 4, and 5 in this example) to the server.</t>
+        </section>
+
+        <section anchor="PUSH_PROMISE" title="PUSH_PROMISE">
+          <t>The PUSH_PROMISE control frame allows the sender to signal a promise to create a stream and serve the referenced resource. Minimal data allowing the receiver to understand which resource(s) are to be pushed are to be included.</t>
+          <figure>
+            <artwork>
+0        1        2        3        4         5        6        7
++--------+--------+--------+--------+-|-------+--------+--------+--------+
+| Length(16)      |    0x5 |Flags(8)|X| Associated-To-Stream-ID(31)      | -&gt;
++--------+--------+--------+--------+-|-------+--------+--------+--------+
+
+8        9        10       11       12,13,14..N
++-|-------+--------+--------+--------+=========================+
+|X| Promised-Stream-ID(31)           | Name/Value Header Block |
++-|-------+--------+--------+--------+=========================+
+            </artwork>
+          </figure>
+
+          <t>Length: An unsigned 16-bit value representing the number of bytes which follow the frame header.  For PUSH_PROMISE frames, this is 4 bytes plus the length of the Name/Value Header Block.</t>
+
+          <t>Flags: Flags related to this frame. Valid flags are:
+            <list>
+              <t>0x01 = FLAG_FIN - marks this frame as the last frame to be transmitted on this stream and puts the sender in the <xref target="StreamHalfClose">half-closed</xref> state.</t>
+            </list>
+          </t>
+
+          <t>Associated-To-Stream-ID: The 31-bit identifier for a stream which this stream is associated to.  If this stream is independent of all other streams, it should be 0.</t>
+
+          <t>Promised-Stream-ID: The 31-bit identifier indicating the stream-id on which the resource will be pushed. If multiple headers are indicated within the Name/Value Header Block, each subsequent resource as indicated in the Header Block will increment the Promised-Stream-Id by two. The Promised-Stream-ID is subject to the same rules as any other stream-id-- when defined and transmitted, the Promised-Stream-ID MUST be part of a monotonically increasing sequence of stream-ids. There is no requirement that the streams referred to by the this frame are created in the order referenced.</t>
+
+          <t>Name/Value Header Block:  A set of name/value pairs carried as part of the PUSH_PROMISE.  <xref target="HeaderBlock">see Name/Value Header Block</xref>.</t>
+
+          <t>If an endpoint receives a PUSH_PROMISE which is larger than the implementation supports, it MAY send a RST_STREAM with error code FRAME_TOO_LARGE.  All implementations MUST support the minimum size limits defined in <xref target="FrameFormat">the Frame Format section</xref>.</t>
+
         </section>
 
         <section anchor="PING" title="PING">
