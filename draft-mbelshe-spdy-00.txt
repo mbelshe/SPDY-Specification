@@ -603,10 +603,10 @@ Internet-Draft                    SPDY                       August 2012
 
 2.5.  Error Handling
 
-   The SPDY framing layer has only two types of errors, and they are
-   always handled consistently.  Any reference in this specification to
-   "issue a connection error" refers to Section 2.5.1.  Any reference to
-   "issue a stream error" refers to Section 2.5.2.
+   HTTP/2.0 framing permits two classes of error:
+
+   o  An error condition that renders the entire connection unusable is
+      a connection error.
 
 
 
@@ -616,6 +616,8 @@ Belshe & Peon           Expires February 2, 2013               [Page 11]
 
 Internet-Draft                    SPDY                       August 2012
 
+
+   o  An error in an individual stream is a stream error.
 
 2.5.1.  Connection Error Handling
 
@@ -663,8 +665,6 @@ Internet-Draft                    SPDY                       August 2012
    implementations.
 
    An endpoint MUST NOT send a RST_STREAM in response to an RST_STREAM
-   frame, to avoid looping.
-
 
 
 
@@ -672,6 +672,8 @@ Belshe & Peon           Expires February 2, 2013               [Page 12]
 
 Internet-Draft                    SPDY                       August 2012
 
+
+   frame, to avoid looping.
 
 2.5.3.  Error Codes
 
@@ -718,8 +720,6 @@ Internet-Draft                    SPDY                       August 2012
    Because TCP provides a single stream of data on which SPDY
    multiplexes multiple logical streams, clients and servers must
    intelligently interleave data messages for concurrent connections.
-
-
 
 
 
@@ -1271,7 +1271,7 @@ Internet-Draft                    SPDY                       August 2012
 
    The HEADERS frame is associated with an existing stream.  If a
    HEADERS frame is received with a stream identifier of 0x0, the
-   receipient MUST respond with a stream error (Section 2.5.2) of type
+   recipient MUST respond with a stream error (Section 2.5.2) of type
    PROTOCOL_ERROR.
 
    The HEADERS frame changes the connection state as defined in

@@ -744,10 +744,10 @@ Table of Contents
 
 <span class="h3"><a name="section-2.5">2.5</a>.  Error Handling</span>
 
-   The SPDY framing layer has only two types of errors, and they are
-   always handled consistently.  Any reference in this specification to
-   "issue a connection error" refers to <a href="#section-2.5.1">Section 2.5.1</a>.  Any reference to
-   "issue a stream error" refers to <a href="#section-2.5.2">Section 2.5.2</a>.
+   HTTP/2.0 framing permits two classes of error:
+
+   o  An error condition that renders the entire connection unusable is
+      a connection error.
 
 
 
@@ -757,6 +757,8 @@ Table of Contents
 </pre><pre class='newpage'><a name="page-12" id="page-12" href="#page-12" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
+
+   o  An error in an individual stream is a stream error.
 
 <span class="h4"><a name="section-2.5.1">2.5.1</a>.  Connection Error Handling</span>
 
@@ -804,8 +806,6 @@ Table of Contents
    implementations.
 
    An endpoint MUST NOT send a RST_STREAM in response to an RST_STREAM
-   frame, to avoid looping.
-
 
 
 
@@ -813,6 +813,8 @@ Table of Contents
 </pre><pre class='newpage'><a name="page-13" id="page-13" href="#page-13" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
+
+   frame, to avoid looping.
 
 <span class="h4"><a name="section-2.5.3">2.5.3</a>.  Error Codes</span>
 
@@ -859,8 +861,6 @@ Table of Contents
    Because TCP provides a single stream of data on which SPDY
    multiplexes multiple logical streams, clients and servers must
    intelligently interleave data messages for concurrent connections.
-
-
 
 
 
@@ -1412,7 +1412,7 @@ Table of Contents
 
    The HEADERS frame is associated with an existing stream.  If a
    HEADERS frame is received with a stream identifier of 0x0, the
-   receipient MUST respond with a stream error (<a href="#section-2.5.2">Section 2.5.2</a>) of type
+   recipient MUST respond with a stream error (<a href="#section-2.5.2">Section 2.5.2</a>) of type
    PROTOCOL_ERROR.
 
    The HEADERS frame changes the connection state as defined in
