@@ -61,7 +61,7 @@
 
       <t>SPDY adds a framing layer for multiplexing multiple, concurrent streams across a single TCP connection (or any reliable transport stream).  The framing layer is optimized for HTTP-like request-response streams, such that applications which run over HTTP today can work over SPDY with little or no change on behalf of the web application writer.</t>
 
-      <t>The SPDY session offers four improvements over HTTP:
+      <t>The SPDY connection offers four improvements over HTTP:
         <list>
           <t>Multiplexed requests: There is no limit to the number of requests that can be issued concurrently over a single SPDY connection.</t>
           <t>Prioritized requests: Clients can request certain resources to be delivered first.  This avoids the problem of congesting the network channel with non-critical resources when a high-priority request is pending.</t>
@@ -78,14 +78,13 @@
       <section title="Definitions">
         <t>
           <list>
-            <t>client: The endpoint initiating the SPDY session.</t>
+            <t>client: The endpoint initiating the SPDY connection.</t>
             <t>connection: A transport-level connection between two endpoints.</t>
             <t>endpoint: Either the client or server of a connection.</t>
-            <t>frame: A header-prefixed sequence of bytes sent over a SPDY session.</t>
-            <t>server: The endpoint which did not initiate the SPDY session.</t>
-            <t>session: A synonym for a connection.</t>
-            <t>session error: An error on the SPDY session.</t>
-            <t>stream: A potentially bi-directional flow of bytes across a virtual channel within a SPDY session.</t>
+            <t>frame: A header-prefixed sequence of bytes sent over a SPDY connection.</t>
+            <t>server: The endpoint which did not initiate the SPDY connection.</t>
+            <t>connection error: An error on the SPDY connection.</t>
+            <t>stream: A potentially bi-directional flow of bytes across a virtual channel within a SPDY connection.</t>
             <t>stream error: An error on an individual SPDY stream.</t>
           </list>
         </t>
@@ -93,8 +92,8 @@
     </section>
 
     <section anchor="FramingLayer" title="SPDY Framing Layer">
-      <section title="Session (Connections)">
-        <t>The SPDY framing layer (or "session") runs atop a reliable transport layer such as <xref target="RFC0793">TCP</xref>. The client is the TCP connection initiator. SPDY connections are persistent connections.</t>
+      <section title="Connection">
+        <t>The SPDY framing layer runs atop a reliable transport layer such as <xref target="RFC0793">TCP</xref>. The client is the TCP connection initiator. SPDY connections are persistent connections.</t>
 
         <t>For best performance, it is expected that non-battery operated clients will leave open connections until the user navigates away from all web pages referencing the connection, or until the server closes the connection. Servers are encouraged to leave connections open for as long as possible, but can terminate idle connections if necessary.  When either endpoint closes the transport-level connection, it MUST first send a <xref target="GOAWAY">GOAWAY</xref> frame so that the endpoints can reliably determine if requests finished before the close. It is expected that battery-operated clients may have more involved heuristics as to when a connection should be closed.</t>
       </section>
@@ -229,7 +228,7 @@
 
           <t>
             Stream-ID: A 31-bit stream identifier (see <xref target="StreamCreation"/>).  A value 0 is
-            reserved for frames that are associated with the session as a 
+            reserved for frames that are associated with the connection as a 
             whole as opposed to an individual stream.
           </t>
 
@@ -284,7 +283,7 @@
             using a <xref target="PUSH_PROMISE">PUSH_PROMISE</xref> frame.  
             An endpoint that receives an unexpected stream identifier MUST 
             terminate the stream by responding with a 
-            <xref target="SessionErrorHandler">connection error</xref> of type 
+            <xref target="ConnectionErrorHandler">connection error</xref> of type 
             PROTOCOL_ERROR.
           </t>
           
@@ -352,29 +351,29 @@
       </section>
 
       <section title="Error Handling">
-        <t>The SPDY framing layer has only two types of errors, and they are always handled consistently.  Any reference in this specification to "issue a session error" refers to <xref target="SessionErrorHandler"></xref>.  Any reference to "issue a stream error" refers to <xref target="StreamErrorHandler"></xref>.</t>
+        <t>The SPDY framing layer has only two types of errors, and they are always handled consistently.  Any reference in this specification to "issue a connection error" refers to <xref target="ConnectionErrorHandler"></xref>.  Any reference to "issue a stream error" refers to <xref target="StreamErrorHandler"></xref>.</t>
 
-        <section anchor="SessionErrorHandler" title="Session Error Handling">
+        <section anchor="ConnectionErrorHandler" title="Connection Error Handling">
           <t>
-            A session error is any error which prevents further processing of the framing layer or
-            which corrupts any session state.
+            A connection error is any error which prevents further processing of the framing layer or
+            which corrupts any connection state.
           </t>
           <t>
-            An endpoint that encounters a session error MUST first send a <xref
+            An endpoint that encounters a connection error MUST first send a <xref
             target="GOAWAY">GOAWAY</xref> frame with the stream identifier of the last stream that
             it successfully received from its peer.  The GOAWAY frame includes an error code that
-            indicates why the session is terminating.  After sending the GOAWAY frame, the endpoint
-            MUST close the TCP session.
+            indicates why the connection is terminating.  After sending the GOAWAY frame, the endpoint
+            MUST close the TCP connection.
           </t>
           <t>
             It is possible that the GOAWAY will not be reliably received by the receiving endpoint.
-            In the event of a session error, GOAWAY only provides a best-effort attempt to
-            communicate with the peer about why the session is being terminated.
+            In the event of a connection error, GOAWAY only provides a best-effort attempt to
+            communicate with the peer about why the connection is being terminated.
           </t>
           <t>
-            An endpoint can end a session at any time.  In particular, an endpoint MAY choose to
-            treat a stream error as a session error if the error is recurrent.  Endpoints SHOULD
-            send a GOAWAY frame when ending a session, as long as circumstances permit it.
+            An endpoint can end a connection at any time.  In particular, an endpoint MAY choose to
+            treat a stream error as a connection error if the error is recurrent.  Endpoints SHOULD
+            send a GOAWAY frame when ending a connection, as long as circumstances permit it.
           </t>
         </section>
 
@@ -456,7 +455,7 @@
       </section>
 
       <section title="Data flow">
-        <t>Because TCP provides a single stream of data on which SPDY multiplexes multiple logical streams, clients and servers must intelligently interleave data messages for concurrent sessions.</t>
+        <t>Because TCP provides a single stream of data on which SPDY multiplexes multiple logical streams, clients and servers must intelligently interleave data messages for concurrent connections.</t>
       </section>
 
       <section anchor="FrameTypes" title="Frame Types">
@@ -508,7 +507,7 @@
             <list>
               <t>If an endpoint receives a data frame for a stream-id which is not open and the endpoint has not sent a <xref target="GOAWAY">GOAWAY</xref> frame, it MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the error code INVALID_STREAM for the stream-id.</t>
               <t>If the endpoint which created the stream receives a data frame before receiving a HEADERS on that stream, it is a protocol error, and the recipient MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code PROTOCOL_ERROR for the stream-id.</t>
-              <t>Implementors note: If an endpoint receives multiple data frames for invalid stream-ids, it MAY close the session.</t>
+              <t>Implementors note: If an endpoint receives multiple data frames for invalid stream-ids, it MAY close the connection.</t>
             </list>
           </t>
         </section>
@@ -544,7 +543,7 @@
             HEADERS+PRIORITY frames MUST be associated with a stream. If a 
             HEADERS+PRIORITY frame is received whose stream 
             identifier field is 0x0, the recipient MUST respond with a 
-            <xref target="SessionErrorHandler">connection error</xref> of type 
+            <xref target="ConnectionErrorHandler">connection error</xref> of type 
             PROTOCOL_ERROR.
           </t>
             
@@ -601,7 +600,7 @@
             RST_STREAM frames MUST be associated with a stream. If a 
             RST_STREAM frame is received whose stream 
             identifier field is 0x0 the recipient MUST respond with a 
-            <xref target="SessionErrorHandler">session error</xref> of type 
+            <xref target="ConnectionErrorHandler">connection error</xref> of type 
             PROTOCOL_ERROR.
           </t>
         </section>
@@ -641,7 +640,7 @@
         </section>
 
         <section anchor="SETTINGS" title="SETTINGS">
-          <t>A SETTINGS frame contains a set of id/value pairs for communicating configuration data about how the two endpoints may communicate. SETTINGS frames can be sent at any time by either endpoint, are optionally sent, and are fully asynchronous.  When the server is the sender, the sender can request that configuration data be persisted by the client across SPDY sessions and returned to the server in future communications.</t>
+          <t>A SETTINGS frame contains a set of id/value pairs for communicating configuration data about how the two endpoints may communicate. SETTINGS frames can be sent at any time by either endpoint, are optionally sent, and are fully asynchronous.  When the server is the sender, the sender can request that configuration data be persisted by the client across SPDY connections and returned to the server in future communications.</t>
 
           <t>Persistence of SETTINGS ID/Value pairs is done on a per origin/IP pair (the "origin" is the set of scheme, host, and port from the URI.  See <xref target="RFC6454"></xref>).  That is, when a client connects to a server, and the server persists settings within the client, the client SHOULD return the persisted settings on future connections to the same origin AND IP address and TCP port. Clients MUST NOT request servers to use the persistence features of the SETTINGS frames, and servers MUST ignore persistence related flags sent by a client.</t>
           <figure>
@@ -884,12 +883,12 @@
           </t>
           <t>
             Flow control operates at two levels: on each individual stream and on the
-            entire session.
+            entire connection.
           </t>
           <t>
             Both types of flow control are hop by hop; that is, only between the two endpoints. 
             Intermediaries do not forward WINDOW_UPDATE messages between
-            dependent sessions.  However, throttling of data transfer by any receiver can
+            dependent connections.  However, throttling of data transfer by any receiver can
             indirectly cause the propagation of flow control information toward the original
             sender.
           </t>
@@ -897,7 +896,7 @@
             Flow control only applies to frames that are identified as being subject to flow
             control. Of the frames defined in this document, this includes only DATA frame.  
             Receivers MUST either buffer or process all other frames, terminate the
-            corresponding stream, or terminate the session.  The stream or session is terminated
+            corresponding stream, or terminate the connection.  The stream or connection is terminated
             with a FLOW_CONTROL_ERROR code.
           </t>
           <figure>
@@ -917,15 +916,15 @@
             The following additional flags are defined for the WINDOW_UPDATE frame:
             <list style="hanging">
               <t hangText="END_FLOW_CONTROL (0x2):">
-                Bit 2 being set indicates that flow control for the identified stream or session has been
+                Bit 2 being set indicates that flow control for the identified stream or connection has been
                 ended; subsequent frames do not need to be flow controlled.
               </t>
             </list>
           </t>
           <t>
-             The WINDOW_UPDATE frame can be specific to a stream or to the entire session. 
+             The WINDOW_UPDATE frame can be specific to a stream or to the entire connection. 
              In the former case, the frame's stream identifier indicates the affected stream;
-             in the latter, the value "0" indicates that the entire session is the subject of 
+             in the latter, the value "0" indicates that the entire connection is the subject of 
              the frame.
           </t>
           <t>
@@ -944,7 +943,7 @@
             </t>
             <t>
               Two flow control windows are applicable; the stream flow
-              control window and the session flow control window.  The sender MUST NOT send a flow
+              control window and the connection flow control window.  The sender MUST NOT send a flow
               controlled frame with a length that exceeds the space available in either of the flow
               control windows advertised by the receiver.  Frames with zero length with the FINAL
               flag set (for example, an empty data frame) MAY be sent if there is no available space
@@ -960,7 +959,7 @@
             <t>
               The receiver of a message sends a WINDOW_UPDATE frame as it consumes data and frees up
               space in flow control windows.  Separate WINDOW_UPDATE messages are sent for the
-              stream and session level flow control windows.
+              stream and connection level flow control windows.
             </t>
             <t>
               A sender that receives a WINDOW_UPDATE frame updates the corresponding window by the
@@ -969,9 +968,9 @@
             <t>
               A sender MUST NOT allow a flow control window to exceed 2<x:sup>31</x:sup> - 1 bytes.
               If a sender receives a WINDOW_UPDATE that causes a flow control window to exceed this
-              maximum it MUST terminate either the stream or the session, as appropriate.  For
+              maximum it MUST terminate either the stream or the connection, as appropriate.  For
               streams, the sender sends a RST_STREAM with the error code of FLOW_CONTROL_ERROR code;
-              for the session, a GOAWAY message with a FLOW_CONTROL_ERROR code.
+              for the connection, a GOAWAY message with a FLOW_CONTROL_ERROR code.
             </t>
             <t>
               Flow controlled frames from the sender and WINDOW_UPDATE frames from the receiver are
@@ -983,16 +982,16 @@
 
           <section title="Initial Flow Control Window Size">
             <t>
-              When a HTTP/2.0 session is first established, new streams are created with an
-              initial flow control window size of 65535 bytes. The session flow control window is
+              When a SPDY connection is first established, new streams are created with an
+              initial flow control window size of 65535 bytes. The connection flow control window is
               65536 bytes.  Both endpoints can adjust the initial window size for new streams by
               including a value for SETTINGS_INITIAL_WINDOW_SIZE in the SETTINGS frame that forms
-              part of the session header.
+              part of the connection header.
             </t>
             <t>
               Prior to receiving a SETTINGS frame that sets a value for
               SETTINGS_INITIAL_WINDOW_SIZE, a client can only use the default initial window size
-              when sending flow controlled frames.  Similarly, the session flow control window is
+              when sending flow controlled frames.  Similarly, the connection flow control window is
               set to the default initial window size until a WINDOW_UPDATE message is received.
             </t>
             <t>
@@ -1009,7 +1008,7 @@
             </t>
             <t>
               For example, if the server sets the initial window size to be 16KB, and the client
-              sends 64KB immediately on session establishment, the client will recalculate the
+              sends 64KB immediately on connection establishment, the client will recalculate the
               available flow control window to be -48KB on receipt of the SETTINGS frame.  The
               client retains a negative flow control window until WINDOW_UPDATE frames restore the
               window to being positive, after which the client can resume sending.
@@ -1048,12 +1047,12 @@
               it is no longer sending on.
             </t>
             <t>
-              Flow control can be disabled for all streams or the session using the
+              Flow control can be disabled for all streams or the connection using the
               SETTINGS_FLOW_CONTROL_OPTIONS setting.  An implementation that does not wish to
               perform flow control can use this in the initial SETTINGS exchange.
             </t>
             <t>
-              Flow control can be disabled for an individual stream or the overall session by
+              Flow control can be disabled for an individual stream or the overall connection by
               sending a WINDOW_UPDATE with the END_FLOW_CONTROL flag set.  The payload of a
               WINDOW_UPDATE frame that has the END_FLOW_CONTROL flag set is ignored.
             </t>
@@ -1067,9 +1066,9 @@
         </section>
 
         <section anchor="CREDENTIAL" title="CREDENTIAL">
-          <t>The CREDENTIAL control frame is used by the client to send additional client certificates to the server.  A SPDY client may decide to send requests for resources from different origins on the same SPDY session if it decides that that server handles both origins.  For example if the IP address associated with both hostnames matches and the SSL server certificate presented in the initial handshake is valid for both hostnames.  However, because the SSL connection can contain at most one client certificate, the client needs a mechanism to send additional client certificates to the server.</t>
+          <t>The CREDENTIAL control frame is used by the client to send additional client certificates to the server.  A SPDY client may decide to send requests for resources from different origins on the same SPDY connection if it decides that that server handles both origins.  For example if the IP address associated with both hostnames matches and the SSL server certificate presented in the initial handshake is valid for both hostnames.  However, because the SSL connection can contain at most one client certificate, the client needs a mechanism to send additional client certificates to the server.</t>
 
-          <t>The server is required to maintain a vector of client certificates associated with a SPDY session.  When the client needs to send a client certificate to the server, it will send a CREDENTIAL frame that specifies the index of the slot in which to store the certificate as well as proof that the client posesses the corresponding private key.  The initial size of this vector must be 8.  If the client provides a client certificate during the first TLS handshake, the contents of this certificate must be copied into the first slot (index 1) in the CREDENTIAL vector, though it may be overwritten by subsequent CREDENTIAL frames.  The server must exclusively use the CREDENTIAL vector when evaluating the client certificates associated with an origin.  The server may change the size of this vector by sending a SETTINGS frame with the setting SETTINGS_CLIENT_CERTIFICATE_VECTOR_SIZE value specified.  In the event that the new size is smaller than the current size, truncation occurs preserving lower-index slots as possible.</t>  
+          <t>The server is required to maintain a vector of client certificates associated with a SPDY connection.  When the client needs to send a client certificate to the server, it will send a CREDENTIAL frame that specifies the index of the slot in which to store the certificate as well as proof that the client posesses the corresponding private key.  The initial size of this vector must be 8.  If the client provides a client certificate during the first TLS handshake, the contents of this certificate must be copied into the first slot (index 1) in the CREDENTIAL vector, though it may be overwritten by subsequent CREDENTIAL frames.  The server must exclusively use the CREDENTIAL vector when evaluating the client certificates associated with an origin.  The server may change the size of this vector by sending a SETTINGS frame with the setting SETTINGS_CLIENT_CERTIFICATE_VECTOR_SIZE value specified.  In the event that the new size is smaller than the current size, truncation occurs preserving lower-index slots as possible.</t>  
 
           <t>TLS renegotiation with client authentication is incompatible with SPDY given the multiplexed nature of SPDY.  Specifically, imagine that the client has 2 requests outstanding to the server for two different pages (in different tabs).  When the renegotiation + client certificate request comes in, the browser is unable to determine which resource triggered the client certificate request, in order to prompt the user accordingly.</t>
 
@@ -1096,7 +1095,7 @@
           <t>Proof: Cryptographic proof that the client has possession of the private key associated with the certificate.  The format is a TLS digitally-signed element (http://tools.ietf.org/html/rfc5246#section-4.7).  The signature algorithm must be the same as that used in the CertificateVerify message.  However, since the MD5+SHA1 signature type used in TLS 1.0 connections can not be correctly encoded in a digitally-signed element, SHA1 must be used when MD5+SHA1 was used in the SSL connection.  The signature is calculated over a 32 byte TLS extractor value (http://tools.ietf.org/html/rfc5705) with a label of "EXPORTER SPDY certificate proof" using the empty string as context. ForRSA certificates the signature would be a PKCS#1 v1.5 signature. For ECDSA, it would be an ECDSA-Sig-Value (http://tools.ietf.org/html/rfc5480#appendix-A).  For a 1024-bit RSA key, the CREDENTIAL message would be ~500 bytes.</t>
           <t>Certificate: The certificate chain, starting with the leaf certificate.  Each certificate must be encoded as a 32 bit length, followed by a DER encoded certificate.  The certificate must be of the same type (RSA, ECDSA, etc) as the client certificate associated with the SSL connection.</t>
           <t>If the server receives a request for a resource with unacceptable credential (either missing or invalid), it must reply with a RST_STREAM frame with the status code INVALID_CREDENTIALS. Upon receipt of a RST_STREAM frame with INVALID_CREDENTIALS, the client should initiate a new stream directly to the requested origin and resend the request.  Note, SPDY does not allow the server to request different client authentication for different resources in the same origin.</t>
-          <t>If the server receives an invalid CREDENTIAL frame, it MUST respond with a GOAWAY frame and shutdown the session.  </t>
+          <t>If the server receives an invalid CREDENTIAL frame, it MUST respond with a GOAWAY frame and shutdown the connection.  </t>
         </section>
 
         <section anchor="HeaderBlock" title="Name/Value Header Block">
@@ -1409,8 +1408,8 @@
       <t>SPDY is intended to be as compatible as possible with current web-based applications. This means that, from the perspective of the server business logic or application API, the features of HTTP are unchanged. To achieve this, all of the application request and response header semantics are preserved, although the syntax of conveying those semantics has changed.  Thus, the rules from the <xref target="RFC2616">HTTP/1.1 specification in RFC2616</xref> apply with the changes in the sections below.</t>
 
       <section title="Connection Management">
-        <t>Clients SHOULD NOT open more than one SPDY session to a given <xref target="RFC6454">origin</xref> concurrently.</t>
-        <t>Note that it is possible for one SPDY session to be finishing (e.g. a GOAWAY message has been sent, but not all streams have finished), while another SPDY session is starting.</t>
+        <t>Clients SHOULD NOT open more than one SPDY connection to a given <xref target="RFC6454">origin</xref> concurrently.</t>
+        <t>Note that it is possible for one SPDY connection to be finishing (e.g. a GOAWAY message has been sent, but not all streams have finished), while another SPDY connection is starting.</t>
         <section title="Use of GOAWAY">
           <t>SPDY provides a GOAWAY message which can be used when closing a connection from either the client or server.  Without a server GOAWAY message, HTTP has a race condition where the client sends a request (a new HEADERS+PRIORITY)  just as the server is closing the connection, and the client cannot know if the server received the stream or not.  By using the last-stream-id in the GOAWAY, servers can indicate to the client if a request was processed or not.</t>
 
@@ -1542,7 +1541,7 @@
           <t>When a PUSH_PROMISE frame which contains an Associated-To-Stream-ID is received, the client must not issue GET requests for the resource in the pushed stream, and instead wait for the pushed stream to arrive.  </t>
 
           <t>If a client receives a server push stream with stream-id 0, it
-            MUST issue a <xref target="SessionErrorHandler">session error</xref> with the status code PROTOCOL_ERROR.</t>
+            MUST issue a <xref target="ConnectionErrorHandler">connection error</xref> with the status code PROTOCOL_ERROR.</t>
 
           <t>When a client receives a HEADERS+PRIORITY from the server without a the ':host', ':scheme', and ':path' headers in the Name/Value section, it MUST reply with a RST_STREAM with error code HTTP_PROTOCOL_ERROR.</t>
 
@@ -1602,7 +1601,7 @@
 
             <t>Also, other HTTP compatible header name/value pairs MAY be present. All header names MUST be lowercase. The successful server response MUST have “:status” containing “101”.</t>
 
-            <t>If the handshake fails, the client MUST send a SPDY data frame with empty data field to avoid abnormal SPDY session termination. The SPDY data frame MUST set the FLAG_FIN to indicate the client intends to send no further data on this stream.</t>
+            <t>If the handshake fails, the client MUST send a SPDY data frame with empty data field to avoid abnormal SPDY connection termination. The SPDY data frame MUST set the FLAG_FIN to indicate the client intends to send no further data on this stream.</t>
           </section>
         </section>
         <section title="Closing Handshake">
@@ -1657,7 +1656,7 @@
 
         <t>When an error is confined to a single stream, but general framing is in tact, SPDY attempts to use the RST_STREAM as a mechanism to invalidate the stream but move forward without aborting the connection altogether.</t>
 
-        <t>For errors occuring outside of a single stream context, SPDY assumes the entire session is hosed.  In this case, the endpoint detecting the error should initiate a connection close.</t>
+        <t>For errors occuring outside of a single stream context, SPDY assumes the entire connection is hosed.  In this case, the endpoint detecting the error should initiate a connection close.</t>
       </section>
       <section title="One Connection Per Domain">
         <t>SPDY attempts to use fewer connections than other protocols have traditionally used.  The rationale for this behavior is because it is very difficult to provide a consistent level of service (e.g. TCP slow-start), prioritization, or optimal compression when the client is connecting to the server through multiple channels.</t>
@@ -1674,7 +1673,7 @@
       <section title="Compression Context(s)">
         <t>When isolating the compression contexts used for communicating with multiple origins, we had a few choices to make.  We could have maintained a map (or list) of compression contexts usable for each origin.  The basic case is easy - each HEADERS frame would need to identify the context to use for that frame.  However, compression contexts are not cheap, so the lifecycle of each context would need to be bounded.  For proxy servers, where we could churn through many contexts, this would be a concern.  We considered using a static set of contexts, say 16 of them, which would bound the memory use.  We also considered dynamic contexts, which could be created on the fly, and would need to be subsequently destroyed.  All of these are complicated, and ultimately we decided that such a mechanism creates too many problems to solve.</t>
 
-        <t>Alternatively, we've chosen the simple approach, which is to simply provide a flag for resetting the compression context.  For the common case (no proxy), this fine because most requests are to the same origin and we never need to reset the context.  For cases where we are using two different origins over a single SPDY session, we simply reset the compression state between each transition.</t>
+        <t>Alternatively, we've chosen the simple approach, which is to simply provide a flag for resetting the compression context.  For the common case (no proxy), this fine because most requests are to the same origin and we never need to reset the context.  For cases where we are using two different origins over a single SPDY connection, we simply reset the compression state between each transition.</t>
       </section>
       <section title="Unidirectional streams">
         <t>Besides providing a clear endpoint for unidirectional streams, Associated-To-Stream-ID also avoids the recipient of pushed streams from needing to send a set of empty frames (e.g. the HEADERS+PRIORITY w/ FLAG_FIN) to signal that it doesn't wish to send data on the stream.</t>
@@ -1755,7 +1754,7 @@
           <t>TODO: Add the 'blocked-on-flow-control' notification. Experience has shown that limits are too easy to get wrong, and this helps to self-correct this problem</t>
           <t>TODO: Modification of flow-control; headers-blocks (thus syn-stream) gets its own pool of memory, separate from data frames</t>
           <t>TODO: Everything after the first header-block-section possibly treated as flow-control</t>
-          <t>TODO: Session-error status code added for UNRECOGNIZED_SCHEME for new streams. This triggers when the recipient doesn't know how to handle a stream of that type.</t>
+          <t>TODO: Connection-error status code added for UNRECOGNIZED_SCHEME for new streams. This triggers when the recipient doesn't know how to handle a stream of that type.</t>
 
         </list>
       </t>
