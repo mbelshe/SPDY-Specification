@@ -14,12 +14,25 @@
   <!ENTITY RFC6454 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.6454.xml'>
   <!ENTITY RFC6455 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.6455.xml'>
   ]>
-
-  <?xml-stylesheet type="text/xsl" href="rfc2629.xml"?>
-
-  <?rfc toc="yes" symrefs="yes"?>
-
-  <rfc ipr="trust200902" docName="draft-mbelshe-httpbis-spdy-00">
+<?xml-stylesheet type="text/xsl" href="lib/rfc2629.xslt"?>
+<?rfc toc="yes" ?>
+<?rfc symrefs="yes" ?>
+<?rfc sortrefs="yes" ?>
+<?rfc compact="yes"?>
+<?rfc subcompact="no" ?>
+<?rfc linkmailto="no" ?>
+<?rfc editing="no" ?>
+<?rfc comments="yes"?>
+<?rfc inline="yes"?>
+<?rfc rfcedstyle="yes"?>
+<?rfc-ext allow-markup-in-artwork="yes" ?>
+<?rfc-ext include-index="no" ?>
+  <rfc ipr="trust200902" 
+       category="std"
+       docName="draft-mbelshe-httpbis-spdy-00"
+       x:maturity-level="proposed"
+       xmlns:x='http://purl.org/net/xml2rfc/ext'>
+       <x:feedback template="mailto:spdy-dev@googlegroups.com?subject={docname},%20%22{section}%22&amp;body=&lt;{ref}&gt;:"/>
     <front>
       <title abbrev="SPDY">SPDY Protocol</title>
       <author initials="M." surname="Belshe" fullname="Mike Belshe">
