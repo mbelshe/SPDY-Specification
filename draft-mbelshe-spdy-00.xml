@@ -1086,7 +1086,7 @@
             <t>
               A server endpoint can request that configuration parameters 
               sent to a client in a SETTINGS frame are to be persisted by 
-              the client across HTTP/2.0 connections and returned to the server
+              the client across SPDY connections and returned to the server
               in any new SETTINGS frame the client sends to the server
               in the current connection or any future connections.
             </t>
@@ -1334,13 +1334,13 @@
             streams on this connection.  It can be sent from the client or the server. Once sent, the
             sender will ignore frames sent on new streams for the remainder of the
             connection. Receivers of a GOAWAY frame MUST NOT open additional streams on the connection,
-            although a new connection can be established for new streams.  The purpose of this message
+            although a new connection can be established for new streams.  The purpose of this frame
             is to allow an endpoint to gracefully stop accepting new streams (perhaps for a reboot
             or maintenance), while still finishing processing of previously established streams.
           </t>
           <t>
             There is an inherent race condition between an endpoint starting new streams and the
-            remote sending a GOAWAY message.  To deal with this case, the GOAWAY contains the stream
+            remote sending a GOAWAY frame.  To deal with this case, the GOAWAY contains the stream
             identifier of the last stream which was processed on the sending endpoint in this
             connection.  If the receiver of the GOAWAY used streams that are newer than the indicated
             stream identifier, they were not processed by the sender and the receiver may treat the
@@ -1348,7 +1348,7 @@
             re-create the streams later on a new connection).
           </t>
           <t>
-            Endpoints should always send a GOAWAY message before closing a connection so that the
+            Endpoints should always send a GOAWAY frame before closing a connection so that the
             remote can know whether a stream has been partially processed or not.  (For example, if
             an HTTP client sends a POST at the same time that a server closes a connection, the
             client cannot know if the server started to process that POST request if the server does
@@ -1362,18 +1362,17 @@
             <cref>Issue: connection state that is established by those "ignored" messages cannot be
             ignored without the state in the two peers becoming unsynchronized.</cref>
           </t>
-          <figure>
-            <artwork>
-0        1        2        3        4         5        6        7     
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-| Length(16)      |    0x7 |Flags(8)|X|               0x0                | -&gt;
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
 
-8        9        10       11      12        13       14       15
-+-|-------+--------+--------+-------+---------+--------+--------+--------+
-|X| Last-Good-Stream-ID(31)         |          Status-Code(32)           | -&gt;
-+-|-------+--------+--------+-------+---------+--------+--------+--------+
-            </artwork>
+          <figure title="GOAWAY Payload Format">
+            <artwork type="inline">
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|X|                  Last-Stream-ID (31)                        |
++-+-------------------------------------------------------------+
+|                      Error Code (32)                          |
++---------------------------------------------------------------+
+</artwork>
           </figure>
           <t>
             The GOAWAY frame does not define any type-specific flags.
@@ -1382,7 +1381,7 @@
             The GOAWAY frame applies to the connection, not a specific stream.  The stream identifier
             MUST be zero.
           </t>
-          <t>
+         <t>
             The last stream identifier in the GOAWAY frame contains the highest numbered stream
             identifier for which the sender of the GOAWAY frame has received frames on and might
             have taken some action on.  All streams up to and including the identified stream might
