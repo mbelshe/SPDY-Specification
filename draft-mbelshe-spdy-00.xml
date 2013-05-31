@@ -1290,18 +1290,12 @@
         </section>
 
         <section anchor="PING" title="PING">
-          <t>The PING control frame is a mechanism for measuring a minimal round-trip time from the sender.  It can be sent from the client or the server.  Recipients of a PING frame should send an identical frame to the sender as soon as possible (if there is other pending data waiting to be sent, PING should take highest priority).  Each ping sent by a sender should use a unique ID.</t>
-          <figure>
-            <artwork>
-0        1        2        3        4         5        6        7
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-| Length(16)      |    0x6 |FLAGS(8)|X|               0x0                |
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-            </artwork>
-          </figure>
-
-          <t>Length: An unsigned 16-bit value representing the number of bytes which follow the frame header.  For PING frames, this dictates the length of the arbitrary, variable-length sequence of octets.</t>
-
+          <t>
+            The PING frame (type=0x6) is a mechanism for measuring a minimal round-trip time from the
+            sender, as well as determining whether an idle connection is still functional.  
+            PING frames can be sent from any endpoint.
+          </t>
+          
           <t>
             PING frames consist of an arbitrary, variable-length sequence of 
             octets. Receivers of a PING send a response PING frame with the PONG
@@ -1312,10 +1306,8 @@
           <t>
             Processing of PING frames SHOULD be performed with the highest
             priority if there are additional frames waiting to be processed.
-          </t>  
-
-          <t>Stream ID: Always set to 0</t>
-
+          </t>   
+          
           <t>
             The PING frame defines one type-specific flag:
             <list style="hanging">
@@ -1326,6 +1318,14 @@
               </t>
             </list>
           </t>
+          <t>
+            PING frames are not associated with any individual stream. If a 
+            PING frame is received with a stream identifier field value other
+            than 0x0, the recipient MUST respond with a 
+            <xref target="ConnectionErrorHandler">connection error</xref> of type 
+            PROTOCOL_ERROR.
+          </t>
+
         </section>
 
         <section anchor="GOAWAY" title="GOAWAY">
