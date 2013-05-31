@@ -425,9 +425,9 @@ Table of Contents
    The client connection header is a sequence of 25 octets (in hex
    notation)
 
-   464f4f202a20485454502f322e300d0a0d0a4241520d0a0d0a
+   464f4f202a20485454502f322e300d0a0d0a42410d0a0d0a
 
-   (the string "FOO * HTTP/2.0\r\n\r\nBAR\r\n\r\n") followed by a
+   (the string "FOO * HTTP/2.0\r\n\r\nBA\r\n\r\n") followed by a
    SETTINGS frame (<a href="#section-2.7.4">Section 2.7.4</a>).  The client sends the client
    connection header immediately upon receipt of a 101 Switching
    Protocols response (indicating a successful upgrade), or after
