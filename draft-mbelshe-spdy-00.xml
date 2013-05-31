@@ -1422,30 +1422,33 @@
             Any number of HEADERS frames can may be sent on an existing stream 
             at any time.
           </t>
-          <t>Here is the format of a headers frame and headers block:</t>
-          <figure>
-            <artwork>
-0        1        2        3         4        5        6        7
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-| Length(16)      |    0x8 |Flags(8)|X| Stream-ID(31)                    | -&gt;
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-
-8,9,10..N
-+=========================+
-| Name/Value Header Block |
-+=========================+
-            </artwork>
-          </figure>
           <t>
-            The HEADERS frame does not define any type-specific flags.
+            Additional type-specific flags for the HEADERS frame are:
+            <list style="hanging">
+              <t hangText="CONTINUES (0x2):">
+                The CONTINUES bit indicates that this frame does not contain the entire payload
+                necessary to provide a complete set of headers.
+                <vspace blankLines="1"/>
+                The payload for a complete set of headers is provided by a sequence of HEADERS
+                frames, terminated by a HEADERS frame without the CONTINUES bit.  Once the sequence
+                terminates, the payload of all HEADERS frames are concatenated and interpreted as a
+                single block.
+                <vspace blankLines="1"/>
+                A HEADERS frame that includes a CONTINUES bit MUST be followed by a HEADERS frame
+                for the same stream.  A receiver MUST treat the receipt of any other type of frame
+                or a frame on a different stream as a <xref
+                target="ConnectionErrorHandler">connection error</xref> of type PROTOCOL_ERROR.
+              </t>
+            </list>
+
           </t>
           <t>
-            The body of a HEADERS frame contains a <xref target="HeaderBlock">Headers Block</xref>.
+            The payload of a HEADERS frame contains a <xref target="HeaderBlock">Headers Block</xref>.
           </t>
           <t>
             The HEADERS frame is associated with an existing stream. If 
             a HEADERS frame is received with a stream identifier of 0x0, 
-            the recipient MUST respond with a 
+            the recipient MUST respond with a
             <xref target="StreamErrorHandler">stream error</xref> of type
             PROTOCOL_ERROR.
           </t>
@@ -1465,31 +1468,20 @@
           </t>
           <t>
             Both types of flow control are hop by hop; that is, only between the two endpoints. 
-            Intermediaries do not forward WINDOW_UPDATE messages between
+            Intermediaries do not forward WINDOW_UPDATE frames between
             dependent connections.  However, throttling of data transfer by any receiver can
             indirectly cause the propagation of flow control information toward the original
             sender.
           </t>
           <t>
             Flow control only applies to frames that are identified as being subject to flow
-            control. Of the frames defined in this document, this includes only DATA frame.  
-            Receivers MUST either buffer or process all other frames, terminate the
-            corresponding stream, or terminate the connection.  The stream or connection is terminated
-            with a FLOW_CONTROL_ERROR code.
+            control. Of the frame types defined in this document, this includes only DATA frame.
+            Frames that are exempt from flow control MUST be accepted and processed, unless the
+            receiver is unable to assign resources to handling the frame.  A receiver MAY respond
+            with a <xref target="StreamErrorHandler">stream error</xref> or <xref
+            target="ConnectionErrorHandler">connection error</xref> of type FLOW_CONTROL_ERROR if it
+            is unable accept a frame.
           </t>
-          <figure>
-            <artwork>
-0        1        2        3        4         5        6        7
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-| Length(16)      |    0x9 |Flags(8)|X| Stream-ID(31)                    | -&gt;
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-
-8        9        10       11
-+--------+--------+--------+--------+
-|Delta-Window-Size                  |
-+--------+--------+--------+--------+
-            </artwork>
-          </figure>
           <t>
             The following additional flags are defined for the WINDOW_UPDATE frame:
             <list style="hanging">
@@ -1498,7 +1490,7 @@
                 ended; subsequent frames do not need to be flow controlled.
               </t>
             </list>
-          </t>
+        </t>
           <t>
              The WINDOW_UPDATE frame can be specific to a stream or to the entire connection. 
              In the former case, the frame's stream identifier indicates the affected stream;
@@ -1535,8 +1527,8 @@
               windows by the length of the transmitted frame.
             </t>
             <t>
-              The receiver of a message sends a WINDOW_UPDATE frame as it consumes data and frees up
-              space in flow control windows.  Separate WINDOW_UPDATE messages are sent for the
+              The receiver of a frame sends a WINDOW_UPDATE frame as it consumes data and frees up
+              space in flow control windows.  Separate WINDOW_UPDATE frames are sent for the
               stream and connection level flow control windows.
             </t>
             <t>
@@ -1548,7 +1540,7 @@
               If a sender receives a WINDOW_UPDATE that causes a flow control window to exceed this
               maximum it MUST terminate either the stream or the connection, as appropriate.  For
               streams, the sender sends a RST_STREAM with the error code of FLOW_CONTROL_ERROR code;
-              for the connection, a GOAWAY message with a FLOW_CONTROL_ERROR code.
+              for the connection, a GOAWAY frame with a FLOW_CONTROL_ERROR code.
             </t>
             <t>
               Flow controlled frames from the sender and WINDOW_UPDATE frames from the receiver are
@@ -1570,7 +1562,7 @@
               Prior to receiving a SETTINGS frame that sets a value for
               SETTINGS_INITIAL_WINDOW_SIZE, a client can only use the default initial window size
               when sending flow controlled frames.  Similarly, the connection flow control window is
-              set to the default initial window size until a WINDOW_UPDATE message is received.
+              set to the default initial window size until a WINDOW_UPDATE frame is received.
             </t>
             <t>
               A SETTINGS frame can alter the initial flow control window size for all current
@@ -1582,7 +1574,7 @@
               A change to SETTINGS_INITIAL_WINDOW_SIZE could cause the available space in a flow
               control window to become negative.  A sender MUST track the negative flow control
               window, and MUST NOT send new flow controlled frames until it receives WINDOW_UPDATE
-              messages that cause the flow control window to become positive.
+              frames that cause the flow control window to become positive.
             </t>
             <t>
               For example, if the server sets the initial window size to be 16KB, and the client
@@ -1609,7 +1601,7 @@
                 </t>
                 <t>
                   The receiver can accept the streams and tolerate the resulting head of line
-                  blocking, sending WINDOW_UPDATE messages as it consumes data.
+                  blocking, sending WINDOW_UPDATE frames as it consumes data.
                 </t>
               </list>
               If a receiver decides to accept streams, both sides MUST recompute the available flow
@@ -1620,9 +1612,9 @@
           <section anchor="EndFlowControl" title="Ending Flow Control">
             <t>
               After a receiver reads in a frame that marks the end of a stream (for example, a data
-              stream with a FINAL flag set), it ceases transmission of WINDOW_UPDATE frames. A
-              sender is not required to maintain the available flow control window for streams that
-              it is no longer sending on.
+              stream with a FINAL flag set), it MUST cease transmission of WINDOW_UPDATE frames for
+              that stream. A sender is not obligated to maintain the available flow control window
+              for streams that it is no longer sending on.
             </t>
             <t>
               Flow control can be disabled for all streams or the connection using the
@@ -1642,6 +1634,8 @@
             </t>
           </section>
         </section>
+      </section>
+    </section>
 
         <section anchor="CREDENTIAL" title="CREDENTIAL">
           <t>The CREDENTIAL control frame is used by the client to send additional client certificates to the server.  A SPDY client may decide to send requests for resources from different origins on the same SPDY connection if it decides that that server handles both origins.  For example if the IP address associated with both hostnames matches and the SSL server certificate presented in the initial handshake is valid for both hostnames.  However, because the SSL connection can contain at most one client certificate, the client needs a mechanism to send additional client certificates to the server.</t>
