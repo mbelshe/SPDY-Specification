@@ -545,6 +545,309 @@
         </section>
       </section>
 
+      <section anchor="HeaderBlock" title="Name/Value Header Block">
+
+        <t>A Name/Value Header Block augments the streams or group of streams identified by the <xref target="HEADERS_PRIORITY">HEADERS+PRIORITY</xref>, <xref target="HEADERS">HEADERS</xref>, or <xref target="PUSH_PROMISE">PUSH_PROMISE</xref> frame stream with additional metadata.
+        </t>
+
+        <t>
+          At the group level, a map of token-index to key-pair is maintained for each defined group. There is no persistent mapping from stream-id to header-group, instead each HeaderBlock includes reference to the HeaderGroup that will be used in this particular set of metadata.
+        </t>
+
+        <t>The HeaderBlock compressor (described later) is subject to the following constraints:
+          <list>
+            <t>TotalHeaderStorageSize :  default(16k)</t>
+            <t>MaxHeaderGroups: default(1)</t>
+            <t>MaxValEntries: default(64)</t>
+          </list>
+        </t>
+
+        <t> It is expected that either party will set these to larger values immediately upon connection establishment using the SETTINGS frame.</t>
+
+        <t> A stream with a HeaderBlock which declares that it is using HeaderGroup 'G' would use the following algorithm to interpret its meta-data.</t>
+
+        <figure>
+          <artwork>
+            def compute_headers(stream):
+            headers = {}
+            for index in stream_group[G]:
+            headers[lru_lookup[index].key] = lru_lookup[index].val)
+            for {key, value} in ephemereal_headers_from_HeaderBlock:
+            headers[key] = value
+            return headers
+          </artwork>
+        </figure>
+
+        <t>A smart implementation will be able to interpret a headers frame without reconstructing the headers, and thus be able to represent and interpret headers with less memory and CPU.</t>
+
+        <t>The Name/Value Header Block is found in the HEADERS+PRIORITY, HEADERS, 
+          and PUSH_PROMISE control frames, and shares a common format:</t>
+        <figure>
+          <artwork>
+            0        1        2          3..N       N+1..K
+            +--------+--------+--------+=====+     +=====+
+            | HG(8)  | next-lru-seq-num| Ops | ... | Ops |
+            +--------+--------+--------+=====+     +=====+
+          </artwork>
+        </figure>
+
+        <t>Ops are of the form:
+          <figure>
+            <artwork>
+              +--------+--------+=========+
+              | OpCode | NumOps | Op Args |
+              +--------+--------+=========+
+            </artwork>
+          </figure>
+        </t>
+
+        <t>HG: (Header Group) An 8 bit unsigned integer specifying the header group for this set of headers.</t>
+        <t>Ops: A number of operations. Operations will be detailed below.</t>
+
+        <t>
+          The Opcode field indicates the type of operation.
+          <list>
+            <t>0x0 (reserved) -- this is not used and is reserved in case a token-based delimiter is required in the future.</t>
+            <t>0x1 (Toggle) indicates that the data which follows will be an lru-index. That lru-index, if present in the current header-group will be removed from the header group. If it is not present in the current header group, it will be added to the current header group. This opcode thus affects what parts of the data stored in the LRU are interpreted as being visible in the current set of headers for whatever frame includes the HeaderBlock</t>
+            <t>0x1 (Clone) indicates that the data which follows will be a key-index and a string literal. The key-index is used to refer to a pre-existing key, and thus the operation results in the storing of the pre-existing key and the new value. The key-value will be appended to the LRU, and the index in the LRU added to the current header group.</t>
+            <t>0x2 (KVSto) indicates that the data which follows will be two string literals. The first such string represents a new key to be stored, and the second such string represents a value. As with Clone, the key-value will be stored in the LRU with a new index, and that index will be added to the current header group.</t>
+            <t>0x2 (Eref)  indicates that the data which follows will be two string literals. The first such string represents key, and the second string represents a value. Unlike KVSto, the Eref does not modify the compressor state-- it only specified a key-value which will be interpreted as being part of the meta-data for the frame which includes the HeaderBlock.</t>
+          </list>
+        </t>
+
+        <t> String are always encoded as a single bit, followed by data. If that bit is '0', then what follows is 7-bit us-ascii, null-terminated. If that bit is '1', then it is huffman encoded using a canonical huffman-code and ends with an 'eof' character (which is not part of the string). If the last bit of the EOF is not immediately before the byte boundary, the remaining bits of that byte are padded with zero. Strings in a request are encoded with a different huffman-encoder than strings in a response, as the frequency of occurance in these differ by quite a bit.
+          <figure>
+            <artwork>
+              A string is either:
+              +-|============================|====================|--------+
+              |1| huffman-encoded-characters | huffman-eof-symbol |pad-bits|
+              +-|============================|====================|--------+
+
+              or
+
+              +-|-------+========+--------+
+              |0|  7 bit-ascii   |00000000|
+              +-|-------+========+--------+
+            </artwork>
+          </figure>
+        </t>
+
+        <t>
+          The NumOps field encodes one minus the number of operations that follow. Since the field-width is 8 bits, a maximum of 256 ops can be represented. If more than 256 operations are required, simply repeat doing this until all operations have been encoded. It is expected that this will be extremely rare.
+        </t>
+
+        <t>
+          Detail of an operation with an opcode of 0x1 (Toggle):
+
+          <figure>
+            <artwork>
+              0        1
+              +--------+--------+
+              |00000001| NumOps |
+              +--------+--------+
+
+
+              repeated NumOps times
+                ______/ \______
+               /               \
+
+              +--------+--------+
+              | LRU idx(16)     |
+              +--------+--------+
+            </artwork>
+          </figure>
+        </t>
+
+        <t>
+          Detail of an operation with an opcode of 0x2 (Clone):
+
+          <figure>
+            <artwork>
+              0        1
+              +--------+--------+
+              |00000010| NumOps |
+              +--------+--------+
+
+
+                 repeated NumOps times
+                ___________/\___________
+               /                        \
+
+              +--------+--------+========+
+              | Key idx(16)     | String |
+              +--------+--------+========+
+            </artwork>
+          </figure>
+        </t>
+
+        <t>
+          Detail of an operation with an opcode of 0x3 (KVSto):
+
+          <figure>
+            <artwork>
+              0        1
+              +--------+--------+
+              |00000011| NumOps |
+              +--------+--------+
+
+
+              repeated NumOps times
+                _______/\______
+               /               \
+
+              +========+========+
+              | String | String |
+              +========+========+
+            </artwork>
+          </figure>
+        </t>
+
+        <t>
+          Detail of an operation with an opcode of 0x4 (Eref):
+
+          <figure>
+            <artwork>
+              0        1
+              +--------+--------+
+              |00000100| NumOps |
+              +--------+--------+
+
+
+              repeated NumOps times
+                _______/\______
+               /               \
+
+              +========+========+
+              | String | String |
+              +========+========+
+            </artwork>
+          </figure>
+        </t>
+
+
+        <t>Each header name must have at least one value.  Header names are encoded using the <xref target="ASCII">US-ASCII character set</xref> and must be all lower case.  The length of each name must be greater than zero.  A recipient of a zero-length name MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code PROTOCOL_ERROR for the stream-id.</t>
+
+        <t>Duplicate header names are allowed, but discouraged, except when encoding a cookie or set-cookie.</t>
+
+        <section title="Compression" anchor="Compression">
+          <t>The Name/Value Header Block is a section of the HEADERS+PRIORITY, HEADERS, and PUSH_PROMISE frames used to carry header meta-data.  This block is always compressed using zlib compression.  Within this specification, any reference to 'zlib' is referring to the <xref target="RFC1950">ZLIB Compressed Data Format Specification Version 3.3 as part of RFC1950.</xref></t>
+
+          <t>For each HEADERS compression instance, the initial state is initialized using the following <xref target="UDELCOMPRESSION">dictionary</xref>:</t>
+
+          <figure>
+            <artwork>
+              Request 1 (for index.html):
+              HEADERS+PRIORITY 1, stream-group (G)=0
+              Header-block:
+              Store(0x1): level(C),index(0),k: ":method"
+              Store(0x1): level(C),index(0),v: "GET"
+              Store(0x1): level(C),index(1),k: ":version"
+              Store(0x1): level(C),index(1),v: "HTTP/1.1"
+              Store(0x1): level(C),index(2),k: "user-agent"
+              Store(0x1): level(C),index(2),v: "blah blah browser version blah blah"
+              Store(0x1): level(C),index(3),k: "accept-encoding"
+              Store(0x1): level(C),index(3),v: "sdch, bzip, compress"
+              Store(0x1): level(G),index(0),k: ":host"
+              Store(0x1): level(G),index(0),v: "www.foo.com"
+              Store(0x1): level(G),index(1),k: "cookie"
+              Store(0x1): level(G),index(1),v: "SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJHBLA"
+              Store(0x1): level(G),index(2),k: ":path"
+              Store(0x1): level(G),index(2),v: "/index.html"
+              Store(0x1): level(G),index(3),k: "date"
+              Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:43 2012"
+
+              At this point the connection headers table looks like this:
+              0: ":method", "GET"
+              1: ":version", "HTTP/1.1"
+              2: "user-agent", "blah blah browser version blah blah"
+              3: "accept-encoding", "sdch, bzip, compress"
+
+              The stream-group table for group zero looks like this:
+              0: ":host", "www.foo.com"
+              1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;BLAJHBLA"
+              2: ":path", "/index.html"
+              3: "date", "Wed Jul 18 11:50:43 2012"
+
+              Request 1 (on stream 1) would look like the following if forwarded on HTTP/1.1:
+              GET /index.html HTTP/1.1
+              host: www.foo.com
+              date: Wed Jul 18 11:50:43 2012
+              cookie: SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJHBLA
+              user-agent: blah blah browser version blah blah
+              accept-encoding: sdch, bzip, compress
+
+
+              Request 2 (for index.js):
+              HEADERS+PRIORITY 3, stream-group (G)=0
+              Header-block:
+              Store(0x1): level(G),index(2),v: "/index.js"
+              Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:44 2012"
+
+              At this point the connection headers table is unchanged:
+              0: ":method", "GET"
+              1: ":version", "HTTP/1.1"
+              2: "user-agent", "blah blah browser version blah blah"
+              3: "accept-encoding", "sdch, bzip, compress"
+
+              The stream-group table for group zero looks like this:
+              0: ":host", "www.foo.com"
+              1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;BLAJHBLA"
+              2: ":path", "/index.js"
+              3: "date", "Wed Jul 18 11:50:44 2012"
+              Both the path and the date have changed.
+
+              Request 2 (on stream 3) would look like the following if forwarded on HTTP/1.1:
+              GET /index.js HTTP/1.1
+              host: www.foo.com
+              date: Wed Jul 18 11:50:44 2012
+              cookie: SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJHBLA
+              user-agent: blah blah browser version blah blah
+              accept-encoding: sdch, bzip, compress
+
+
+              Request 3 (for index.css):
+              HEADERS+PRIORITY 5, stream-group (G)=0
+              Header-block:
+              Store(0x1): level(G),index(2),v: "/index.css"
+              Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:44 PDT 2012"
+
+              Connection level-headers are implied.
+              Stream-group level headers are implied.
+
+              For this example, using TaCo (truncate and concatenate) wasn't useful.
+              If the user, however, changes the cookie on the next request...
+
+              Request 3 (for somepage.html):
+              HEADERS+PRIORITY 5, stream-group (G)=0
+              Header-block:
+              Store(0x1): level(G),index(2),v: "/somepage.html"
+              TaCo(0x1): level(G),index(1),v,TruncTo(40),"FOOBLA"
+
+              At this point the connection headers table remains unchanged.
+              0: ":method", "GET"
+              1: ":version", "HTTP/1.1"
+              2: "user-agent", "blah blah browser version blah blah"
+              3: "accept-encoding", "sdch, bzip, compress"
+
+              The stream-group table for group zero looks like this:
+              0: ":host", "www.foo.com"
+              1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;FOOBLA"
+              2: ":path", "/somepate.html"
+              Both the path and the date have changed.
+
+              Request 3 (on stream 5) would look like the following if forwarded on HTTP/1.1:
+              GET /somepage.html HTTP/1.1
+              host: www.foo.com
+              date: Wed Jul 18 11:50:44 2012
+              cookie: SOMELONGSTRINGTHATISMOSTLYOPAQUE;FOOBLA
+              user-agent: blah blah browser version blah blah
+              accept-encoding: sdch, bzip, compress
+
+            </artwork>
+          </figure>
+        </section>
+      </section>
+
       <section title="Data flow">
         <t>Because TCP provides a single stream of data on which SPDY multiplexes multiple logical streams, clients and servers must intelligently interleave data messages for concurrent connections.</t>
       </section>
@@ -1187,310 +1490,6 @@
           <t>Certificate: The certificate chain, starting with the leaf certificate.  Each certificate must be encoded as a 32 bit length, followed by a DER encoded certificate.  The certificate must be of the same type (RSA, ECDSA, etc) as the client certificate associated with the SSL connection.</t>
           <t>If the server receives a request for a resource with unacceptable credential (either missing or invalid), it must reply with a RST_STREAM frame with the status code INVALID_CREDENTIALS. Upon receipt of a RST_STREAM frame with INVALID_CREDENTIALS, the client should initiate a new stream directly to the requested origin and resend the request.  Note, SPDY does not allow the server to request different client authentication for different resources in the same origin.</t>
           <t>If the server receives an invalid CREDENTIAL frame, it MUST respond with a GOAWAY frame and shutdown the connection.  </t>
-        </section>
-
-        <section anchor="HeaderBlock" title="Name/Value Header Block">
-
-          <t>A Name/Value Header Block augments the streams or group of streams identified by the <xref target="HEADERS_PRIORITY">HEADERS+PRIORITY</xref>, <xref target="HEADERS">HEADERS</xref>, or <xref target="PUSH_PROMISE">PUSH_PROMISE</xref> frame stream with additional metadata.
-          </t>
-
-          <t>
-            At the group level, a map of token-index to key-pair is maintained for each defined group. There is no persistent mapping from stream-id to header-group, instead each HeaderBlock includes reference to the HeaderGroup that will be used in this particular set of metadata.
-          </t>
-
-          <t>The HeaderBlock compressor (described later) is subject to the following constraints:
-            <list>
-              <t>TotalHeaderStorageSize :  default(16k)</t>
-              <t>MaxHeaderGroups: default(1)</t>
-              <t>MaxValEntries: default(64)</t>
-            </list>
-          </t>
-
-          <t> It is expected that either party will set these to larger values immediately upon connection establishment using the SETTINGS frame.</t>
-
-          <t> A stream with a HeaderBlock which declares that it is using HeaderGroup 'G' would use the following algorithm to interpret its meta-data.</t>
-
-          <figure>
-            <artwork>
-              def compute_headers(stream):
-              headers = {}
-              for index in stream_group[G]:
-              headers[lru_lookup[index].key] = lru_lookup[index].val)
-              for {key, value} in ephemereal_headers_from_HeaderBlock:
-              headers[key] = value
-              return headers
-            </artwork>
-          </figure>
-
-          <t>A smart implementation will be able to interpret a headers frame without reconstructing the headers, and thus be able to represent and interpret headers with less memory and CPU.</t>
-
-          <t>The Name/Value Header Block is found in the HEADERS+PRIORITY, HEADERS, 
-            and PUSH_PROMISE control frames, and shares a common format:</t>
-          <figure>
-            <artwork>
-              0        1        2          3..N       N+1..K
-              +--------+--------+--------+=====+     +=====+
-              | HG(8)  | next-lru-seq-num| Ops | ... | Ops |
-              +--------+--------+--------+=====+     +=====+
-            </artwork>
-          </figure>
-
-          <t>Ops are of the form:
-            <figure>
-              <artwork>
-                +--------+--------+=========+
-                | OpCode | NumOps | Op Args |
-                +--------+--------+=========+
-              </artwork>
-            </figure>
-          </t>
-
-          <t>HG: (Header Group) An 8 bit unsigned integer specifying the header group for this set of headers.</t>
-          <t>Ops: A number of operations. Operations will be detailed below.</t>
-
-          <t>
-            The Opcode field indicates the type of operation.
-            <list>
-              <t>0x0 (reserved) -- this is not used and is reserved in case a token-based delimiter is required in the future.</t>
-              <t>0x1 (Toggle) indicates that the data which follows will be an lru-index. That lru-index, if present in the current header-group will be removed from the header group. If it is not present in the current header group, it will be added to the current header group. This opcode thus affects what parts of the data stored in the LRU are interpreted as being visible in the current set of headers for whatever frame includes the HeaderBlock</t>
-              <t>0x1 (Clone) indicates that the data which follows will be a key-index and a string literal. The key-index is used to refer to a pre-existing key, and thus the operation results in the storing of the pre-existing key and the new value. The key-value will be appended to the LRU, and the index in the LRU added to the current header group.</t>
-              <t>0x2 (KVSto) indicates that the data which follows will be two string literals. The first such string represents a new key to be stored, and the second such string represents a value. As with Clone, the key-value will be stored in the LRU with a new index, and that index will be added to the current header group.</t>
-              <t>0x2 (Eref)  indicates that the data which follows will be two string literals. The first such string represents key, and the second string represents a value. Unlike KVSto, the Eref does not modify the compressor state-- it only specified a key-value which will be interpreted as being part of the meta-data for the frame which includes the HeaderBlock.</t>
-            </list>
-          </t>
-
-          <t> String are always encoded as a single bit, followed by data. If that bit is '0', then what follows is 7-bit us-ascii, null-terminated. If that bit is '1', then it is huffman encoded using a canonical huffman-code and ends with an 'eof' character (which is not part of the string). If the last bit of the EOF is not immediately before the byte boundary, the remaining bits of that byte are padded with zero. Strings in a request are encoded with a different huffman-encoder than strings in a response, as the frequency of occurance in these differ by quite a bit.
-            <figure>
-              <artwork>
-                A string is either:
-                +-|============================|====================|--------+
-                |1| huffman-encoded-characters | huffman-eof-symbol |pad-bits|
-                +-|============================|====================|--------+
-
-                or
-
-                +-|-------+========+--------+
-                |0|  7 bit-ascii   |00000000|
-                +-|-------+========+--------+
-              </artwork>
-            </figure>
-          </t>
-
-          <t>
-            The NumOps field encodes one minus the number of operations that follow. Since the field-width is 8 bits, a maximum of 256 ops can be represented. If more than 256 operations are required, simply repeat doing this until all operations have been encoded. It is expected that this will be extremely rare.
-          </t>
-
-          <t>
-            Detail of an operation with an opcode of 0x1 (Toggle):
-
-            <figure>
-              <artwork>
-                0        1
-                +--------+--------+
-                |00000001| NumOps |
-                +--------+--------+
-
-
-                repeated NumOps times
-                  ______/ \______
-                 /               \
-
-                +--------+--------+
-                | LRU idx(16)     |
-                +--------+--------+
-              </artwork>
-            </figure>
-          </t>
-
-          <t>
-            Detail of an operation with an opcode of 0x2 (Clone):
-
-            <figure>
-              <artwork>
-                0        1
-                +--------+--------+
-                |00000010| NumOps |
-                +--------+--------+
-
-
-                   repeated NumOps times
-                  ___________/\___________
-                 /                        \
-
-                +--------+--------+========+
-                | Key idx(16)     | String |
-                +--------+--------+========+
-              </artwork>
-            </figure>
-          </t>
-
-          <t>
-            Detail of an operation with an opcode of 0x3 (KVSto):
-
-            <figure>
-              <artwork>
-                0        1
-                +--------+--------+
-                |00000011| NumOps |
-                +--------+--------+
-
-
-                repeated NumOps times
-                  _______/\______
-                 /               \
-
-                +========+========+
-                | String | String |
-                +========+========+
-              </artwork>
-            </figure>
-          </t>
-
-          <t>
-            Detail of an operation with an opcode of 0x4 (Eref):
-
-            <figure>
-              <artwork>
-                0        1
-                +--------+--------+
-                |00000100| NumOps |
-                +--------+--------+
-
-
-                repeated NumOps times
-                  _______/\______
-                 /               \
-
-                +========+========+
-                | String | String |
-                +========+========+
-              </artwork>
-            </figure>
-          </t>
-
-
-          <t>Each header name must have at least one value.  Header names are encoded using the <xref target="ASCII">US-ASCII character set</xref> and must be all lower case.  The length of each name must be greater than zero.  A recipient of a zero-length name MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code PROTOCOL_ERROR for the stream-id.</t>
-
-          <t>Duplicate header names are allowed, but discouraged, except when encoding a cookie or set-cookie.</t>
-
-          <section title="Compression" anchor="Compression">
-            <t>The Name/Value Header Block is a section of the HEADERS+PRIORITY, HEADERS, and PUSH_PROMISE frames used to carry header meta-data.  This block is always compressed using zlib compression.  Within this specification, any reference to 'zlib' is referring to the <xref target="RFC1950">ZLIB Compressed Data Format Specification Version 3.3 as part of RFC1950.</xref></t>
-
-            <t>For each HEADERS compression instance, the initial state is initialized using the following <xref target="UDELCOMPRESSION">dictionary</xref>:</t>
-
-            <figure>
-              <artwork>
-                Request 1 (for index.html):
-                HEADERS+PRIORITY 1, stream-group (G)=0
-                Header-block:
-                Store(0x1): level(C),index(0),k: ":method"
-                Store(0x1): level(C),index(0),v: "GET"
-                Store(0x1): level(C),index(1),k: ":version"
-                Store(0x1): level(C),index(1),v: "HTTP/1.1"
-                Store(0x1): level(C),index(2),k: "user-agent"
-                Store(0x1): level(C),index(2),v: "blah blah browser version blah blah"
-                Store(0x1): level(C),index(3),k: "accept-encoding"
-                Store(0x1): level(C),index(3),v: "sdch, bzip, compress"
-                Store(0x1): level(G),index(0),k: ":host"
-                Store(0x1): level(G),index(0),v: "www.foo.com"
-                Store(0x1): level(G),index(1),k: "cookie"
-                Store(0x1): level(G),index(1),v: "SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJHBLA"
-                Store(0x1): level(G),index(2),k: ":path"
-                Store(0x1): level(G),index(2),v: "/index.html"
-                Store(0x1): level(G),index(3),k: "date"
-                Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:43 2012"
-
-                At this point the connection headers table looks like this:
-                0: ":method", "GET"
-                1: ":version", "HTTP/1.1"
-                2: "user-agent", "blah blah browser version blah blah"
-                3: "accept-encoding", "sdch, bzip, compress"
-
-                The stream-group table for group zero looks like this:
-                0: ":host", "www.foo.com"
-                1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;BLAJHBLA"
-                2: ":path", "/index.html"
-                3: "date", "Wed Jul 18 11:50:43 2012"
-
-                Request 1 (on stream 1) would look like the following if forwarded on HTTP/1.1:
-                GET /index.html HTTP/1.1
-                host: www.foo.com
-                date: Wed Jul 18 11:50:43 2012
-                cookie: SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJHBLA
-                user-agent: blah blah browser version blah blah
-                accept-encoding: sdch, bzip, compress
-
-
-                Request 2 (for index.js):
-                HEADERS+PRIORITY 3, stream-group (G)=0
-                Header-block:
-                Store(0x1): level(G),index(2),v: "/index.js"
-                Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:44 2012"
-
-                At this point the connection headers table is unchanged:
-                0: ":method", "GET"
-                1: ":version", "HTTP/1.1"
-                2: "user-agent", "blah blah browser version blah blah"
-                3: "accept-encoding", "sdch, bzip, compress"
-
-                The stream-group table for group zero looks like this:
-                0: ":host", "www.foo.com"
-                1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;BLAJHBLA"
-                2: ":path", "/index.js"
-                3: "date", "Wed Jul 18 11:50:44 2012"
-                Both the path and the date have changed.
-
-                Request 2 (on stream 3) would look like the following if forwarded on HTTP/1.1:
-                GET /index.js HTTP/1.1
-                host: www.foo.com
-                date: Wed Jul 18 11:50:44 2012
-                cookie: SOMELONGSTRINGTHATISMOSTLYOPAQUE;BLAJHBLA
-                user-agent: blah blah browser version blah blah
-                accept-encoding: sdch, bzip, compress
-
-
-                Request 3 (for index.css):
-                HEADERS+PRIORITY 5, stream-group (G)=0
-                Header-block:
-                Store(0x1): level(G),index(2),v: "/index.css"
-                Store(0x1): level(G),index(3),v: "Wed Jul 18 11:50:44 PDT 2012"
-
-                Connection level-headers are implied.
-                Stream-group level headers are implied.
-
-                For this example, using TaCo (truncate and concatenate) wasn't useful.
-                If the user, however, changes the cookie on the next request...
-
-                Request 3 (for somepage.html):
-                HEADERS+PRIORITY 5, stream-group (G)=0
-                Header-block:
-                Store(0x1): level(G),index(2),v: "/somepage.html"
-                TaCo(0x1): level(G),index(1),v,TruncTo(40),"FOOBLA"
-
-                At this point the connection headers table remains unchanged.
-                0: ":method", "GET"
-                1: ":version", "HTTP/1.1"
-                2: "user-agent", "blah blah browser version blah blah"
-                3: "accept-encoding", "sdch, bzip, compress"
-
-                The stream-group table for group zero looks like this:
-                0: ":host", "www.foo.com"
-                1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;FOOBLA"
-                2: ":path", "/somepate.html"
-                Both the path and the date have changed.
-
-                Request 3 (on stream 5) would look like the following if forwarded on HTTP/1.1:
-                GET /somepage.html HTTP/1.1
-                host: www.foo.com
-                date: Wed Jul 18 11:50:44 2012
-                cookie: SOMELONGSTRINGTHATISMOSTLYOPAQUE;FOOBLA
-                user-agent: blah blah browser version blah blah
-                accept-encoding: sdch, bzip, compress
-
-              </artwork>
-            </figure>
-          </section>
-
         </section>
       </section>
     </section>
