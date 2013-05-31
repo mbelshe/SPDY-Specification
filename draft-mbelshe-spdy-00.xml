@@ -900,18 +900,16 @@
             The HEADERS+PRIORITY frame (type=0x1) allows the sender to 
             set header fields and stream priority at the same time.
           </t>
-          <figure>
-            <artwork>
-0        1        2        3        4         5        6        7
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-| Length(16)      |    0x1 |Flags(8)|X| Stream-ID(31)                    | -&gt;
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-
-8        9        10       11       12,13,14..N
-+-|-------+--------+--------+--------+=========================+
-|X|Priority(31)                      | Name/Value Header Block |
-+-|-------+--------+--------+--------+=========================+
-            </artwork>
+          <figure title="HEADERS+PRIORITY Frame Payload">
+            <artwork type="inline">
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|X|                   Priority (31)                             |
++-+-------------------------------------------------------------+
+|                    Header Block (*)                         ...
++---------------------------------------------------------------+
+</artwork>
           </figure>
 
           <t>
@@ -920,8 +918,11 @@
             <xref target="StreamPriority"/>.
           </t>
           
-          <t>No type-specific flags are defined.</t>
-          
+          <t>
+            HEADERS+PRIORITY uses the same flags as the HEADERS frame, except that a
+            HEADERS+PRIORITY frame with a CONTINUES bit MUST be followed by another HEADERS+PRIORITY
+            frame.  See <xref target="HEADERS">HEADERS frame</xref> for any flags.
+          </t>
           <t>
             HEADERS+PRIORITY frames MUST be associated with a stream. If a 
             HEADERS+PRIORITY frame is received whose stream 
