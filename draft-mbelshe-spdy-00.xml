@@ -1215,41 +1215,78 @@
               </list>
             </t>
           </section>
-
         </section>
 
         <section anchor="PUSH_PROMISE" title="PUSH_PROMISE">
-          <t>The PUSH_PROMISE control frame allows the sender to signal a promise to create a stream and serve the referenced resource. Minimal data allowing the receiver to understand which resource(s) are to be pushed are to be included.</t>
-          <figure>
-            <artwork>
-0        1        2        3        4         5        6        7
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-| Length(16)      |    0x5 |Flags(8)|X| Associated-To-Stream-ID(31)      | -&gt;
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
 
-8        9        10       11       12,13,14..N
-+-|-------+--------+--------+--------+=========================+
-|X| Promised-Stream-ID(31)           | Name/Value Header Block |
-+-|-------+--------+--------+--------+=========================+
-            </artwork>
-          </figure>
-
-          <t>Length: An unsigned 16-bit value representing the number of bytes which follow the frame header.  For PUSH_PROMISE frames, this is 4 bytes plus the length of the Name/Value Header Block.</t>
-
-          <t>Flags: Flags related to this frame. Valid flags are:
-            <list>
-              <t>0x01 = FLAG_FIN - marks this frame as the last frame to be transmitted on this stream and puts the sender in the <xref target="StreamHalfClose">half-closed</xref> state.</t>
-            </list>
+          <t>
+            The PUSH_PROMISE frame (type=0x5) is used to notify the peer 
+            endpoint in advance of streams the sender intends to initiate.
+            The PUSH_PROMISE frame includes the unsigned 31-bit identifier
+            of the stream the endpoint plans to create along with a minimal
+            set of headers that provide additional context for the stream.
+            <xref target="PushResources"/> contains a thorough description
+            of the use of PUSH_PROMISE frames.
           </t>
 
-          <t>Associated-To-Stream-ID: The 31-bit identifier for a stream which this stream is associated to.  If this stream is independent of all other streams, it should be 0.</t>
+          <figure title="PUSH_PROMISE Payload Format">
+            <artwork type="inline">
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|X|                Promised-Stream-ID (31)                      |
++-+-------------------------------------------------------------+
+|                    Header Block (*)                         ...
++---------------------------------------------------------------+
+</artwork>
+          </figure>
+          
+          <t>
+            The payload of a PUSH_PROMISE includes a "Promised-Stream-ID".  This 
+            unsigned 31-bit integer identifies the stream the endpoint
+            intends to start sending frames for.  The promised stream
+            identifier MUST be a valid choice for the next stream sent by the sender (see <xref
+            target="StreamCreation">new stream identifier</xref>).
+          </t>
 
-          <t>Promised-Stream-ID: The 31-bit identifier indicating the stream-id on which the resource will be pushed. If multiple headers are indicated within the Name/Value Header Block, each subsequent resource as indicated in the Header Block will increment the Promised-Stream-Id by two. The Promised-Stream-ID is subject to the same rules as any other stream-id-- when defined and transmitted, the Promised-Stream-ID MUST be part of a monotonically increasing sequence of stream-ids. There is no requirement that the streams referred to by the this frame are created in the order referenced.</t>
+          <t>
+            PUSH_PROMISE frames MUST be associated with an existing stream. If 
+            the stream identifier field specifies the value 0x0, a recipient
+            MUST respond with a <xref target="ConnectionErrorHandler">connection 
+            error</xref> of type PROTOCOL_ERROR.
+          </t>
+          
+          <t>
+            The state of promised streams is bound to the state of the 
+            original associated stream on which the PUSH_PROMISE frame
+            were sent. If the originating stream state changes to 
+            fully closed, all associated promised streams fully close as well. 
+            <cref>Ed. Note: We need clarification on this point. How synchronized
+              are the lifecycles of streams and associated promised streams?</cref>
+          </t>
+          
+          <t>
+            PUSH_PROMISE uses the same flags as the HEADERS frame, except that a PUSH_PROMISE frame
+            with a CONTINUES bit MUST be followed by another PUSH_PROMISE frame.  See <xref
+            target="HEADERS">HEADERS frame</xref> for any flags.
+          </t>
 
-          <t>Name/Value Header Block:  A set of name/value pairs carried as part of the PUSH_PROMISE.  <xref target="HeaderBlock">see Name/Value Header Block</xref>.</t>
-
-          <t>If an endpoint receives a PUSH_PROMISE which is larger than the implementation supports, it MAY send a RST_STREAM with error code FRAME_TOO_LARGE.  All implementations MUST support the minimum size limits defined in <xref target="FrameFormat">the Frame Format section</xref>.</t>
-
+          <t>
+            Promised streams are not required to be used in order promised.
+            The PUSH_PROMISE only reserves stream identifiers for later use.
+          </t>
+          
+          <t>
+            Recipients of PUSH_PROMISE frames can choose to reject promised
+            streams by returning a RST_STREAM referencing the promised stream
+            identifier back to the sender of the PUSH_PROMISE.
+          </t>
+          
+          <t>
+            The PUSH_PROMISE frame modifies the connection state as 
+            defined in <xref target="HeaderBlock" />.
+          </t>
+            
         </section>
 
         <section anchor="PING" title="PING">
