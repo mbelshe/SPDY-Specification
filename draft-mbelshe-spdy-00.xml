@@ -115,7 +115,7 @@
           <xref target="SETTINGS">SETTINGS frame</xref>.  The client sends the client connection header
           immediately upon receipt of a 101 Switching Protocols response (indicating a successful
           upgrade), or after receiving a TLS Finished message from the server. If starting an
-          HTTP/2.0 connection with prior knowledge of server support for the protocol, the client
+          SPDY connection with prior knowledge of server support for the protocol, the client
           connection header is sent upon connection establishment.
         </t>
         <t>
@@ -243,7 +243,7 @@
       <section title="Streams">
        <t>
           A "stream" is an independent, bi-directional sequence of frames 
-          exchanged between the client and server within an HTTP/2.0 connection.
+          exchanged between the client and server within a SPDY connection.
           Streams have several important characteristics:
           <list style="symbols">
             <t>
@@ -268,7 +268,7 @@
               HEADERS, or PUSH_PROMISE frames.
             </t>
             <t>
-              A single HTTP/2.0 connection can contain multiple concurrently
+              A single SPDY connection can contain multiple concurrently
               active streams, with either endpoint interleaving frames from 
               multiple streams.
             </t>
@@ -295,7 +295,7 @@
           <t>
             The identifier of a newly established stream MUST be numerically 
             greater than all previously established streams from that endpoint
-            within the HTTP/2.0 connection, unless the identifier has been reserved 
+            within the SPDY connection, unless the identifier has been reserved 
             using a <xref target="PUSH_PROMISE">PUSH_PROMISE</xref> frame.  
             An endpoint that receives an unexpected stream identifier MUST 
             respond with a <xref target="ConnectionErrorHandler">connection error</xref> of type 
@@ -370,7 +370,7 @@
             When an endpoint sends a frame for a stream with the FINAL flag 
             set, the stream is considered to be half-closed for that endpoint.
             Subsequent frames MUST NOT be sent by that endpoint for the half
-            closed stream for the remaining duration of the HTTP/2.0 connection.
+            closed stream for the remaining duration of the SPDY connection.
             When both endpoints have sent frames with the FINAL flag set, the
             stream is considered to be fully closed.
           </t>
@@ -432,7 +432,7 @@
 
       <section title="Error Handling">
         <t>
-          HTTP/2.0 framing permits two classes of error: 
+          SPDY framing permits two classes of error: 
           <list style="symbols">
             <t>
               An error condition that renders the entire connection unusable is a connection error.
@@ -1027,7 +1027,7 @@
 
           <section title="The Flow Control Window">
             <t>
-              Flow control in HTTP/2.0 is implemented using a window kept by each sender on every
+              Flow control in SPDY is implemented using a window kept by each sender on every
               stream. The flow control window is a simple integer value that indicates how many
               bytes of data the sender is permitted to transmit; as such, its size is a
               measure of the buffering capability of the receiver.
