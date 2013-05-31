@@ -946,18 +946,14 @@
             receiver is rejecting the stream, requesting that the stream be 
             cancelled or that an error condition has occurred. 
           </t>
-          <figure>
-            <artwork>
-0        1        2        3        4         5        6        7
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-| Length(16)      |    0x3 |Flags(8)|X| Stream-ID(31)                    | -&gt;
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-
-8        9        10       11
-+--------+--------+--------+--------+
-|            Error-Code(32)         |
-+--------+--------+--------+--------+
-            </artwork>
+          <figure title="RST_STREAM Frame Payload">
+            <artwork type="inline">
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                         Error Code (32)                       |
++---------------------------------------------------------------+
+</artwork>
           </figure>
 
           <t>
@@ -987,6 +983,7 @@
             <xref target="ConnectionErrorHandler">connection error</xref> of type 
             PROTOCOL_ERROR.
           </t>
+
         </section>
 
         <section anchor="SETTINGS" title="SETTINGS">
