@@ -867,41 +867,32 @@
           defined by this document are permitted to alter the connection state.
         </t>
 
-        <section anchor="DATA" title="DATA">
-          <figure>
-            <artwork>
-0        1        2        3        4         5        6        7
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-| Length(16)      |    0x0 |Flags(8)|X| Stream-ID(31)                    | -&gt;
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-
-8..N
-+========+
-|  Data  |
-+========+
-            </artwork>
-          </figure>
-
-          <t>Length: An unsigned 16-bit value representing the number of bytes which follow the frame header.  The total size of a data frame is 8 bytes + length. It is valid to have a zero-length data frame.</t>
-
-          <t>Flags: Flags related to this frame. Valid flags are:
-            <list>
-              <t>0x01 = FLAG_FIN - signifies that this frame represents the last frame to be transmitted on this stream.  See <xref target="StreamClose">Stream Close</xref> below.</t>
-              <t>0x02 = MSG_DONE - signifies that this frame represents the last frame of a message.  This is relevant for layering of message-based protocols on top of SPDY.</t>
+        <section anchor="DataFrames" title="DATA Frames">
+          
+          <t>
+            DATA frames (type=0x0) convey arbitrary, variable-length
+            sequences of octets associated with a stream. One or more 
+            DATA frames are used, for instance, to carry HTTP request
+            or response payloads.
+          </t>
+          
+          <t>
+            The DATA frame defines the following flag:
+            <list style="hanging">
+              <t hangText="MSG_DONE (0x2):">
+                Bit 2 being set signifies that this frame represents the last frame of a message.
+                This is relevant for layering of message-based protocols on top of SPDY.
+              </t>
             </list>
           </t>
-
-          <t>Stream-ID: A 31-bit value identifying the stream.</t>
-
-          <t>Data: The variable-length data payload; the length was defined in the length field.</t>
-
-          <t>Data frame processing requirements:
-            <list>
-              <t>If an endpoint receives a data frame for a stream-id which is not open and the endpoint has not sent a <xref target="GOAWAY">GOAWAY</xref> frame, it MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the error code INVALID_STREAM for the stream-id.</t>
-              <t>If the endpoint which created the stream receives a data frame before receiving a HEADERS on that stream, it is a protocol error, and the recipient MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code PROTOCOL_ERROR for the stream-id.</t>
-              <t>Implementors note: If an endpoint receives multiple data frames for invalid stream-ids, it MAY close the connection.</t>
-            </list>
+          
+          <t>
+            DATA frames MUST be associated with a stream. If a DATA frame is 
+            received whose stream identifier field is 0x0, the recipient MUST 
+            respond with a <xref target="ConnectionErrorHandler">connection error</xref> 
+            of type PROTOCOL_ERROR.
           </t>
+          
         </section>
 
         <section anchor="HEADERS_PRIORITY" title="HEADERS+PRIORITY">
