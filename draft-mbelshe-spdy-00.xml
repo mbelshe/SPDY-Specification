@@ -115,7 +115,7 @@
           <xref target="SETTINGS">SETTINGS frame</xref>.  The client sends the client connection header
           immediately upon receipt of a 101 Switching Protocols response (indicating a successful
           upgrade), or after receiving a TLS Finished message from the server. If starting an
-          HTTP/2.0 connection with prior knowledge of server support for the protocol, the client
+          SPDY connection with prior knowledge of server support for the protocol, the client
           connection header is sent upon connection establishment.
         </t>
         <t>
@@ -241,26 +241,42 @@
       </section>
 
       <section title="Streams">
-        <t>Streams are independent sequences of bi-directional data divided into frames with several properties:
-          <list>
-            <t>Streams may be created by either the client or server.</t>
-            <t>Streams optionally carry a set of name/value header pairs.</t>
-            <t>Streams can concurrently send data interleaved with other streams.</t>
-            <t>Streams may be cancelled.</t>
+       <t>
+          A "stream" is an independent, bi-directional sequence of frames 
+          exchanged between the client and server within a SPDY connection.
+          Streams have several important characteristics:
+          <list style="symbols">
+            <t>
+              Streams can be established and used unilaterally or shared by 
+              either the client or server.
+            </t>
+            <t>
+              Streams can be rejected or cancelled by either endpoint.
+            </t>
+            <t>
+              Multiple types of frames can be sent by either endpoint within 
+              a single stream.
+            </t>
+            <t>
+              The order in which frames are sent within a stream is 
+              significant. Recipients are required to process frames 
+              in the order they are received.
+            </t>
+            <t>
+              Streams optionally carry a set of name-value header pairs
+              that are expressed within the headers block of HEADERS+PRIORITY, 
+              HEADERS, or PUSH_PROMISE frames.
+            </t>
+            <t>
+              A single SPDY connection can contain multiple concurrently
+              active streams, with either endpoint interleaving frames from 
+              multiple streams.
+            </t>
           </list>
         </t>
 
-        <section anchor="StreamFrames" title="Stream frames">
-          <t>SPDY defines 3 control frames to manage the lifecycle of a stream:
-            <list>
-              <t>HEADERS+PRIORITY - Open a new stream</t>
-              <t>HEADERS - Remote acknowledgement of a new, open stream</t>
-              <t>RST_STREAM - Close a stream</t>
-            </list>
-          </t>
-        </section>
+        <section anchor="StreamCreation" title="Stream Creation">
 
-        <section anchor="StreamCreation" title="Stream creation">
           <t>
             There is no coordination or shared action between the client and 
             server required to create a stream. Rather, new streams are 
@@ -282,8 +298,7 @@
             within the SPDY connection, unless the identifier has been reserved 
             using a <xref target="PUSH_PROMISE">PUSH_PROMISE</xref> frame.  
             An endpoint that receives an unexpected stream identifier MUST 
-            terminate the stream by responding with a 
-            <xref target="ConnectionErrorHandler">connection error</xref> of type 
+            respond with a <xref target="ConnectionErrorHandler">connection error</xref> of type 
             PROTOCOL_ERROR.
           </t>
           
@@ -302,57 +317,122 @@
           </t>
           
           <t>
-            Stream identifiers cannot be reused within a connection.  Accordingly, long-lived
+            Stream identifiers cannot be reused within a connection.  Long-lived
             connections can cause an endpoint to exhaust the available range of stream
-            identifiers. An endpoint that is unable to establish a new stream identifier can
-            establish a new connection for any new streams.
+            identifiers. A client that is unable to establish a new stream identifier can
+            establish a new connection for new streams.
+          </t>
+
+          <t>
+            Either endpoint can request the early termination of an unwanted 
+            stream by sending an <xref target="StreamErrorHandler">RST_STREAM
+            frame</xref> with an error code of either REFUSED_STREAM (if no
+            frames have been processed) or CANCEL (if at least one frame has
+            been processed). Such termination might not take effect immediately
+            as the peer might have sent additional frames on the stream prior 
+            to receiving the termination request.
           </t>
           
-          <t>
-            An endpoint can request the early termination of an unwanted stream.  Upon receipt of a
-            frame, the receiver can terminate the corresponding stream by sending a <xref
-            target="StreamErrorHandler">stream error</xref> of type REFUSED_STREAM. This cannot
-            prevent the initiating endpoint from sending frames for that stream prior to receiving
-            this request.
-          </t>
         </section>
 
         <section anchor="StreamPriority" title="Stream priority">
-          <t>The creator of a stream assigns a priority for that stream.  Priority is represented as an integer from 0 to 7.  0 represents the highest priority and 7 represents the lowest priority.</t>
-
-          <t>The sender and recipient SHOULD use best-effort to process streams in the order of highest priority to lowest priority.</t>
-        </section>
-
-        <section title="Stream headers">
-          <t>Streams carry optional sets of name/value pair headers which carry metadata about the stream.  After the stream has been created, and as long as the sender is not <xref target="StreamClose">closed</xref> or <xref target="StreamHalfClose">half-closed</xref>, each side may send HEADERS frame(s) containing the header data.  Header data can be sent in multiple HEADERS frames, and HEADERS frames may be interleaved with data frames.</t>
-        </section>
-
-        <section title="Stream data exchange">
-          <t>Once a stream is created, it can be used to send arbitrary amounts of data.  Generally this means that a series of data frames will be sent on the stream until a frame containing the FLAG_FIN flag is set.  The FLAG_FIN can be set on a <xref target="HEADERS_PRIORITY">HEADERS+PRIORITY</xref>, <xref target="HEADERS">HEADERS</xref> or a <xref target="DATA">DATA</xref> frame.  Once the FLAG_FIN has been sent, the stream is considered to be half-closed.</t>
+          <t>
+            The endpoint establishing a new stream can assign a priority for 
+            the stream.  Priority is represented as an unsigned 31-bit integer.  
+            0 represents the highest priority and 2<x:sup>31</x:sup>-1 represents
+            the lowest priority.
+          </t>
+          
+          <t>
+            The purpose of this value is to allow the initiating
+            endpoint to request that frames for the stream be processed with 
+            higher priority relative to any other concurrently active 
+            streams. That is, if an endpoint receives interleaved frames
+            for multiple streams, the endpoint ought to make a best-effort
+            attempt at processing frames for higher priority streams before 
+            processing those for lower priority streams.
+          </t>
+          
+          <t>
+            Explicitly setting the priority for a stream does not 
+            guarantee any particular processing order for the stream
+            relative to any other stream. Nor is there is any mechanism 
+            provided by which the initiator of a stream can force or require 
+            a receiving endpoint to process frames from one stream before 
+            processing frames from another.
+          </t>
+          
         </section>
 
         <section anchor="StreamHalfClose" title="Stream half-close">
-          <t>When one side of the stream sends a frame with the FLAG_FIN flag set, the stream is half-closed from that endpoint. The sender of the FLAG_FIN MUST NOT send further frames on that stream. When both sides have half-closed, the stream is closed.</t>
+          
+          <t>
+            When an endpoint sends a frame for a stream with the FINAL flag 
+            set, the stream is considered to be half-closed for that endpoint.
+            Subsequent frames MUST NOT be sent by that endpoint for the half
+            closed stream for the remaining duration of the SPDY connection.
+            When both endpoints have sent frames with the FINAL flag set, the
+            stream is considered to be fully closed.
+          </t>
 
-          <t>If an endpoint receives a data frame after the stream is half-closed from the sender (e.g. the endpoint has already received a prior frame for the stream with the FIN flag set), it MUST send a RST_STREAM to the sender with the status STREAM_ALREADY_CLOSED.</t>
+          <t>
+            If an endpoint receives additional frames for a stream that was 
+            previously half-closed by the sending peer, the recipient MUST 
+            respond with a <xref target="StreamErrorHandler">stream error</xref> 
+            of type STREAM_CLOSED.
+          </t>
+          
+          <t>
+            An endpoint that has not yet half-closed a stream by sending the
+            FINAL flag can continue sending frames on the stream.
+          </t>
+          
+          <t>
+            It is not necessary for an endpoint to half-close a stream 
+            for which it has not sent any frames. This allows endpoints to
+            use fully unidirectional streams that do not require explicit
+            action or acknowledgement from the receiver.
+          </t>  
+
         </section>
 
         <section anchor="StreamClose" title="Stream close">
-          <t>There are 3 ways that streams can be terminated:
-            <list>
-              <t>Normal termination: Normal stream termination occurs when both sender and recipient have half-closed the stream by sending a FLAG_FIN.</t>
-              <t>Abrupt termination: Either the client or server can send a RST_STREAM control frame at any time. A RST_STREAM contains an error code to indicate the reason for failure.  When a RST_STREAM is sent from the stream originator, it indicates a failure to complete the stream and that no further data will be sent on the stream.  When a RST_STREAM is sent from the stream recipient, the sender, upon receipt, should stop sending any data on the stream.  The stream recipient should be aware that there is a race between data already in transit from the sender and the time the RST_STREAM is received.  See <xref target="StreamErrorHandler">Stream Error Handling</xref></t>
-              <t>TCP connection teardown: If the TCP connection is torn down while un-closed streams exist, then the endpoint must assume that the stream was abnormally interrupted and may be incomplete.</t>
+          <t>
+            Streams can be terminated in the following ways:
+            <list style="hanging">
+              <t hangText="Normal termination:">
+                Normal stream termination occurs when both client and server have half-closed the
+                stream by sending a frame containing a <xref target="FrameHeader">FINAL flag</xref>.
+              </t>
+              <t hangText="Half-close on unidirectional stream:">
+                A stream that only has frames sent in one direction can be tentatively considered to
+                be closed once a frame containing a FINAL flag is sent.  The active sender on the
+                stream MUST be prepared to receive frames after closing the stream.
+              </t>
+              <t hangText="Abrupt termination:">
+                Either peer can send a RST_STREAM control frame at any time to terminate an
+                active stream. RST_STREAM contains an error code to indicate the reason for
+                termination.  A RST_STREAM indicates that the sender will transmit no further data
+                on the stream and that the receiver is advised to cease transmission on it.
+                <vspace blankLines="1"/>
+                The sender of a RST_STREAM frame MUST allow for frames that have already been sent
+                by the peer prior to the RST_STREAM being processed.  If in-transit frames alter
+                connection state, these frames cannot be safely discarded.  See <xref
+                target="StreamErrorHandler">Stream Error Handling</xref> for more details.
+              </t>
+              <t hangText="TCP connection teardown:">
+                If the TCP connection is torn down while un-closed streams
+                exist, then the endpoint MUST assume that the stream was abnormally interrupted and
+                may be incomplete.
+              </t>
             </list>
           </t>
-
-          <t>If an endpoint receives a data frame after the stream is closed, it must send a RST_STREAM to the sender with the status PROTOCOL_ERROR.</t>
         </section>
       </section>
 
       <section title="Error Handling">
         <t>
-          HTTP/2.0 framing permits two classes of error: 
+          SPDY framing permits two classes of error: 
           <list style="symbols">
             <t>
               An error condition that renders the entire connection unusable is a connection error.
@@ -402,7 +482,8 @@
             A RST_STREAM is the last frame that an endpoint can send on a stream.  The peer that
             sends the RST_STREAM frame MUST be prepared to receive any frames that were sent or
             enqueued for sending by the remote peer.  These frames can be ignored, except where they
-            modify connection state (such as that for header compression).
+            modify connection state (such as the state maintained for <xref
+            target="HeaderBlock">header compression</xref>).
           </t>
           <t>
             Normally, an endpoint SHOULD NOT send more than one RST_STREAM frame for any stream. However, an endpoint
@@ -946,7 +1027,7 @@
 
           <section title="The Flow Control Window">
             <t>
-              Flow control in HTTP/2.0 is implemented using a window kept by each sender on every
+              Flow control in SPDY is implemented using a window kept by each sender on every
               stream. The flow control window is a simple integer value that indicates how many
               bytes of data the sender is permitted to transmit; as such, its size is a
               measure of the buffering capability of the receiver.
