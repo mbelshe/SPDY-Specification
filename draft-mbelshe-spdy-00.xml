@@ -1634,8 +1634,6 @@
             </t>
           </section>
         </section>
-      </section>
-    </section>
 
         <section anchor="CREDENTIAL" title="CREDENTIAL">
           <t>The CREDENTIAL control frame is used by the client to send additional client certificates to the server.  A SPDY client may decide to send requests for resources from different origins on the same SPDY connection if it decides that that server handles both origins.  For example if the IP address associated with both hostnames matches and the SSL server certificate presented in the initial handshake is valid for both hostnames.  However, because the SSL connection can contain at most one client certificate, the client needs a mechanism to send additional client certificates to the server.</t>
