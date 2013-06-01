@@ -151,91 +151,90 @@
       </section>
 
       <section title="Framing">
-        <t>Once the connection is established, clients and servers exchange framed messages.</t>
-
-        <t>All frames carry a common set of headers: length, type, and flags. Flag definitions vary between frame types. The simple header format is designed to make reading and writing of frames easy.</t>
-
-        <t>All integer values, including length, and type, are in network byte order.  SPDY does not enforce alignment of types in dynamically sized frames.</t>
-
-        <section anchor="NotationalConventions" title="Notational Conventions for Framing">
-          <t> In SPDY, since everything is defined to be in network byte-order, the most significant bit of any field is the "leftmost" in any diagram.
-            <list>
-              <t> "+" denotes the boundary of a byte (synonomous with octet in this document)</t>
-              <t> "-" denotes a bit </t>
-              <t> "=" denotes an unknown number of bits, typically bounded by one of the fields in the frame definition</t>
-              <t> "|" denotes field separation, which may or may not be on a byte boundary. This does not count as a bit</t>
-              <t> "-&gt;" at the end of a line indicates that the structure is not yet fully described</t>
-              <t> "(N)" indicates that the field is N bits long</t>
-              <t> "[Foo]" advises that the field is the Foo field for that frame</t>
-              <t> "X" represents a reserved bit. It MUST be zeroed</t>
-              <t> A number preceeded by "0x" is a hexidecimal number</t>
-              <t> A number which is not preceeded by "0x" is to be interpreted as binary</t>
-              <t> The numbers above the boxes indicate the byte-offset from the start of that frame or section, as appropriate</t>
+        <t>Once the SPDY connection is established, clients and servers 
+          can begin exchanging frames.</t>
+        
+        <section anchor="FrameHeader" title="Frame Header">
+          <t>
+            SPDY frames share a common base format consisting of 
+            an 8-byte header followed by 0 to 65535 bytes of data.
+          </t>
+          <figure title="Frame Header">
+            <artwork type="inline">
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|         Length (16)           |   Type (8)    |   Flags (8)   |
++-+-------------+---------------+-------------------------------+
+|R|                 Stream Identifier (31)                      |
++-+-------------------------------------------------------------+
+|                     Frame Data (0...)                       ...
++---------------------------------------------------------------+
+</artwork>
+          </figure>
+          <t>
+            The fields of the frame header are defined as:
+            <list style="hanging">
+              <t hangText="Length:">
+                The length of the frame data expressed as an unsigned 16-bit
+                integer. The 8 bytes of the frame header are not included
+                in this value.
+              </t>
+              <t hangText="Type:">
+                The 8-bit type of the frame.  The frame type determines how the remainder of the
+                frame header and data are interpreted.  Implementations MUST ignore unsupported 
+                and unrecognized frame types.
+              </t>
+              <t hangText="Flags:">
+                An 8-bit field reserved for frame-type specific boolean flags.
+                <vspace blankLines="1"/>
+                The least significant bit (0x1) - the FINAL bit - is defined for all frame types as
+                an indication that this frame is the last the endpoint will send for the identified
+                stream.  Setting this flag causes the stream to enter the <xref
+                target="StreamHalfClose">half-closed state</xref>.  Implementations MUST process the
+                FINAL bit for all frames whose stream identifier field is not 0x0.  The FINAL bit
+                MUST NOT be set on frames that use a stream identifier of 0.
+                <vspace blankLines="1"/> 
+                The remaining flags can be assigned semantics specific to the 
+                indicated frame type. Flags that have no defined semantics for 
+                a particular frame type MUST be ignored, and MUST be left 
+                unset (0) when sending.
+              </t>
+              <t hangText="R:">
+                A reserved 1-bit field.  The semantics of this bit are undefined
+                and the bit MUST remain unset (0) when sending and MUST be ignored
+                when receiving.
+              </t>
+              <t hangText="Stream Identifier:">
+                A 31-bit stream identifier (see <xref target="StreamCreation"/>).  A value 0 is
+                reserved for frames that are associated with the connection as a 
+                whole as opposed to an individual stream.
+              </t>
             </list>
           </t>
-          <t> As an example:
-            <figure>
-              <artwork>
-                0         1         2       3
-                +--|------+--|------+--------+--------+
-                |10|[PRI]0xEE|XXXXXX| Len(16)         |
-                +--|------+--|------+--------+--------+
-              </artwork>
-            </figure>
-            This describes a frame which starts with 1 as the MSB, a 0 in the second most significant bit, followed by 0b11101110 (or 0xEE) as the "PRI" field, followed by 6 reserved bits, which will have all be zeroed, followed by a Len field which is 16 bits long.
-            In other words, first two bytes would be: 0b10111011 0b10000000, followed by the Len field.
-          </t>
-
-          <t>
-            Another example.  In this case, a single byte is represented with the most significant bit a 0, the second most significant bit a 1, the next bit the 'K' field, the next bit the 'L' field, and the next 4 bits are reserved and must be zeros. The frame description continues, describing that an indeterminate (presumably defined elsewhere) amount of data follows and ends on a byte boundary.
-            <figure>
-              <artwork>
-                0
-                +--|-|-|----+
-                |01|K|L|XXXX|  -&gt;
-                +--|-|-|----+
-
-                1..N
-                +========+
-                |  data  |
-                +========+
-              </artwork>
-            </figure>
-          </t>
+          <t>The structure and content of the remaining frame data is 
+            dependent entirely on the frame type.</t>
         </section>
 
-        <section anchor="FrameFormat" title="Frame Format">
-          <figure>
-            <artwork>
-0        1        2        3        4         5        6        7
-+--------+--------+--------+--------+--------+--------+--------+--------+
-| Length(16)      |Type(8) |Flags(8)|             Stream-ID             | -&gt;
-+--------+--------+--------+--------+--------+--------+--------+--------+
+        <section anchor="FrameSize" title="Frame Size">
+          
+          <t>Implementations with limited resources might not be capable of 
+            processing large frame sizes. Such implementations MAY choose
+            to place additional limits on the maximum frame size. However,
+            all implementations MUST be capable of receiving and processing
+            frames containing at least 8192 octets of data.
+            <cref>Ed. Question: Does this minimum include the 8-byte header 
+              or just the frame data?</cref></t>
 
-8..N
-+========+
-|  Data  |
-+========+
-            </artwork>
-          </figure>
-          <t>Length: An unsigned 16-bit value representing the number of bytes of the data field.</t>
-
-          <t>Type: The frame type. See <xref target="FrameTypes">Frame Types</xref> for the complete list of frames.</t>
-
-          <t>Flags: Flags related to this frame. Flag definitions are dependent upon the frame type.</t>
-
-          <t>Data: data associated with this control frame. The format of this data is controlled by the frame type.</t>
-
-          <t>
-            Stream-ID: A 31-bit stream identifier (see <xref target="StreamCreation"/>).  A value 0 is
-            reserved for frames that are associated with the connection as a 
-            whole as opposed to an individual stream.
+          <t>An implementation MUST terminate a stream immediately if it is
+            unable to process a frame due it's size. This is done by sending 
+            an <xref target="RST_STREAM">RST_STREAM frame</xref> containing 
+            the FRAME_TOO_LARGE error code.
           </t>
-
-          <t>Frame processing requirements:
-            <list>
-              <t>Note that full length frames (64kb) can be large for implementations running on resource-limited hardware.  In such cases, implementations MAY limit the maximum length frame supported.  However, all implementations MUST be able to receive frames of at least 8192 octets in length.</t>
-            </list>
+          <t>
+            <cref><eref target="https://github.com/http2/http2-spec/issues/28">Issue 28</eref>: Need
+            a way to signal the maximum frame size; no way to RST_STREAM on non-stream-related
+            frames.</cref>
           </t>
         </section>
       </section>
@@ -848,62 +847,52 @@
         </section>
       </section>
 
-      <section title="Data flow">
-        <t>Because TCP provides a single stream of data on which SPDY multiplexes multiple logical streams, clients and servers must intelligently interleave data messages for concurrent connections.</t>
-      </section>
+      <section title="Frame Types" anchor="frame-types">
+        
+        <t>
+          This specification defines a number of frame types, 
+          each identified by a unique 8-bit type code. Each frame
+          type serves a distinct purpose either in the establishment and 
+          management of the connection as a whole, or of individual streams.
+        </t>
+        
+        <t>
+          The transmission of specific frame types can alter the state of 
+          a connection. If endpoints fail to maintain a synchronized view 
+          of the connection state, successful communication within the connection 
+          will no longer be possible. Therefore, it is important that endpoints 
+          have a shared comprehension of how the state is affected by the use
+          any given frame. Accordingly, while it is expected that new frame 
+          types will be introduced by extensions to this protocol, only frames
+          defined by this document are permitted to alter the connection state.
+        </t>
 
-      <section anchor="FrameTypes" title="Frame Types">
-        <texttable align='left'>
-          <ttcol align='center'>Type-field value</ttcol>
-          <ttcol align='center'>Frame type</ttcol>
-          <c> 0x0</c> <c> <xref target="DATA">DATA</xref></c>
-          <c> 0x1</c> <c> <xref target="HEADERS_PRIORITY">HEADERS+PRIORITY</xref></c>
-          <c> 0x3</c> <c> <xref target="RST_STREAM">RST_STREAM</xref></c>
-          <c> 0x4</c> <c> <xref target="SETTINGS">SETTINGS</xref></c>
-          <c> 0x5</c> <c> <xref target="PUSH_PROMISE">PUSH_PROMISE</xref></c>
-          <c> 0x6</c> <c> <xref target="PING">PING</xref></c>
-          <c> 0x7</c> <c> <xref target="GOAWAY">GOAWAY</xref></c>
-          <c> 0x8</c> <c> <xref target="HEADERS">HEADERS</xref></c>
-          <c> 0x9</c> <c> <xref target="WINDOW_UPDATE">WINDOW_UPDATE</xref></c>
-          <c> 0xa</c> <c> <xref target="CREDENTIAL">CREDENTIAL</xref></c>
-        </texttable>
-        <t> Shared components of several control frames: <xref target="HeaderBlock">Name/Value Header Block</xref></t>
-
-        <section anchor="DATA" title="DATA">
-          <figure>
-            <artwork>
-0        1        2        3        4         5        6        7
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-| Length(16)      |    0x0 |Flags(8)|X| Stream-ID(31)                    | -&gt;
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-
-8..N
-+========+
-|  Data  |
-+========+
-            </artwork>
-          </figure>
-
-          <t>Length: An unsigned 16-bit value representing the number of bytes which follow the frame header.  The total size of a data frame is 8 bytes + length. It is valid to have a zero-length data frame.</t>
-
-          <t>Flags: Flags related to this frame. Valid flags are:
-            <list>
-              <t>0x01 = FLAG_FIN - signifies that this frame represents the last frame to be transmitted on this stream.  See <xref target="StreamClose">Stream Close</xref> below.</t>
-              <t>0x02 = MSG_DONE - signifies that this frame represents the last frame of a message.  This is relevant for layering of message-based protocols on top of SPDY.</t>
+        <section anchor="DataFrames" title="DATA Frames">
+          
+          <t>
+            DATA frames (type=0x0) convey arbitrary, variable-length
+            sequences of octets associated with a stream. One or more 
+            DATA frames are used, for instance, to carry HTTP request
+            or response payloads.
+          </t>
+          
+          <t>
+            The DATA frame defines the following flag:
+            <list style="hanging">
+              <t hangText="MSG_DONE (0x2):">
+                Bit 2 being set signifies that this frame represents the last frame of a message.
+                This is relevant for layering of message-based protocols on top of SPDY.
+              </t>
             </list>
           </t>
-
-          <t>Stream-ID: A 31-bit value identifying the stream.</t>
-
-          <t>Data: The variable-length data payload; the length was defined in the length field.</t>
-
-          <t>Data frame processing requirements:
-            <list>
-              <t>If an endpoint receives a data frame for a stream-id which is not open and the endpoint has not sent a <xref target="GOAWAY">GOAWAY</xref> frame, it MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the error code INVALID_STREAM for the stream-id.</t>
-              <t>If the endpoint which created the stream receives a data frame before receiving a HEADERS on that stream, it is a protocol error, and the recipient MUST issue a <xref target="StreamErrorHandler">stream error</xref> with the status code PROTOCOL_ERROR for the stream-id.</t>
-              <t>Implementors note: If an endpoint receives multiple data frames for invalid stream-ids, it MAY close the connection.</t>
-            </list>
+          
+          <t>
+            DATA frames MUST be associated with a stream. If a DATA frame is 
+            received whose stream identifier field is 0x0, the recipient MUST 
+            respond with a <xref target="ConnectionErrorHandler">connection error</xref> 
+            of type PROTOCOL_ERROR.
           </t>
+          
         </section>
 
         <section anchor="HEADERS_PRIORITY" title="HEADERS+PRIORITY">
@@ -911,18 +900,16 @@
             The HEADERS+PRIORITY frame (type=0x1) allows the sender to 
             set header fields and stream priority at the same time.
           </t>
-          <figure>
-            <artwork>
-0        1        2        3        4         5        6        7
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-| Length(16)      |    0x1 |Flags(8)|X| Stream-ID(31)                    | -&gt;
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-
-8        9        10       11       12,13,14..N
-+-|-------+--------+--------+--------+=========================+
-|X|Priority(31)                      | Name/Value Header Block |
-+-|-------+--------+--------+--------+=========================+
-            </artwork>
+          <figure title="HEADERS+PRIORITY Frame Payload">
+            <artwork type="inline">
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|X|                   Priority (31)                             |
++-+-------------------------------------------------------------+
+|                    Header Block (*)                         ...
++---------------------------------------------------------------+
+</artwork>
           </figure>
 
           <t>
@@ -931,8 +918,11 @@
             <xref target="StreamPriority"/>.
           </t>
           
-          <t>No type-specific flags are defined.</t>
-          
+          <t>
+            HEADERS+PRIORITY uses the same flags as the HEADERS frame, except that a
+            HEADERS+PRIORITY frame with a CONTINUES bit MUST be followed by another HEADERS+PRIORITY
+            frame.  See <xref target="HEADERS">HEADERS frame</xref> for any flags.
+          </t>
           <t>
             HEADERS+PRIORITY frames MUST be associated with a stream. If a 
             HEADERS+PRIORITY frame is received whose stream 
@@ -956,18 +946,14 @@
             receiver is rejecting the stream, requesting that the stream be 
             cancelled or that an error condition has occurred. 
           </t>
-          <figure>
-            <artwork>
-0        1        2        3        4         5        6        7
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-| Length(16)      |    0x3 |Flags(8)|X| Stream-ID(31)                    | -&gt;
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-
-8        9        10       11
-+--------+--------+--------+--------+
-|            Error-Code(32)         |
-+--------+--------+--------+--------+
-            </artwork>
+          <figure title="RST_STREAM Frame Payload">
+            <artwork type="inline">
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                         Error Code (32)                       |
++---------------------------------------------------------------+
+</artwork>
           </figure>
 
           <t>
@@ -997,126 +983,319 @@
             <xref target="ConnectionErrorHandler">connection error</xref> of type 
             PROTOCOL_ERROR.
           </t>
+
         </section>
 
         <section anchor="SETTINGS" title="SETTINGS">
-          <t>A SETTINGS frame contains a set of id/value pairs for communicating configuration data about how the two endpoints may communicate. SETTINGS frames can be sent at any time by either endpoint, are optionally sent, and are fully asynchronous.  When the server is the sender, the sender can request that configuration data be persisted by the client across SPDY connections and returned to the server in future communications.</t>
+          <t>
+            The SETTINGS frame (type=0x4) conveys configuration parameters that affect how endpoints
+            communicate. The parameters are either constraints on peer behavior or preferences.
+          </t>
+          
+          <t>
+            SETTINGS frames MUST be sent at the start of a connection, and MAY 
+            be sent at any other time by either endpoint over the lifetime 
+            of the connection. 
+          </t>
+          
+          <t>
+            Implementations MUST support all of the settings defined by this 
+            specification and MAY support additional settings defined by 
+            extensions. Unsupported or unrecognized settings MUST be ignored.
+            New settings MUST NOT be defined or implemented in a way that 
+            requires endpoints to understand them in order to communicate
+            successfully.
+          </t>
+                    
+          <t>
+            A SETTINGS frame is not required to include every defined 
+            setting; senders can include only those parameters for which it 
+            has accurate values and a need to convey. When multiple parameters 
+            are sent, they SHOULD be sent in order of numerically lowest ID to 
+            highest ID.  A single SETTINGS frame MUST NOT contain multiple values for the same ID.  If the
+            receiver of a SETTINGS frame discovers multiple values for the same ID, it MUST ignore
+            all values for that ID except the first one.
+          </t>
+          <t>
+            Over the lifetime of a connection, an endpoint MAY send multiple SETTINGS frames
+            containing previously unspecified parameters or new values for parameters whose values
+            have already been established. Only the most recent value provided setting value
+            applies.
+          </t>
+          <t>
+            The SETTINGS frame defines the following flag:
+            <list style="hanging">
+              <t hangText="CLEAR_PERSISTED (0x2):">
+                Bit 2 being set indicates a request to clear any previously persisted settings
+                before processing the settings.  Clients MUST NOT set this flag.
+              </t>
+            </list>
+          </t>
+          <t>
+            SETTINGS frames always apply to a connection, never a single stream.  
+            The stream identifier for a settings frame MUST be zero. If an 
+            endpoint receives a SETTINGS frame whose stream identifier field
+            is anything other than 0x0, the endpoint MUST respond with a 
+            <xref target="ConnectionErrorHandler">connection error</xref> of type
+            PROTOCOL_ERROR.
+          </t>
 
-          <t>Persistence of SETTINGS ID/Value pairs is done on a per origin/IP pair (the "origin" is the set of scheme, host, and port from the URI.  See <xref target="RFC6454"></xref>).  That is, when a client connects to a server, and the server persists settings within the client, the client SHOULD return the persisted settings on future connections to the same origin AND IP address and TCP port. Clients MUST NOT request servers to use the persistence features of the SETTINGS frames, and servers MUST ignore persistence related flags sent by a client.</t>
-          <figure>
-            <artwork>
-0        1        2        3        4         5        6        7
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-| Length(16)      |    0x4 |Flags(8)|X|               0x0                | -&gt;
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-
-8..N
-+================+
-| ID/Value-Pairs |
-+================+
-            </artwork>
-          </figure>
-
-          <t>Length: An unsigned 16-bit value representing the number of bytes which follow the frame header.  For SETTINGS frames, this is the length of the ID/Value-Pairs Block.</t>
-
-          <t>Type: The message type for a SETTINGS message is 4.</t>
-
-          <t>Flags: FLAG_SETTINGS_CLEAR_SETTINGS (0x1): When set, the client should clear any previously persisted SETTINGS ID/Value pairs.  If this frame contains ID/Value pairs with the FLAG_SETTINGS_PERSIST_VALUE set, then the client will first clear its existing, persisted settings, and then persist the values with the flag set which are contained within this frame.  Because persistence is only implemented on the client, this flag can only be used when the sender is the server.</t>
-
-          <t>Number of entries: A 32-bit value representing the number of ID/value pairs in this message. </t>
-
-          <t>Each ID/value pair is as follows:
-            <figure>
-              <artwork>
-                0        1        2        3        4        5        6        7
-                +--------+--------+--------+--------+--------+--------+--------+--------+
-                |Flags(8)| ID(24)                   | Value(32)                         |
-                +--------+--------+--------+--------+--------+--------+--------+--------+
-              </artwork>
+          <section title="Setting Format" anchor="SettingFormat">
+            
+            <t>
+              The payload of a SETTINGS frame consists of zero or more settings. Each setting
+              consists of an 8-bit flags field specifying per-item instructions, an unsigned 24-bit
+              setting identifier, and an unsigned 32-bit value.
+            </t>
+            
+            <figure title="Setting Format">
+              <artwork type="inline">
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|SettingFlags(8)|             Setting Identifier (24)           |
++---------------+-----------------------------------------------+
+|                        Value (32)                             |
++---------------------------------------------------------------+
+</artwork>
             </figure>
-          </t>
-
-          <t>Flags: An 8 bit value.  Defined Flags:
-            <list>
-              <t>FLAG_SETTINGS_PERSIST_VALUE (0x1):   When set, the sender of this SETTINGS frame is requesting that the recipient persist the ID/Value and return it in future SETTINGS frames sent from the sender to this recipient.  Because persistence is only implemented on the client, this flag is only sent by the server.</t>
-              <t>FLAG_SETTINGS_PERSISTED (0x2):  When set, the sender is notifying the recipient that this ID/Value pair was previously sent to the sender by the recipient with the FLAG_SETTINGS_PERSIST_VALUE, and the sender is returning it.  Because persistence is only implemented on the client, this flag is only sent by the client.</t>
-            </list>
-          </t>
-
-          <t>ID: 24-bits in network byte order.  Defined IDs:
-            <list>
-              <t>1 - SETTINGS_UPLOAD_BANDWIDTH allows the sender to send its expected upload bandwidth on this channel. This number is an estimate. The value should be the integral number of kilobytes per second that the sender predicts as an expected maximum upload channel capacity.</t>
-              <t>2 - SETTINGS_DOWNLOAD_BANDWIDTH allows the sender to send its expected download bandwidth on this channel. This number is an estimate. The value should be the integral number of kilobytes per second that the sender predicts as an expected maximum download channel capacity.</t>
-              <t>3 - SETTINGS_ROUND_TRIP_TIME allows the sender to send its expected round-trip-time on this channel. The round trip time is defined as the minimum amount of time to send a control frame from this client to the remote and receive a response. The value is represented in milliseconds.</t>
-              <t>4 - SETTINGS_MAX_CONCURRENT_STREAMS allows the sender to inform the remote endpoint the maximum number of concurrent streams which it will allow. By default there is no limit. For implementors it is recommended that this value be no smaller than 100.</t>
-              <t>5 - SETTINGS_CURRENT_CWND allows the sender to inform the remote endpoint of the current TCP CWND value.</t>
-              <t>6 - SETTINGS_DOWNLOAD_RETRANS_RATE allows the sender to inform the remote endpoint the retransmission rate (bytes retransmitted / total bytes transmitted).</t>
-              <t>7 - SETTINGS_INITIAL_WINDOW_SIZE allows the sender to inform the remote endpoint the initial window size (in bytes) for new streams.</t>
-              <t>8 - SETTINGS_CLIENT_CERTIFICATE_VECTOR_SIZE allows the server to inform the client if the new size of the client certificate vector.</t>
-              <t>9 - SETTINGS_SUPPORTING_SCHEMES allows the sender to inform the remote endpoint supporting overlayering protocol schemes. The corresponding value must be a 32-bit value, and which contains flags as follows:</t>
-              <list>
-                <t>bit 0: http</t>
-                <t>bit 1: https</t>
-                <t>bit 2: ws</t>
-                <t>bit 3: wss</t>
+            
+            <t>
+              Two flags are defined for the 8-bit flags field:
+              <list style="hanging">
+                <t hangText="PERSIST_VALUE (0x1):">
+                  Bit 1 (the least significant bit) being set indicates a request from the server
+                  to the client to persist this setting.  A client MUST NOT set this flag.
+                </t>
+                <t hangText="PERSISTED (0x2):">
+                  Bit 2 being set indicates that this setting is a persisted setting being
+                  returned by the client to the server.  This also indicates that this setting is
+                  not a client setting, but a value previously set by the server.  A server MUST
+                  NOT set this flag.
+                </t>
               </list>
-            </list>
-          </t>
+            </t>
+          </section>
 
-          <t>Value: A 32-bit value.</t>
+          <section title="Setting Persistence">
+            <t>
+              <cref>Note that persistence of settings is under discussion in the WG and might be
+              removed in a future version of this document.</cref>
+            </t>
+            
+            <t>
+              A server endpoint can request that configuration parameters 
+              sent to a client in a SETTINGS frame are to be persisted by 
+              the client across SPDY connections and returned to the server
+              in any new SETTINGS frame the client sends to the server
+              in the current connection or any future connections.
+            </t>
+            
+            <t>
+              Persistence is requested on a per-setting basis by setting the
+              PERSIST_VALUE flag (0x1).
+            </t>
+            
+            <t>
+              Client endpoints are not permitted to make such requests. Servers
+              MUST ignore any attempt by clients to request that a server 
+              persist configuration parameters.
+            </t>
+            
+            <t>
+              Persistence of configuration parameters is done on a per-origin
+              basis (see <xref target="RFC6454"/>). That is, when a client 
+              establishes a connection with a server, and the server requests that
+              the client maintain persistent settings, the client SHOULD return 
+              the persisted settings on all future connections to the same origin,
+              IP address and TCP port.
+            </t>
 
-          <t>The message is intentionally extensible for future information which may improve client-server communications. The sender does not need to send every type of ID/value. It must only send those for which it has accurate values to convey. When multiple ID/value pairs are sent, they should be sent in order of lowest id to highest id.  A single SETTINGS frame MUST not contain multiple values for the same ID.  If the recipient of a SETTINGS frame discovers multiple values for the same ID, it MUST ignore all values except the first one.</t>
+            <t>
+              Whenever the client sends a SETTINGS frame in the current connection,
+              or establishes a new connection with the same origin, persisted 
+              configuration parameters are sent with the PERSISTED
+              flag (0x2) set for each persisted parameter.
+            </t>
+            
+            <t>
+              Persisted settings accumulate until the server requests that
+              all previously persisted settings are to be cleared by setting 
+              the CLEAR_PERSISTED (0x2) flag on the SETTINGS frame.
+            </t>
 
-          <t>A server may send multiple SETTINGS frames containing different ID/Value pairs.  When the same ID/Value is sent twice, the most recent value overrides any previously sent values.  If the server sends IDs 1, 2, and 3 with the FLAG_SETTINGS_PERSIST_VALUE in a first SETTINGS frame, and then sends IDs 4 and 5 with the FLAG_SETTINGS_PERSIST_VALUE, when the client returns the persisted state on its next SETTINGS frame, it SHOULD send all 5 settings (1, 2, 3, 4, and 5 in this example) to the server.</t>
+            <t>
+              For example, if the server sends IDs 1, 2, and 3 with the 
+              FLAG_SETTINGS_PERSIST_VALUE in a first SETTINGS frame, and then 
+              sends IDs 4 and 5 with the FLAG_SETTINGS_PERSIST_VALUE in a 
+              subsequent SETTINGS frame, the client will return values for 
+              all 5 settings (1, 2, 3, 4, and 5 in this example) to the server.
+            </t>          
+          </section>
+          
+          <section anchor="SettingValues" title="Defined Settings">
+            <t>
+              The following settings are defined:
+              <list style="hanging">
+                <x:lt hangText="SETTINGS_UPLOAD_BANDWIDTH (1):">
+                  <t>
+                    indicates the sender's estimated upload bandwidth for this connection. The value 
+                    is an the integral number of kilobytes per
+                    second that the sender predicts as an expected maximum upload channel capacity.
+                  </t>
+                </x:lt>
+                <x:lt hangText="SETTINGS_DOWNLOAD_BANDWIDTH (2):">
+                  <t>
+                    indicates the sender's estimated download bandwidth for this connection. The value 
+                    is an integral number of kilobytes per
+                    second that the sender predicts as an expected maximum download channel capacity.
+                  </t>
+                </x:lt>
+                <x:lt hangText="SETTINGS_ROUND_TRIP_TIME (3):">
+                  <t>
+                    indicates the sender's estimated round-trip-time for this connection. The round
+                    trip time is defined as the minimum amount of time to send a control frame from
+                    this client to the remote and receive a response. The value is represented in
+                    milliseconds.
+                  </t>
+                </x:lt>
+                <x:lt hangText="SETTINGS_MAX_CONCURRENT_STREAMS (4):">
+                  <t>
+                    indicates the maximum number of concurrent streams that the sender will allow. 
+                    This limit is directional: it applies to the number
+                    of streams that the sender permits the receiver to create. By default there is no
+                    limit.  It is recommended that this value be no smaller than 100,
+                    so as to not unnecessarily limit parallelism.
+                  </t>
+                </x:lt>
+                <x:lt hangText="SETTINGS_CURRENT_CWND (5):">
+                  <t>
+                    indicates the sender's current TCP CWND value.
+                  </t>
+                </x:lt>
+                <x:lt hangText="SETTINGS_DOWNLOAD_RETRANS_RATE (6):">
+                  <t>
+                    indicates the sender's retransmission rate (bytes retransmitted / total bytes transmitted).
+                  </t>
+                </x:lt>
+                <x:lt hangText="SETTINGS_INITIAL_WINDOW_SIZE (7):">
+                  <t>
+                    indicates the sender's initial stream window size (in bytes) for new streams.
+                  </t>
+                </x:lt>
+                <x:lt hangText="SETTINGS_CLIENT_CERTIFICATE_VECTOR_SIZE (8):">
+                  <t>
+                    indicates the sender's (which should be the server) size of the client certificate vector.
+                  </t>
+                </x:lt>
+                <x:lt hangText="SETTINGS_SUPPORTING_SCHEMES (9):">
+                  <t>
+                    indicates the sender's supported overlayering protocol schemes. The corresponding value must be a 32-bit value, and which contains flags as follows:
+                    <list>
+                      <t>bit 0: http</t>
+                      <t>bit 1: https</t>
+                      <t>bit 2: ws</t>
+                      <t>bit 3: wss</t>
+                    </list>
+                  </t>
+                </x:lt>
+                <x:lt hangText="SETTINGS_FLOW_CONTROL_OPTIONS (10):">
+                  <t>
+                    indicates that streams directed to the sender will not
+                    be subject to flow control.  The least significant bit (0x1) is set to indicate
+                    that new streams are not flow controlled.  All other bits are reserved.
+                  </t>
+                  <t>
+                    This setting applies to all streams, including existing streams.
+                  </t>
+                  <t>
+                    These bits cannot be cleared once set, see <xref target="EndFlowControl"/>.
+                  </t>
+                </x:lt>
+              </list>
+            </t>
+          </section>
         </section>
 
         <section anchor="PUSH_PROMISE" title="PUSH_PROMISE">
-          <t>The PUSH_PROMISE control frame allows the sender to signal a promise to create a stream and serve the referenced resource. Minimal data allowing the receiver to understand which resource(s) are to be pushed are to be included.</t>
-          <figure>
-            <artwork>
-0        1        2        3        4         5        6        7
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-| Length(16)      |    0x5 |Flags(8)|X| Associated-To-Stream-ID(31)      | -&gt;
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
 
-8        9        10       11       12,13,14..N
-+-|-------+--------+--------+--------+=========================+
-|X| Promised-Stream-ID(31)           | Name/Value Header Block |
-+-|-------+--------+--------+--------+=========================+
-            </artwork>
-          </figure>
-
-          <t>Length: An unsigned 16-bit value representing the number of bytes which follow the frame header.  For PUSH_PROMISE frames, this is 4 bytes plus the length of the Name/Value Header Block.</t>
-
-          <t>Flags: Flags related to this frame. Valid flags are:
-            <list>
-              <t>0x01 = FLAG_FIN - marks this frame as the last frame to be transmitted on this stream and puts the sender in the <xref target="StreamHalfClose">half-closed</xref> state.</t>
-            </list>
+          <t>
+            The PUSH_PROMISE frame (type=0x5) is used to notify the peer 
+            endpoint in advance of streams the sender intends to initiate.
+            The PUSH_PROMISE frame includes the unsigned 31-bit identifier
+            of the stream the endpoint plans to create along with a minimal
+            set of headers that provide additional context for the stream.
+            <xref target="PushResources"/> contains a thorough description
+            of the use of PUSH_PROMISE frames.
           </t>
 
-          <t>Associated-To-Stream-ID: The 31-bit identifier for a stream which this stream is associated to.  If this stream is independent of all other streams, it should be 0.</t>
+          <figure title="PUSH_PROMISE Payload Format">
+            <artwork type="inline">
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|X|                Promised-Stream-ID (31)                      |
++-+-------------------------------------------------------------+
+|                    Header Block (*)                         ...
++---------------------------------------------------------------+
+</artwork>
+          </figure>
+          
+          <t>
+            The payload of a PUSH_PROMISE includes a "Promised-Stream-ID".  This 
+            unsigned 31-bit integer identifies the stream the endpoint
+            intends to start sending frames for.  The promised stream
+            identifier MUST be a valid choice for the next stream sent by the sender (see <xref
+            target="StreamCreation">new stream identifier</xref>).
+          </t>
 
-          <t>Promised-Stream-ID: The 31-bit identifier indicating the stream-id on which the resource will be pushed. If multiple headers are indicated within the Name/Value Header Block, each subsequent resource as indicated in the Header Block will increment the Promised-Stream-Id by two. The Promised-Stream-ID is subject to the same rules as any other stream-id-- when defined and transmitted, the Promised-Stream-ID MUST be part of a monotonically increasing sequence of stream-ids. There is no requirement that the streams referred to by the this frame are created in the order referenced.</t>
+          <t>
+            PUSH_PROMISE frames MUST be associated with an existing stream. If 
+            the stream identifier field specifies the value 0x0, a recipient
+            MUST respond with a <xref target="ConnectionErrorHandler">connection 
+            error</xref> of type PROTOCOL_ERROR.
+          </t>
+          
+          <t>
+            The state of promised streams is bound to the state of the 
+            original associated stream on which the PUSH_PROMISE frame
+            were sent. If the originating stream state changes to 
+            fully closed, all associated promised streams fully close as well. 
+            <cref>Ed. Note: We need clarification on this point. How synchronized
+              are the lifecycles of streams and associated promised streams?</cref>
+          </t>
+          
+          <t>
+            PUSH_PROMISE uses the same flags as the HEADERS frame, except that a PUSH_PROMISE frame
+            with a CONTINUES bit MUST be followed by another PUSH_PROMISE frame.  See <xref
+            target="HEADERS">HEADERS frame</xref> for any flags.
+          </t>
 
-          <t>Name/Value Header Block:  A set of name/value pairs carried as part of the PUSH_PROMISE.  <xref target="HeaderBlock">see Name/Value Header Block</xref>.</t>
-
-          <t>If an endpoint receives a PUSH_PROMISE which is larger than the implementation supports, it MAY send a RST_STREAM with error code FRAME_TOO_LARGE.  All implementations MUST support the minimum size limits defined in <xref target="FrameFormat">the Frame Format section</xref>.</t>
-
+          <t>
+            Promised streams are not required to be used in order promised.
+            The PUSH_PROMISE only reserves stream identifiers for later use.
+          </t>
+          
+          <t>
+            Recipients of PUSH_PROMISE frames can choose to reject promised
+            streams by returning a RST_STREAM referencing the promised stream
+            identifier back to the sender of the PUSH_PROMISE.
+          </t>
+          
+          <t>
+            The PUSH_PROMISE frame modifies the connection state as 
+            defined in <xref target="HeaderBlock" />.
+          </t>
+            
         </section>
 
         <section anchor="PING" title="PING">
-          <t>The PING control frame is a mechanism for measuring a minimal round-trip time from the sender.  It can be sent from the client or the server.  Recipients of a PING frame should send an identical frame to the sender as soon as possible (if there is other pending data waiting to be sent, PING should take highest priority).  Each ping sent by a sender should use a unique ID.</t>
-          <figure>
-            <artwork>
-0        1        2        3        4         5        6        7
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-| Length(16)      |    0x6 |FLAGS(8)|X|               0x0                |
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-            </artwork>
-          </figure>
-
-          <t>Length: An unsigned 16-bit value representing the number of bytes which follow the frame header.  For PING frames, this dictates the length of the arbitrary, variable-length sequence of octets.</t>
-
+          <t>
+            The PING frame (type=0x6) is a mechanism for measuring a minimal round-trip time from the
+            sender, as well as determining whether an idle connection is still functional.  
+            PING frames can be sent from any endpoint.
+          </t>
+          
           <t>
             PING frames consist of an arbitrary, variable-length sequence of 
             octets. Receivers of a PING send a response PING frame with the PONG
@@ -1127,10 +1306,8 @@
           <t>
             Processing of PING frames SHOULD be performed with the highest
             priority if there are additional frames waiting to be processed.
-          </t>  
-
-          <t>Stream ID: Always set to 0</t>
-
+          </t>   
+          
           <t>
             The PING frame defines one type-specific flag:
             <list style="hanging">
@@ -1141,6 +1318,14 @@
               </t>
             </list>
           </t>
+          <t>
+            PING frames are not associated with any individual stream. If a 
+            PING frame is received with a stream identifier field value other
+            than 0x0, the recipient MUST respond with a 
+            <xref target="ConnectionErrorHandler">connection error</xref> of type 
+            PROTOCOL_ERROR.
+          </t>
+
         </section>
 
         <section anchor="GOAWAY" title="GOAWAY">
@@ -1149,13 +1334,13 @@
             streams on this connection.  It can be sent from the client or the server. Once sent, the
             sender will ignore frames sent on new streams for the remainder of the
             connection. Receivers of a GOAWAY frame MUST NOT open additional streams on the connection,
-            although a new connection can be established for new streams.  The purpose of this message
+            although a new connection can be established for new streams.  The purpose of this frame
             is to allow an endpoint to gracefully stop accepting new streams (perhaps for a reboot
             or maintenance), while still finishing processing of previously established streams.
           </t>
           <t>
             There is an inherent race condition between an endpoint starting new streams and the
-            remote sending a GOAWAY message.  To deal with this case, the GOAWAY contains the stream
+            remote sending a GOAWAY frame.  To deal with this case, the GOAWAY contains the stream
             identifier of the last stream which was processed on the sending endpoint in this
             connection.  If the receiver of the GOAWAY used streams that are newer than the indicated
             stream identifier, they were not processed by the sender and the receiver may treat the
@@ -1163,7 +1348,7 @@
             re-create the streams later on a new connection).
           </t>
           <t>
-            Endpoints should always send a GOAWAY message before closing a connection so that the
+            Endpoints should always send a GOAWAY frame before closing a connection so that the
             remote can know whether a stream has been partially processed or not.  (For example, if
             an HTTP client sends a POST at the same time that a server closes a connection, the
             client cannot know if the server started to process that POST request if the server does
@@ -1177,18 +1362,17 @@
             <cref>Issue: connection state that is established by those "ignored" messages cannot be
             ignored without the state in the two peers becoming unsynchronized.</cref>
           </t>
-          <figure>
-            <artwork>
-0        1        2        3        4         5        6        7     
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-| Length(16)      |    0x7 |Flags(8)|X|               0x0                | -&gt;
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
 
-8        9        10       11      12        13       14       15
-+-|-------+--------+--------+-------+---------+--------+--------+--------+
-|X| Last-Good-Stream-ID(31)         |          Status-Code(32)           | -&gt;
-+-|-------+--------+--------+-------+---------+--------+--------+--------+
-            </artwork>
+          <figure title="GOAWAY Payload Format">
+            <artwork type="inline">
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|X|                  Last-Stream-ID (31)                        |
++-+-------------------------------------------------------------+
+|                      Error Code (32)                          |
++---------------------------------------------------------------+
+</artwork>
           </figure>
           <t>
             The GOAWAY frame does not define any type-specific flags.
@@ -1197,7 +1381,7 @@
             The GOAWAY frame applies to the connection, not a specific stream.  The stream identifier
             MUST be zero.
           </t>
-          <t>
+         <t>
             The last stream identifier in the GOAWAY frame contains the highest numbered stream
             identifier for which the sender of the GOAWAY frame has received frames on and might
             have taken some action on.  All streams up to and including the identified stream might
@@ -1238,30 +1422,33 @@
             Any number of HEADERS frames can may be sent on an existing stream 
             at any time.
           </t>
-          <t>Here is the format of a headers frame and headers block:</t>
-          <figure>
-            <artwork>
-0        1        2        3         4        5        6        7
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-| Length(16)      |    0x8 |Flags(8)|X| Stream-ID(31)                    | -&gt;
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-
-8,9,10..N
-+=========================+
-| Name/Value Header Block |
-+=========================+
-            </artwork>
-          </figure>
           <t>
-            The HEADERS frame does not define any type-specific flags.
+            Additional type-specific flags for the HEADERS frame are:
+            <list style="hanging">
+              <t hangText="CONTINUES (0x2):">
+                The CONTINUES bit indicates that this frame does not contain the entire payload
+                necessary to provide a complete set of headers.
+                <vspace blankLines="1"/>
+                The payload for a complete set of headers is provided by a sequence of HEADERS
+                frames, terminated by a HEADERS frame without the CONTINUES bit.  Once the sequence
+                terminates, the payload of all HEADERS frames are concatenated and interpreted as a
+                single block.
+                <vspace blankLines="1"/>
+                A HEADERS frame that includes a CONTINUES bit MUST be followed by a HEADERS frame
+                for the same stream.  A receiver MUST treat the receipt of any other type of frame
+                or a frame on a different stream as a <xref
+                target="ConnectionErrorHandler">connection error</xref> of type PROTOCOL_ERROR.
+              </t>
+            </list>
+
           </t>
           <t>
-            The body of a HEADERS frame contains a <xref target="HeaderBlock">Headers Block</xref>.
+            The payload of a HEADERS frame contains a <xref target="HeaderBlock">Headers Block</xref>.
           </t>
           <t>
             The HEADERS frame is associated with an existing stream. If 
             a HEADERS frame is received with a stream identifier of 0x0, 
-            the recipient MUST respond with a 
+            the recipient MUST respond with a
             <xref target="StreamErrorHandler">stream error</xref> of type
             PROTOCOL_ERROR.
           </t>
@@ -1281,31 +1468,20 @@
           </t>
           <t>
             Both types of flow control are hop by hop; that is, only between the two endpoints. 
-            Intermediaries do not forward WINDOW_UPDATE messages between
+            Intermediaries do not forward WINDOW_UPDATE frames between
             dependent connections.  However, throttling of data transfer by any receiver can
             indirectly cause the propagation of flow control information toward the original
             sender.
           </t>
           <t>
             Flow control only applies to frames that are identified as being subject to flow
-            control. Of the frames defined in this document, this includes only DATA frame.  
-            Receivers MUST either buffer or process all other frames, terminate the
-            corresponding stream, or terminate the connection.  The stream or connection is terminated
-            with a FLOW_CONTROL_ERROR code.
+            control. Of the frame types defined in this document, this includes only DATA frame.
+            Frames that are exempt from flow control MUST be accepted and processed, unless the
+            receiver is unable to assign resources to handling the frame.  A receiver MAY respond
+            with a <xref target="StreamErrorHandler">stream error</xref> or <xref
+            target="ConnectionErrorHandler">connection error</xref> of type FLOW_CONTROL_ERROR if it
+            is unable accept a frame.
           </t>
-          <figure>
-            <artwork>
-0        1        2        3        4         5        6        7
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-| Length(16)      |    0x9 |Flags(8)|X| Stream-ID(31)                    | -&gt;
-+--------+--------+--------+--------+-|-------+--------+--------+--------+
-
-8        9        10       11
-+--------+--------+--------+--------+
-|Delta-Window-Size                  |
-+--------+--------+--------+--------+
-            </artwork>
-          </figure>
           <t>
             The following additional flags are defined for the WINDOW_UPDATE frame:
             <list style="hanging">
@@ -1314,7 +1490,7 @@
                 ended; subsequent frames do not need to be flow controlled.
               </t>
             </list>
-          </t>
+        </t>
           <t>
              The WINDOW_UPDATE frame can be specific to a stream or to the entire connection. 
              In the former case, the frame's stream identifier indicates the affected stream;
@@ -1351,8 +1527,8 @@
               windows by the length of the transmitted frame.
             </t>
             <t>
-              The receiver of a message sends a WINDOW_UPDATE frame as it consumes data and frees up
-              space in flow control windows.  Separate WINDOW_UPDATE messages are sent for the
+              The receiver of a frame sends a WINDOW_UPDATE frame as it consumes data and frees up
+              space in flow control windows.  Separate WINDOW_UPDATE frames are sent for the
               stream and connection level flow control windows.
             </t>
             <t>
@@ -1364,7 +1540,7 @@
               If a sender receives a WINDOW_UPDATE that causes a flow control window to exceed this
               maximum it MUST terminate either the stream or the connection, as appropriate.  For
               streams, the sender sends a RST_STREAM with the error code of FLOW_CONTROL_ERROR code;
-              for the connection, a GOAWAY message with a FLOW_CONTROL_ERROR code.
+              for the connection, a GOAWAY frame with a FLOW_CONTROL_ERROR code.
             </t>
             <t>
               Flow controlled frames from the sender and WINDOW_UPDATE frames from the receiver are
@@ -1386,7 +1562,7 @@
               Prior to receiving a SETTINGS frame that sets a value for
               SETTINGS_INITIAL_WINDOW_SIZE, a client can only use the default initial window size
               when sending flow controlled frames.  Similarly, the connection flow control window is
-              set to the default initial window size until a WINDOW_UPDATE message is received.
+              set to the default initial window size until a WINDOW_UPDATE frame is received.
             </t>
             <t>
               A SETTINGS frame can alter the initial flow control window size for all current
@@ -1398,7 +1574,7 @@
               A change to SETTINGS_INITIAL_WINDOW_SIZE could cause the available space in a flow
               control window to become negative.  A sender MUST track the negative flow control
               window, and MUST NOT send new flow controlled frames until it receives WINDOW_UPDATE
-              messages that cause the flow control window to become positive.
+              frames that cause the flow control window to become positive.
             </t>
             <t>
               For example, if the server sets the initial window size to be 16KB, and the client
@@ -1425,7 +1601,7 @@
                 </t>
                 <t>
                   The receiver can accept the streams and tolerate the resulting head of line
-                  blocking, sending WINDOW_UPDATE messages as it consumes data.
+                  blocking, sending WINDOW_UPDATE frames as it consumes data.
                 </t>
               </list>
               If a receiver decides to accept streams, both sides MUST recompute the available flow
@@ -1436,9 +1612,9 @@
           <section anchor="EndFlowControl" title="Ending Flow Control">
             <t>
               After a receiver reads in a frame that marks the end of a stream (for example, a data
-              stream with a FINAL flag set), it ceases transmission of WINDOW_UPDATE frames. A
-              sender is not required to maintain the available flow control window for streams that
-              it is no longer sending on.
+              stream with a FINAL flag set), it MUST cease transmission of WINDOW_UPDATE frames for
+              that stream. A sender is not obligated to maintain the available flow control window
+              for streams that it is no longer sending on.
             </t>
             <t>
               Flow control can be disabled for all streams or the connection using the
