@@ -151,91 +151,90 @@
       </section>
 
       <section title="Framing">
-        <t>Once the connection is established, clients and servers exchange framed messages.</t>
-
-        <t>All frames carry a common set of headers: length, type, and flags. Flag definitions vary between frame types. The simple header format is designed to make reading and writing of frames easy.</t>
-
-        <t>All integer values, including length, and type, are in network byte order.  SPDY does not enforce alignment of types in dynamically sized frames.</t>
-
-        <section anchor="NotationalConventions" title="Notational Conventions for Framing">
-          <t> In SPDY, since everything is defined to be in network byte-order, the most significant bit of any field is the "leftmost" in any diagram.
-            <list>
-              <t> "+" denotes the boundary of a byte (synonomous with octet in this document)</t>
-              <t> "-" denotes a bit </t>
-              <t> "=" denotes an unknown number of bits, typically bounded by one of the fields in the frame definition</t>
-              <t> "|" denotes field separation, which may or may not be on a byte boundary. This does not count as a bit</t>
-              <t> "-&gt;" at the end of a line indicates that the structure is not yet fully described</t>
-              <t> "(N)" indicates that the field is N bits long</t>
-              <t> "[Foo]" advises that the field is the Foo field for that frame</t>
-              <t> "X" represents a reserved bit. It MUST be zeroed</t>
-              <t> A number preceeded by "0x" is a hexidecimal number</t>
-              <t> A number which is not preceeded by "0x" is to be interpreted as binary</t>
-              <t> The numbers above the boxes indicate the byte-offset from the start of that frame or section, as appropriate</t>
+        <t>Once the SPDY connection is established, clients and servers 
+          can begin exchanging frames.</t>
+        
+        <section anchor="FrameHeader" title="Frame Header">
+          <t>
+            SPDY frames share a common base format consisting of 
+            an 8-byte header followed by 0 to 65535 bytes of data.
+          </t>
+          <figure title="Frame Header">
+            <artwork type="inline">
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|         Length (16)           |   Type (8)    |   Flags (8)   |
++-+-------------+---------------+-------------------------------+
+|R|                 Stream Identifier (31)                      |
++-+-------------------------------------------------------------+
+|                     Frame Data (0...)                       ...
++---------------------------------------------------------------+
+</artwork>
+          </figure>
+          <t>
+            The fields of the frame header are defined as:
+            <list style="hanging">
+              <t hangText="Length:">
+                The length of the frame data expressed as an unsigned 16-bit
+                integer. The 8 bytes of the frame header are not included
+                in this value.
+              </t>
+              <t hangText="Type:">
+                The 8-bit type of the frame.  The frame type determines how the remainder of the
+                frame header and data are interpreted.  Implementations MUST ignore unsupported 
+                and unrecognized frame types.
+              </t>
+              <t hangText="Flags:">
+                An 8-bit field reserved for frame-type specific boolean flags.
+                <vspace blankLines="1"/>
+                The least significant bit (0x1) - the FINAL bit - is defined for all frame types as
+                an indication that this frame is the last the endpoint will send for the identified
+                stream.  Setting this flag causes the stream to enter the <xref
+                target="StreamHalfClose">half-closed state</xref>.  Implementations MUST process the
+                FINAL bit for all frames whose stream identifier field is not 0x0.  The FINAL bit
+                MUST NOT be set on frames that use a stream identifier of 0.
+                <vspace blankLines="1"/> 
+                The remaining flags can be assigned semantics specific to the 
+                indicated frame type. Flags that have no defined semantics for 
+                a particular frame type MUST be ignored, and MUST be left 
+                unset (0) when sending.
+              </t>
+              <t hangText="R:">
+                A reserved 1-bit field.  The semantics of this bit are undefined
+                and the bit MUST remain unset (0) when sending and MUST be ignored
+                when receiving.
+              </t>
+              <t hangText="Stream Identifier:">
+                A 31-bit stream identifier (see <xref target="StreamCreation"/>).  A value 0 is
+                reserved for frames that are associated with the connection as a 
+                whole as opposed to an individual stream.
+              </t>
             </list>
           </t>
-          <t> As an example:
-            <figure>
-              <artwork>
-                0         1         2       3
-                +--|------+--|------+--------+--------+
-                |10|[PRI]0xEE|XXXXXX| Len(16)         |
-                +--|------+--|------+--------+--------+
-              </artwork>
-            </figure>
-            This describes a frame which starts with 1 as the MSB, a 0 in the second most significant bit, followed by 0b11101110 (or 0xEE) as the "PRI" field, followed by 6 reserved bits, which will have all be zeroed, followed by a Len field which is 16 bits long.
-            In other words, first two bytes would be: 0b10111011 0b10000000, followed by the Len field.
-          </t>
-
-          <t>
-            Another example.  In this case, a single byte is represented with the most significant bit a 0, the second most significant bit a 1, the next bit the 'K' field, the next bit the 'L' field, and the next 4 bits are reserved and must be zeros. The frame description continues, describing that an indeterminate (presumably defined elsewhere) amount of data follows and ends on a byte boundary.
-            <figure>
-              <artwork>
-                0
-                +--|-|-|----+
-                |01|K|L|XXXX|  -&gt;
-                +--|-|-|----+
-
-                1..N
-                +========+
-                |  data  |
-                +========+
-              </artwork>
-            </figure>
-          </t>
+          <t>The structure and content of the remaining frame data is 
+            dependent entirely on the frame type.</t>
         </section>
 
-        <section anchor="FrameFormat" title="Frame Format">
-          <figure>
-            <artwork>
-0        1        2        3        4         5        6        7
-+--------+--------+--------+--------+--------+--------+--------+--------+
-| Length(16)      |Type(8) |Flags(8)|             Stream-ID             | -&gt;
-+--------+--------+--------+--------+--------+--------+--------+--------+
+        <section anchor="FrameSize" title="Frame Size">
+          
+          <t>Implementations with limited resources might not be capable of 
+            processing large frame sizes. Such implementations MAY choose
+            to place additional limits on the maximum frame size. However,
+            all implementations MUST be capable of receiving and processing
+            frames containing at least 8192 octets of data.
+            <cref>Ed. Question: Does this minimum include the 8-byte header 
+              or just the frame data?</cref></t>
 
-8..N
-+========+
-|  Data  |
-+========+
-            </artwork>
-          </figure>
-          <t>Length: An unsigned 16-bit value representing the number of bytes of the data field.</t>
-
-          <t>Type: The frame type. See <xref target="FrameTypes">Frame Types</xref> for the complete list of frames.</t>
-
-          <t>Flags: Flags related to this frame. Flag definitions are dependent upon the frame type.</t>
-
-          <t>Data: data associated with this control frame. The format of this data is controlled by the frame type.</t>
-
-          <t>
-            Stream-ID: A 31-bit stream identifier (see <xref target="StreamCreation"/>).  A value 0 is
-            reserved for frames that are associated with the connection as a 
-            whole as opposed to an individual stream.
+          <t>An implementation MUST terminate a stream immediately if it is
+            unable to process a frame due it's size. This is done by sending 
+            an <xref target="RST_STREAM">RST_STREAM frame</xref> containing 
+            the FRAME_TOO_LARGE error code.
           </t>
-
-          <t>Frame processing requirements:
-            <list>
-              <t>Note that full length frames (64kb) can be large for implementations running on resource-limited hardware.  In such cases, implementations MAY limit the maximum length frame supported.  However, all implementations MUST be able to receive frames of at least 8192 octets in length.</t>
-            </list>
+          <t>
+            <cref><eref target="https://github.com/http2/http2-spec/issues/28">Issue 28</eref>: Need
+            a way to signal the maximum frame size; no way to RST_STREAM on non-stream-related
+            frames.</cref>
           </t>
         </section>
       </section>
@@ -848,26 +847,25 @@
         </section>
       </section>
 
-      <section title="Data flow">
-        <t>Because TCP provides a single stream of data on which SPDY multiplexes multiple logical streams, clients and servers must intelligently interleave data messages for concurrent connections.</t>
-      </section>
-
-      <section anchor="FrameTypes" title="Frame Types">
-        <texttable align='left'>
-          <ttcol align='center'>Type-field value</ttcol>
-          <ttcol align='center'>Frame type</ttcol>
-          <c> 0x0</c> <c> <xref target="DATA">DATA</xref></c>
-          <c> 0x1</c> <c> <xref target="HEADERS_PRIORITY">HEADERS+PRIORITY</xref></c>
-          <c> 0x3</c> <c> <xref target="RST_STREAM">RST_STREAM</xref></c>
-          <c> 0x4</c> <c> <xref target="SETTINGS">SETTINGS</xref></c>
-          <c> 0x5</c> <c> <xref target="PUSH_PROMISE">PUSH_PROMISE</xref></c>
-          <c> 0x6</c> <c> <xref target="PING">PING</xref></c>
-          <c> 0x7</c> <c> <xref target="GOAWAY">GOAWAY</xref></c>
-          <c> 0x8</c> <c> <xref target="HEADERS">HEADERS</xref></c>
-          <c> 0x9</c> <c> <xref target="WINDOW_UPDATE">WINDOW_UPDATE</xref></c>
-          <c> 0xa</c> <c> <xref target="CREDENTIAL">CREDENTIAL</xref></c>
-        </texttable>
-        <t> Shared components of several control frames: <xref target="HeaderBlock">Name/Value Header Block</xref></t>
+      <section title="Frame Types" anchor="frame-types">
+        
+        <t>
+          This specification defines a number of frame types, 
+          each identified by a unique 8-bit type code. Each frame
+          type serves a distinct purpose either in the establishment and 
+          management of the connection as a whole, or of individual streams.
+        </t>
+        
+        <t>
+          The transmission of specific frame types can alter the state of 
+          a connection. If endpoints fail to maintain a synchronized view 
+          of the connection state, successful communication within the connection 
+          will no longer be possible. Therefore, it is important that endpoints 
+          have a shared comprehension of how the state is affected by the use
+          any given frame. Accordingly, while it is expected that new frame 
+          types will be introduced by extensions to this protocol, only frames
+          defined by this document are permitted to alter the connection state.
+        </t>
 
         <section anchor="DATA" title="DATA">
           <figure>
