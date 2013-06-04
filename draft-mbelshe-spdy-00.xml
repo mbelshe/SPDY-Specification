@@ -1873,16 +1873,55 @@
         </section>
       </section>
 
-      <section title="Server Push Transactions">
-        <t>SPDY enables a server to send multiple replies to a client for a single request.  The rationale for this feature is that sometimes a server knows that it will need to send multiple resources in response to a single request and would otherwise be forced to inline the images into the document.  Without server push features, the server must inline, or the client must first download the primary resource, then discover the secondary resource(s), and request them.  Pushing of resources avoids the round-trip delay, but also creates a potential race where a server can be pushing content which a user-agent is in the process of requesting.  The following mechanics attempt to prevent the race condition while enabling the performance benefit. Server push is designed to be strictly better than inlining.</t>
+      <section anchor="PushResources" title="Server Push Transactions">
+        <t>
+          SPDY enables a server to send multiple replies to a client for a single request.  The
+          rationale for this feature is that sometimes a server knows that it will need to send
+          multiple resources in response to a single request.  Without server push features, the
+          client must first download the primary resource, then discover the secondary resource(s),
+          and request them.
+        </t>
+       
+        <t>
+          Server push is an optional feature.  The SETTINGS_MAX_CONCURRENT_STREAMS setting from the
+          client limits the number of resources that can be concurrently pushed by a server.  Server
+          push can be disabled by clients that do not wish to receive pushed resources by
+          advertising a SETTINGS_MAX_CONCURRENT_STREAMS <xref target="SETTINGS">SETTING</xref> of
+          zero.  This prevents servers from creating the streams necessary to push resources.
+        </t>
 
-        <t>Browsers receiving a pushed response MUST validate that the server is authorized to push the URL using the <xref target="RFC6454">browser same-origin</xref> policy, or by verifying that the server has proven (via SSL handshake or CERTIFICATE frame) that it has the certificate for the domain of the pushed content.  For example, a SPDY connection to www.foo.com is generally not permitted to push a response for www.evil.com. A SPDY connection to www.foo.com would be allowed to push images.foo.com, however, assuming the cert provided at the SSL handshake was a wildcard cert encoding *.foo.com</t>
+        <t>
+          Clients receiving a pushed response MUST validate that the server is authorized to push
+          the resource using the same-origin policy (<xref target="RFC6454" x:fmt="," x:sec="3"/>).
+          For example, a SPDY connection to <spanx style="verb">example.com</spanx> is generally
+          <cref>Ed: weaselly use of "generally", needs better definition</cref> not permitted to
+          push a response for <spanx style="verb">www.example.org</spanx>.
+        </t>
 
-        <t>If the browser accepts a pushed response (e.g. it does not send a RST_STREAM), the browser MUST attempt to cache the pushed response in same way that it would cache any other response.  This means validating the response headers and inserting into the cache.</t>
-
-        <t>Because pushed responses have no request, they have no request headers associated with them.  At the framing layer, SPDY pushed streams contain an "associated-stream-id" which indicates the requested stream for which the pushed stream is related.  The pushed stream inherits all of the headers from the associated-stream-id with the exception of ":host", ":scheme", and ":path", which are provided as part of the pushed response stream headers.  The browser MUST store these inherited and implied request headers with the cached resource.</t>
-
-        <t>Implementation note:  Similarly with inlining, with server push it is theoretically possible for servers to push large amounts of content or resources to the user-agent.  Browsers MUST implement throttles to protect against unreasonable push attacks, just as they must react reasonably to abuse of inlining. The server-push mechanism should make this easier to deal with than inlining in basically every case.</t>
+        <t>
+          A client that accepts pushed resources caches those resources as though they were
+          responses to GET requests.
+        </t>
+        <t>
+          Pushing of resources avoids the round-trip delay, but also creates a potential race where
+          a server can be pushing content which a client is in the process of requesting.  The
+          PUSH_PROMISE frame reduces the chances of this condition occurring, while retaining the
+          performance benefit.
+        </t>
+        <t>
+           Pushed responses are associated with a request at the SPDY framing layer.  The
+           PUSH_PROMISE is sent on the stream for the associated request, which allows a receiver to
+           correlate the pushed resource with a request.  The pushed stream inherits all of the
+           request header fields from the associated stream with the exception of resource
+           identification header fields (<spanx style="verb">:host</spanx>, <spanx
+           style="verb">:scheme</spanx>, and <spanx style="verb">:path</spanx>), which are provided
+           as part of the PUSH_PROMISE frame.
+        </t>
+        <t>
+          Pushed resources always have an associated <spanx style="verb">:method</spanx> of <spanx
+          style="verb">GET</spanx>.  A cache MUST store these inherited and implied request header
+          fields with the cached resource.
+        </t>
 
         <section title="Server implementation">
           <t>When the server intends to push a resource to the user-agent, it promises that it will opens a new stream in the future (but not now) by sending a PUSH_PROMISE frame.  The PUSH_PROMISE frame MUST include an Associated-To-Stream-ID, Prmoised-Stream-ID, and MUST ensure that headers for ":scheme", ":host", ":path" representing the URL for the resource being pushed are either already present in the implied headers context (i.e. the request headers), or it must override the headers which do not match the pushed resource. The ":path" MUST always be different from the originally request resource.  The stream-IDs represented in the Promised-Stream-ID field MUST NOT count towards the MAX_CONCURRENT_STREAMS limit. When the server is ready to send the resource, it will send a HEADERS frame with the stream-ID indicated by the Promised-Stream-ID sent in the PUSH_PROMISE frame earlier. As with any other HEADERS frame, subsequent headers may follow in other HEADERS frames. The purpose of the association is so that the user-agent can differentiate which request induced the pushed stream; without it, if the user-agent had two tabs open to the same page, each pushing unique content under a fixed URL, the user-agent would not be able to differentiate the requests.</t>
