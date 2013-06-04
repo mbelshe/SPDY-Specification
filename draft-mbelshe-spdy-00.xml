@@ -1787,25 +1787,68 @@
           </t>
         </section>
 
-        <section title="Response">
-          <t>The server responds to a client request with a HEADERS frame. Symmetric to the client's upload stream, server will send data after the HEADERS frame via a series of DATA frames, and the last data frame will contain the FLAG_FIN to indicate successful end-of-stream.  If a response (like a 202 or 204 response) contains no body, the HEADERS frame may contain the FLAG_FIN flag to indicate no further data will be sent on the stream.</t>
+        <section anchor="HttpResponse" title="Response">
+          <t>
+            The server responds to a client request using the same stream identifier that was used
+            by the request.  An HTTP response begins with a HEADERS frame. An HTTP response body
+            consists of a series of DATA frames.  The last data frame contains a FINAL flag to
+            indicate the end of the response.  A response that contains no body (such as a 204 or
+            304 response) consists only of a HEADERS frame that contains the FINAL flag to indicate
+            no further data will be sent on the stream.
+          </t>
 
           <t>
             <list>
-              <t>The response status line is unfolded into name/value pairs like other HTTP headers and must be present:
-                <list>
-                  <t>":status" - The HTTP response status code (e.g. "200" or "200 OK")</t>
-                  <t>":version" - The HTTP response version (e.g. "HTTP/1.1")</t>
+              <t>
+                The response status line is unfolded into name-value pairs like other HTTP header
+                fields and must be present:
+                <list style="hanging">
+                  <t hangText="&quot;:status&quot;:">
+                    The HTTP response status code (e.g. "200" or "200 OK")
+                  </t>
                 </list>
               </t>
-              <t>All header names must be lowercase.</t>
-              <t>The Connection, Keep-Alive, Proxy-Connection, and Transfer-Encoding headers are not valid and MUST not be sent.</t>
-              <t>Responses MAY be accompanied by a Content-Length header for advisory purposes.  (e.g. for UI progress meters)</t>
-              <t>If a client receives a response where the sum of the data frame payload lengths does not equal the size of the Content-Length header, the client MUST ignore the content length header.</t>
+              <t>
+                All header field names starting with ":" (whether defined in this document or future
+                extensions to this document) MUST appear before any other header fields.
+              </t>
+              <t>
+                All header field names MUST be all lowercase.
+              </t>
+              <t>
+                The Connection, Keep-Alive, Proxy-Connection, and Transfer-Encoding header fields
+                are not valid and MUST NOT be sent.
+              </t>
+              <t>
+                Responses MAY be accompanied by a Content-Length header field for advisory purposes.
+                This allows clients to learn the full size of an entity prior to receiving all the
+                data frames.  This can help in, for example, reporting progress.
+              </t>
+              <t>
+                If a client receives a response where the sum of the data frame payload length does
+                not equal the size of the Content-Length header field, the client MUST ignore the
+                content length header field. <cref>Ed: See <eref
+                target="https://github.com/http2/http2-spec/issues/46">issue 46</eref>.</cref>
+              </t>
             </list>
           </t>
 
-          <t>If a client receives a HEADERS frame without a status or without a version header, the client must reply with a RST_STREAM frame indicating a PROTOCOL ERROR.</t>
+          <t>
+            If a client receives a response with an absent or duplicated status header, the client
+            MUST treat this as a <xref target="StreamErrorHandler">stream error</xref> of type
+            PROTOCOL_ERROR.
+          </t>
+
+          <t>
+            If the client receives a data frame prior to a HEADERS frame the client MUST treat this
+            as a <xref target="StreamErrorHandler">stream error</xref> of type PROTOCOL_ERROR.
+          </t>
+
+          <t>
+            Clients MUST support gzip compression.  Regardless of the value of the Accept-Encoding
+            header field, a server MAY send responses with gzip or deflate encoding.  A compressed
+            response MUST still bear an appropriate Content-Encoding header field.
+          </t>
         </section>
 
         <section title="Authentication" anchor="Authentication">
