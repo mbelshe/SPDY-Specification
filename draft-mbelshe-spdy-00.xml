@@ -1676,18 +1676,6 @@
       <section title="Connection Management">
         <t>Clients SHOULD NOT open more than one SPDY connection to a given <xref target="RFC6454">origin</xref> concurrently.</t>
         <t>Note that it is possible for one SPDY connection to be finishing (e.g. a GOAWAY message has been sent, but not all streams have finished), while another SPDY connection is starting.</t>
-        <section title="Use of GOAWAY">
-          <t>SPDY provides a GOAWAY message which can be used when closing a connection from either the client or server.  Without a server GOAWAY message, HTTP has a race condition where the client sends a request (a new HEADERS+PRIORITY)  just as the server is closing the connection, and the client cannot know if the server received the stream or not.  By using the last-stream-id in the GOAWAY, servers can indicate to the client if a request was processed or not.</t>
-
-          <t>Note that some servers will choose to send the GOAWAY and immediately terminate the connection without waiting for active streams to finish.  The client will be able to determine this because SPDY streams are determinstically closed.  This abrupt termination will force the client to heuristically decide whether to retry the pending requests.  Clients always need to be capable of dealing with this case because they must deal with accidental connection termination cases, which are the same as the server never having sent a GOAWAY.</t>
-
-          <t>More sophisticated servers will use GOAWAY to implement a graceful teardown. They will send the GOAWAY and provide some time for the active streams to finish before terminating the connection.</t>
-
-          <t>If a SPDY client closes the connection, it should also send a GOAWAY message.  This allows the server to know if any server-push streams were received by the client.</t>
-
-          <t>If the endpoint closing the connection has not received any HEADERS+PRIORITY from the remote, the GOAWAY will contain a last-stream-id of 0.</t>
-
-        </section>
       </section>
 
       <section title="HTTP Request/Response">
