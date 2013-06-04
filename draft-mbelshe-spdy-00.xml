@@ -1695,6 +1695,18 @@
       </section>
 
       <section title="HTTP Request/Response">
+
+        <section title="HTTP Header Fields and SPDY Headers">
+          <t>
+            At the application level, HTTP uses name-value pairs in its header fields.  Because
+            SPDY merges the existing HTTP header fields with SPDY headers, there is a
+            possibility that some HTTP applications already use a particular header field name.  To
+            avoid any conflicts, all header fields introduced for layering HTTP over SPDY are
+            prefixed with ":".  ":" is not a valid sequence in HTTP/1.* header field naming,
+            preventing any possible conflict.
+          </t>
+        </section>
+
         <section title="Request">
           <t>The client initiates a request by sending a HEADERS+PRIORITY frame.  For requests which do not contain a body, the HEADERS+PRIORITY frame MUST set the FLAG_FIN, indicating that the client intends to send no further data on this stream.  For requests which do contain a body, the HEADERS+PRIORITY will not contain the FLAG_FIN, and the body will follow the HEADERS+PRIORITY in a series of DATA frames. The last DATA frame will set the FLAG_FIN to indicate the end of the body.</t>
 
