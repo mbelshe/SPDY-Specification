@@ -1942,28 +1942,70 @@
         </section>
 
         <section title="Client implementation">
-          <t>When fetching a resource the client has 3 possibilities:
-            <list>
-              <t>the resource is not being pushed</t>
-              <t>the resource is being pushed, but the data has not yet arrived</t>
-              <t>the resource is being pushed, and the data has started to arrive</t>
+          <t>
+            When fetching a resource the client has 3 possibilities:
+            <list style="numbers">
+              <t>
+                the resource is not being pushed
+              </t>
+              <t>
+                the resource is being pushed, but the data has not yet arrived
+              </t>
+              <t>
+                the resource is being pushed, and the data has started to arrive
+              </t>
             </list>
           </t>
 
-          <t>When a PUSH_PROMISE frame which contains an Associated-To-Stream-ID is received, the client must not issue GET requests for the resource in the pushed stream, and instead wait for the pushed stream to arrive.  </t>
+          <t>
+            A client SHOULD NOT issue GET requests for a resource that has been promised.  A client
+            is instead advised to wait for the pushed resource to arrive.
+          </t>
 
-          <t>If a client receives a server push stream with stream-id 0, it
-            MUST issue a <xref target="ConnectionErrorHandler">connection error</xref> with the status code PROTOCOL_ERROR.</t>
+          <t>
+            When a client receives a PUSH_PROMISE frame from the server without the <spanx
+            style="verb">:host</spanx>, <spanx style="verb">:scheme</spanx>, and <spanx
+            style="verb">:path</spanx> header fields, it MUST treat this as a <xref
+            target="StreamErrorHandler">stream error</xref> of type PROTOCOL_ERROR.
+          </t>
 
-          <t>When a client receives a HEADERS+PRIORITY from the server without a the ':host', ':scheme', and ':path' headers in the Name/Value section, it MUST reply with a RST_STREAM with error code HTTP_PROTOCOL_ERROR.</t>
+          <t>
+            To cancel individual server push streams, the client can issue a <xref
+            target="StreamErrorHandler">stream error</xref> of type CANCEL.  After receiving a
+            PUSH_PROMISE frame, the client is able to cancel the pushed resource before receiving
+            any frames on the promised stream.  The server ceases transmission of the pushed
+            resource; if the server has not commenced transmission, it does not start.
+          </t> 
 
-          <t>To cancel individual server push streams, the client can issue a <xref target="StreamErrorHandler">stream error</xref> with error code CANCEL.  Upon receipt, the server MUST stop sending on this stream immediately (this is an Abrupt termination).</t> 
+          <t>
+            To cancel all server push streams related to a request, the client may issue a <xref
+            target="StreamErrorHandler">stream error</xref> of type CANCEL on the
+            associated-stream-id.  By cancelling that stream, the server MUST immediately stop
+            sending frames for any streams with in-association-to for the original stream.
+            <cref>Ed: Triggering side-effects on stream reset is going to be problematic for the
+            framing layer.  Purely from a design perspective, it's a layering violation.  More
+            practically speaking, the base request stream might already be removed.  Special
+            handling logic would be required.</cref>
+          </t>
 
-          <t>To cancel all server push streams related to a request, the client may issue a <xref target="StreamErrorHandler">stream error</xref> with error code CANCEL on the associated-stream-id.  By cancelling that stream, the server MUST immediately stop sending frames for any streams with in-association-to for the original stream.</t>
+          <t>
+            A client can choose to time out pushed streams if the server does not provide the
+            resource in a timely fashion.  A <xref target="StreamErrorHandler">stream error</xref>
+            of type CANCEL can be used to stop a timed out push.
+          </t>
 
-          <t>If the server sends a HEADER frame containing duplicate headers with a previous HEADERS frame for the same stream, the client must issue a <xref target="StreamErrorHandler">stream error</xref> with error code PROTOCOL ERROR.</t>
+          <t>
+            If the server sends a HEADERS frame containing header fields that duplicate values on a
+            previous HEADERS or PUSH_PROMISE frames on the same stream, the client MUST treat this
+            as a <xref target="StreamErrorHandler">stream error</xref> of type PROTOCOL_ERROR.
+          </t>
 
-          <t>If the server sends a HEADERS frame after sending a data frame for the same stream, the client MAY ignore the HEADERS frame.  Ignoring the HEADERS frame after a data frame prevents handling of HTTP's trailing headers (http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.40).</t>
+          <t>
+            If the server sends a HEADERS frame after sending a data frame for the same stream, the
+            client MAY ignore the HEADERS frame.  Ignoring the HEADERS frame after a data frame
+            prevents handling of HTTP's trailing header fields (<xref target="HTTP-p1" x:fmt="of"
+            x:rel="#header.trailer"/>).
+          </t>
         </section>
       </section>
 
