@@ -1135,83 +1135,58 @@
           
           <section anchor="SettingValues" title="Defined Settings">
             <t>
-              The following settings are defined:
               <list style="hanging">
-                <x:lt hangText="SETTINGS_UPLOAD_BANDWIDTH (1):">
-                  <t>
-                    indicates the sender's estimated upload bandwidth for this connection. The value 
-                    is an the integral number of kilobytes per
-                    second that the sender predicts as an expected maximum upload channel capacity.
-                  </t>
-                </x:lt>
-                <x:lt hangText="SETTINGS_DOWNLOAD_BANDWIDTH (2):">
-                  <t>
-                    indicates the sender's estimated download bandwidth for this connection. The value 
-                    is an integral number of kilobytes per
-                    second that the sender predicts as an expected maximum download channel capacity.
-                  </t>
-                </x:lt>
-                <x:lt hangText="SETTINGS_ROUND_TRIP_TIME (3):">
-                  <t>
-                    indicates the sender's estimated round-trip-time for this connection. The round
-                    trip time is defined as the minimum amount of time to send a control frame from
-                    this client to the remote and receive a response. The value is represented in
-                    milliseconds.
-                  </t>
-                </x:lt>
-                <x:lt hangText="SETTINGS_MAX_CONCURRENT_STREAMS (4):">
-                  <t>
-                    indicates the maximum number of concurrent streams that the sender will allow. 
-                    This limit is directional: it applies to the number
-                    of streams that the sender permits the receiver to create. By default there is no
-                    limit.  It is recommended that this value be no smaller than 100,
-                    so as to not unnecessarily limit parallelism.
-                  </t>
-                </x:lt>
-                <x:lt hangText="SETTINGS_CURRENT_CWND (5):">
-                  <t>
-                    indicates the sender's current TCP CWND value.
-                  </t>
-                </x:lt>
-                <x:lt hangText="SETTINGS_DOWNLOAD_RETRANS_RATE (6):">
-                  <t>
-                    indicates the sender's retransmission rate (bytes retransmitted / total bytes transmitted).
-                  </t>
-                </x:lt>
-                <x:lt hangText="SETTINGS_INITIAL_WINDOW_SIZE (7):">
-                  <t>
-                    indicates the sender's initial stream window size (in bytes) for new streams.
-                  </t>
-                </x:lt>
-                <x:lt hangText="SETTINGS_CLIENT_CERTIFICATE_VECTOR_SIZE (8):">
-                  <t>
-                    indicates the sender's (which should be the server) size of the client certificate vector.
-                  </t>
-                </x:lt>
-                <x:lt hangText="SETTINGS_SUPPORTING_SCHEMES (9):">
-                  <t>
-                    indicates the sender's supported overlayering protocol schemes. The corresponding value must be a 32-bit value, and which contains flags as follows:
-                    <list>
-                      <t>bit 0: http</t>
-                      <t>bit 1: https</t>
-                      <t>bit 2: ws</t>
-                      <t>bit 3: wss</t>
-                    </list>
-                  </t>
-                </x:lt>
-                <x:lt hangText="SETTINGS_FLOW_CONTROL_OPTIONS (10):">
-                  <t>
-                    indicates that streams directed to the sender will not
-                    be subject to flow control.  The least significant bit (0x1) is set to indicate
-                    that new streams are not flow controlled.  All other bits are reserved.
-                  </t>
-                  <t>
-                    This setting applies to all streams, including existing streams.
-                  </t>
-                  <t>
-                    These bits cannot be cleared once set, see <xref target="EndFlowControl"/>.
-                  </t>
-                </x:lt>
+                <t hangText="SETTINGS_UPLOAD_BANDWIDTH (1):">
+                  indicates the sender's estimated upload bandwidth for this connection. The value 
+                  is an the integral number of kilobytes per
+                  second that the sender predicts as an expected maximum upload channel capacity.
+                </t>
+                <t hangText="SETTINGS_DOWNLOAD_BANDWIDTH (2):">
+                  indicates the sender's estimated download bandwidth for this connection. The value 
+                  is an integral number of kilobytes per
+                  second that the sender predicts as an expected maximum download channel capacity.
+                </t>
+                <t hangText="SETTINGS_ROUND_TRIP_TIME (3):">
+                  indicates the sender's estimated round-trip-time for this connection. The round
+                  trip time is defined as the minimum amount of time to send a control frame from
+                  this client to the remote and receive a response. The value is represented in
+                  milliseconds.
+                </t>
+                <t hangText="SETTINGS_MAX_CONCURRENT_STREAMS (4):">
+                  indicates the maximum number of concurrent streams that the sender will allow. 
+                  This limit is directional: it applies to the number
+                  of streams that the sender permits the receiver to create. By default there is no
+                  limit.  It is recommended that this value be no smaller than 100,
+                  so as to not unnecessarily limit parallelism.
+                </t>
+                <t hangText="SETTINGS_CURRENT_CWND (5):">
+                  indicates the sender's current TCP CWND value.
+                </t>
+                <t hangText="SETTINGS_DOWNLOAD_RETRANS_RATE (6):">
+                  indicates the sender's retransmission rate (bytes retransmitted / total bytes transmitted).
+                </t>
+                <t hangText="SETTINGS_INITIAL_WINDOW_SIZE (7):">
+                  indicates the sender's initial stream window size (in bytes) for new streams.
+                </t>
+                <t hangText="SETTINGS_CLIENT_CERTIFICATE_VECTOR_SIZE (8):">
+                  indicates the sender's (which should be the server) size of the client certificate vector.
+                </t>
+                <t hangText="SETTINGS_SUPPORTING_SCHEMES (9):">
+                  indicates the sender's supported overlayering protocol schemes. The corresponding value must be a 32-bit value, and which contains flags as follows:
+                  <list>
+                    <t>bit 0: http</t>
+                    <t>bit 1: https</t>
+                    <t>bit 2: ws</t>
+                    <t>bit 3: wss</t>
+                  </list>
+                </t>
+                <t hangText="SETTINGS_FLOW_CONTROL_OPTIONS (10):">
+                  indicates that streams directed to the sender will not
+                  be subject to flow control.  The least significant bit (0x1) is set to indicate
+                  that new streams are not flow controlled.  All other bits are reserved.
+                  This setting applies to all streams, including existing streams.
+                  These bits cannot be cleared once set, see <xref target="EndFlowControl"/>.
+                </t>
               </list>
             </t>
           </section>
