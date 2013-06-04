@@ -1674,8 +1674,15 @@
       <t>SPDY is intended to be as compatible as possible with current web-based applications. This means that, from the perspective of the server business logic or application API, the features of HTTP are unchanged. To achieve this, all of the application request and response header semantics are preserved, although the syntax of conveying those semantics has changed.  Thus, the rules from the <xref target="RFC2616">HTTP/1.1 specification in RFC2616</xref> apply with the changes in the sections below.</t>
 
       <section title="Connection Management">
-        <t>Clients SHOULD NOT open more than one SPDY connection to a given <xref target="RFC6454">origin</xref> concurrently.</t>
-        <t>Note that it is possible for one SPDY connection to be finishing (e.g. a GOAWAY message has been sent, but not all streams have finished), while another SPDY connection is starting.</t>
+        <t>
+          Clients SHOULD NOT open more than one SPDY connection to a given origin
+          (<xref target="RFC6454"/>) concurrently.
+        </t>
+        <t>
+          Note that it is possible for one SPDY connection to be finishing (e.g. a GOAWAY frame
+          has been sent, but not all streams have finished), while another SPDY connection is
+          starting.
+        </t>
       </section>
 
       <section title="HTTP Request/Response">
