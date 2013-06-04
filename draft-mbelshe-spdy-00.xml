@@ -1356,10 +1356,10 @@
           </t>
 
           <t>
-            After sending a GOAWAY message, the sender can ignore frames for new streams.
+            After sending a GOAWAY frame, the sender can ignore frames for new streams.
           </t>
           <t>
-            <cref>Issue: connection state that is established by those "ignored" messages cannot be
+            <cref>Issue: connection state that is established by those "ignored" frames cannot be
             ignored without the state in the two peers becoming unsynchronized.</cref>
           </t>
 
