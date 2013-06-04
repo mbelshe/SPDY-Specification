@@ -106,7 +106,7 @@
           and to establish the default parameters for the SPDY connection.</t>
 
         <t>
-          The client connection header is a sequence of 25 octets (in hex notation)
+          The client connection header is a sequence of 24 octets (in hex notation)
         </t>
        <figure><artwork type="inline">
 464f4f202a20485454502f322e300d0a0d0a42410d0a0d0a</artwork></figure>
