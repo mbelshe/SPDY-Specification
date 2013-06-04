@@ -73,19 +73,69 @@
       <t>SPDY attempts to preserve the existing semantics of HTTP. All features such as cookies, ETags, Vary headers, Content-Encoding negotiations, etc work as they do with HTTP; SPDY only replaces the way the data is written to the network.</t>
 
       <section title="Document Organization">
-        <t>The SPDY Specification is split into two parts: <xref target="FramingLayer">a framing layer</xref>, which multiplexes a TCP connection into independent, length-prefixed frames, and <xref target="HTTPLayer">an HTTP layer</xref>, which specifies the mechanism for overlaying HTTP request/response pairs on top of the framing layer. While some of the framing layer concepts are isolated from the HTTP layer, building a generic framing layer has not been a goal. The framing layer is tailored to the needs of the HTTP protocol and server push.</t>
-      </section>
-      <section title="Definitions">
         <t>
-          <list>
-            <t>client: The endpoint initiating the SPDY connection.</t>
-            <t>connection: A transport-level connection between two endpoints.</t>
-            <t>endpoint: Either the client or server of a connection.</t>
-            <t>frame: A header-prefixed sequence of bytes sent over a SPDY connection.</t>
-            <t>server: The endpoint which did not initiate the SPDY connection.</t>
-            <t>connection error: An error on the SPDY connection.</t>
-            <t>stream: A potentially bi-directional flow of bytes across a virtual channel within a SPDY connection.</t>
-            <t>stream error: An error on an individual SPDY stream.</t>
+          The SPDY Specification is split into three parts: <xref target="starting">starting
+          SPDY</xref>, which covers how a SPDY connection is initiated; <xref target="FramingLayer">a
+          framing layer</xref>, which multiplexes a single TCP connection into independent
+          frames of various types; and <xref target="HTTPLayer">an HTTP layer</xref>, which specifies the mechanism
+          for expressing HTTP interactions using the framing layer. While some of the
+          framing layer concepts are isolated from HTTP, building a generic framing layer
+          has not been a goal. The framing layer is tailored to the needs of the HTTP protocol and
+          server push.
+        </t>
+      </section>
+      <section title="Conventions and Terminology">
+        <t>
+          The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD
+          NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as
+          described in <xref target="RFC2119">RFC 2119</xref>.
+        </t>
+        <t>
+          All numeric values are in network byte order.  Values are unsigned unless otherwise
+          indicated.  Literal values are provided in decimal or hexadecimal as appropriate.
+          Hexadecimal literals are prefixed with <spanx style="verb">0x</spanx> to distinguish them
+          from decimal literals.
+        </t>
+        <t>
+          The following terms are used:
+          <list style="hanging">
+            <t hangText="client:">
+              The endpoint initiating the SPDY connection.
+            </t>
+            <t hangText="connection:">
+              A transport-level connection between two endpoints.
+            </t>
+            <t hangText="endpoint:">
+              Either the client or server of the connection.
+            </t>
+            <t hangText="frame:">
+              The smallest unit of communication within an SPDY connection, 
+              consisting of a header and a variable-length sequence of bytes
+              structured according to the frame type.
+            </t>
+            <t hangText="peer:">
+              An endpoint.  When discussing a particular endpoint, "peer" refers to the endpoint
+              that is remote to the primary subject of discussion.
+            </t>
+            <t hangText="receiver:">
+              An endpoint that is receiving frames.
+            </t>
+            <t hangText="sender:">
+              An endpoint that is transmitting frames.
+            </t>
+            <t hangText="server:">
+              The endpoint which did not initiate the SPDY connection.
+            </t>
+            <t hangText="connection error:">
+              An error on the SPDY connection.
+            </t>
+            <t hangText="stream:">
+              A bi-directional flow of frames across a virtual channel within 
+              the SPDY connection.
+            </t>
+            <t hangText="stream error:">
+              An error on the individual SPDY stream.
+            </t>
           </list>
         </t>
       </section>
