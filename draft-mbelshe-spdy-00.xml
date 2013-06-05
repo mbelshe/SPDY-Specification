@@ -74,8 +74,7 @@
 
       <section title="Document Organization">
         <t>
-          The SPDY Specification is split into three parts: <xref target="starting">starting
-          SPDY</xref>, which covers how a SPDY connection is initiated; <xref target="FramingLayer">a
+          The SPDY Specification is split into two parts: <xref target="FramingLayer">a
           framing layer</xref>, which multiplexes a single TCP connection into independent
           frames of various types; and <xref target="HTTPLayer">an HTTP layer</xref>, which specifies the mechanism
           for expressing HTTP interactions using the framing layer. While some of the
