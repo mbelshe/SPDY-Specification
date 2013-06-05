@@ -1426,7 +1426,7 @@ Table of Contents
 
 
 <span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 23]</span>
-</pre><pre class='newpage'>
+</pre><pre class='newpage'><a name="page-24" id="page-24" href="#page-24" class="invisible"> </a>
 <span class="grey">Internet-Draft                    SPDY                       August 2012</span>
 
 
@@ -1453,6 +1453,78 @@ Table of Contents
 
 <span class="h5"><a name="section-2.7.4.3">2.7.4.3</a>.  Defined Settings</span>
 
+   SETTINGS_UPLOAD_BANDWIDTH (1):  indicates the sender's estimated
+      upload bandwidth for this connection.  The value is an the
+      integral number of kilobytes per second that the sender predicts
+      as an expected maximum upload channel capacity.
+
+   SETTINGS_DOWNLOAD_BANDWIDTH (2):  indicates the sender's estimated
+      download bandwidth for this connection.  The value is an integral
+      number of kilobytes per second that the sender predicts as an
+      expected maximum download channel capacity.
+
+   SETTINGS_ROUND_TRIP_TIME (3):  indicates the sender's estimated
+      round-trip-time for this connection.  The round trip time is
+      defined as the minimum amount of time to send a control frame from
+      this client to the remote and receive a response.  The value is
+      represented in milliseconds.
+
+   SETTINGS_MAX_CONCURRENT_STREAMS (4):  indicates the maximum number of
+      concurrent streams that the sender will allow.  This limit is
+      directional: it applies to the number of streams that the sender
+      permits the receiver to create.  By default there is no limit.  It
+      is recommended that this value be no smaller than 100, so as to
+      not unnecessarily limit parallelism.
+
+
+
+
+
+
+<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 24]</span>
+</pre><pre class='newpage'>
+<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+
+
+   SETTINGS_CURRENT_CWND (5):  indicates the sender's current TCP CWND
+      value.
+
+   SETTINGS_DOWNLOAD_RETRANS_RATE (6):  indicates the sender's
+      retransmission rate (bytes retransmitted / total bytes
+      transmitted).
+
+   SETTINGS_INITIAL_WINDOW_SIZE (7):  indicates the sender's initial
+      stream window size (in bytes) for new streams.
+
+   SETTINGS_CLIENT_CERTIFICATE_VECTOR_SIZE (8):  indicates the sender's
+      (which should be the server) size of the client certificate
+      vector.
+
+   SETTINGS_SUPPORTING_SCHEMES (9):  indicates the sender's supported
+      overlayering protocol schemes.  The corresponding value must be a
+      32-bit value, and which contains flags as follows:
+
+         bit 0: http
+
+         bit 1: https
+
+         bit 2: ws
+
+         bit 3: wss
+
+   SETTINGS_FLOW_CONTROL_OPTIONS (10):  indicates that streams directed
+      to the sender will not be subject to flow control.  The least
+      significant bit (0x1) is set to indicate that new streams are not
+      flow controlled.  All other bits are reserved.  This setting
+      applies to all streams, including existing streams.  These bits
+      cannot be cleared once set, see <a href="#section-2.7.9.4">Section 2.7.9.4</a>.
+
+<span class="h4"><a name="section-2.7.5">2.7.5</a>.  PUSH_PROMISE</span>
+
+   The PUSH_PROMISE frame (type=0x5) is used to notify the peer endpoint
+   in advance of streams the sender intends to initiate.  The
+   PUSH_PROMISE frame includes the unsigned 31-bit identifier of the
+   stream the endpoint plans to create along with a minimal set of
 
 </pre><br />
 <span class="noprint"><small><small>Html markup produced by rfcmarkup 1.90, available from
