@@ -2921,10 +2921,6 @@ Internet-Draft                    SPDY                       August 2012
    [RFC0793]          Postel, J., "Transmission Control Protocol",
                       STD 7, RFC 793, September 1981.
 
-   [RFC1738]          Berners-Lee, T., Masinter, L., and M. McCahill,
-                      "Uniform Resource Locators (URL)", RFC 1738,
-                      December 1994.
-
    [RFC1950]          Deutsch, L. and J-L. Gailly, "ZLIB Compressed Data
                       Format Specification version 3.3", RFC 1950,
                       May 1996.
@@ -2932,14 +2928,6 @@ Internet-Draft                    SPDY                       August 2012
    [RFC2119]          Bradner, S., "Key words for use in RFCs to
                       Indicate Requirement Levels", BCP 14, RFC 2119,
                       March 1997.
-
-   [RFC2285]          Mandeville, R., "Benchmarking Terminology for LAN
-                      Switching Devices", RFC 2285, February 1998.
-
-   [RFC2616]          Fielding, R., Gettys, J., Mogul, J., Frystyk, H.,
-                      Masinter, L., Leach, P., and T. Berners-Lee,
-                      "Hypertext Transfer Protocol -- HTTP/1.1",
-                      RFC 2616, June 1999.
 
    [RFC2617]          Franks, J., Hallam-Baker, P., Hostetler, J.,
                       Lawrence, S., Leach, P., Luotonen, A., and L.
@@ -2962,13 +2950,6 @@ Internet-Draft                    SPDY                       August 2012
                       Security (TLS) Protocol Version 1.2", RFC 5246,
                       August 2008.
 
-
-
-Belshe & Peon           Expires February 2, 2013               [Page 53]
-
-Internet-Draft                    SPDY                       August 2012
-
-
    [RFC6454]          Barth, A., "The Web Origin Concept", RFC 6454,
                       December 2011.
 
@@ -2980,6 +2961,14 @@ Internet-Draft                    SPDY                       August 2012
                       draft-agl-tls-nextprotoneg-01>.
 
    [UDELCOMPRESSION]  Yang, F., Amer, P., and J. Leighton, "A
+
+
+
+Belshe & Peon           Expires February 2, 2013               [Page 53]
+
+Internet-Draft                    SPDY                       August 2012
+
+
                       Methodology to Derive SPDY's Initial Dictionary
                       for Zlib Compression", <http://www.eecis.udel.edu/
                       ~amer/PEL/poc/pdf/SPDY-Fan.pdf>.
@@ -3016,6 +3005,17 @@ Authors' Addresses
    Google, Inc
 
    EMail: fenix@google.com
+
+
+
+
+
+
+
+
+
+
+
 
 
 

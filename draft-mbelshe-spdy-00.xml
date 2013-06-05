@@ -5,7 +5,6 @@
   <!ENTITY RFC2617 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.2617.xml'>
   <!ENTITY RFC4366 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.4366.xml'>
   <!ENTITY RFC4559 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.4559.xml'>
-  <!ENTITY RFC6454 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.6454.xml'>
   <!ENTITY RFC6455 PUBLIC '' 'http://xml.resource.org/public/rfc/bibxml/reference.RFC.6455.xml'>
   ]>
 <?xml-stylesheet type="text/xsl" href="lib/rfc2629.xslt"?>
@@ -2257,7 +2256,6 @@
       &RFC2617;
       &RFC4366;
       &RFC4559;
-      &RFC6454;
       &RFC6455;
 
       <reference anchor="RFC0793">
