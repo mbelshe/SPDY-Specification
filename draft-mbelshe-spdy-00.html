@@ -145,8 +145,8 @@
 Network Working Group                                          M. Belshe
 Internet-Draft                                                     Twist
 Intended status: Standards Track                                 R. Peon
-Expires: February 2, 2013                                    Google, Inc
-                                                             August 2012
+Expires: December 6, 2013                                    Google, Inc
+                                                            June 4, 2013
 
 
                              <span class="h1">SPDY Protocol</span>
@@ -178,11 +178,11 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on February 2, 2013.
+   This Internet-Draft will expire on December 6, 2013.
 
 Copyright Notice
 
-   Copyright (c) 2012 IETF Trust and the persons identified as the
+   Copyright (c) 2013 IETF Trust and the persons identified as the
    document authors.  All rights reserved.
 
    This document is subject to <a href="./rfcmarkup?bcp=78">BCP 78</a> and the IETF Trust's Legal
@@ -193,9 +193,9 @@ Copyright Notice
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013                [Page 1]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013                [Page 1]</span>
 </pre><pre class='newpage'><a name="page-2" id="page-2" href="#page-2" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    to this document.  Code Components extracted from this document must
@@ -205,7 +205,7 @@ Copyright Notice
 
 Table of Contents
 
-   <a href="#section-1">1</a>.  Overview . . . . . . . . . . . . . . . . . . . . . . . . . . .  <a href="#page-4">4</a>
+   <a href="#section-1">1</a>.  Introduction . . . . . . . . . . . . . . . . . . . . . . . . .  <a href="#page-4">4</a>
      <a href="#section-1.1">1.1</a>.  Document Organization  . . . . . . . . . . . . . . . . . .  <a href="#page-4">4</a>
      <a href="#section-1.2">1.2</a>.  Conventions and Terminology  . . . . . . . . . . . . . . .  <a href="#page-5">5</a>
    <a href="#section-2">2</a>.  SPDY Framing Layer . . . . . . . . . . . . . . . . . . . . . .  <a href="#page-5">5</a>
@@ -249,9 +249,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013                [Page 2]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013                [Page 2]</span>
 </pre><pre class='newpage'><a name="page-3" id="page-3" href="#page-3" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    <a href="#section-4">4</a>.  WebSocket Layering over SPDY . . . . . . . . . . . . . . . . . <a href="#page-43">43</a>
@@ -305,12 +305,12 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013                [Page 3]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013                [Page 3]</span>
 </pre><pre class='newpage'><a name="page-4" id="page-4" href="#page-4" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
-<span class="h2"><a name="section-1">1</a>.  Overview</span>
+<span class="h2"><a name="section-1">1</a>.  Introduction</span>
 
    One of the bottlenecks of HTTP implementations is that HTTP relies on
    multiple connections for concurrency.  This causes several problems,
@@ -361,9 +361,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013                [Page 4]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013                [Page 4]</span>
 </pre><pre class='newpage'><a name="page-5" id="page-5" href="#page-5" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    goal.  The framing layer is tailored to the needs of the HTTP
@@ -417,9 +417,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013                [Page 5]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013                [Page 5]</span>
 </pre><pre class='newpage'><a name="page-6" id="page-6" href="#page-6" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
 <span class="h3"><a name="section-2.1">2.1</a>.  Connection</span>
@@ -473,9 +473,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013                [Page 6]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013                [Page 6]</span>
 </pre><pre class='newpage'><a name="page-7" id="page-7" href="#page-7" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    additional frames to the server immediately after sending the client
@@ -529,9 +529,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013                [Page 7]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013                [Page 7]</span>
 </pre><pre class='newpage'><a name="page-8" id="page-8" href="#page-8" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    Flags:  An 8-bit field reserved for frame-type specific boolean
@@ -585,9 +585,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013                [Page 8]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013                [Page 8]</span>
 </pre><pre class='newpage'><a name="page-9" id="page-9" href="#page-9" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    Streams have several important characteristics:
@@ -641,9 +641,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013                [Page 9]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013                [Page 9]</span>
 </pre><pre class='newpage'><a name="page-10" id="page-10" href="#page-10" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    limit.  All concurrently active streams initiated by an endpoint,
@@ -697,9 +697,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 10]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 10]</span>
 </pre><pre class='newpage'><a name="page-11" id="page-11" href="#page-11" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    previously half-closed by the sending peer, the recipient MUST
@@ -753,9 +753,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 11]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 11]</span>
 </pre><pre class='newpage'><a name="page-12" id="page-12" href="#page-12" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    o  An error in an individual stream is a stream error.
@@ -809,9 +809,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 12]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 12]</span>
 </pre><pre class='newpage'><a name="page-13" id="page-13" href="#page-13" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    An endpoint MUST NOT send a RST_STREAM in response to an RST_STREAM
@@ -865,9 +865,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 13]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 13]</span>
 </pre><pre class='newpage'><a name="page-14" id="page-14" href="#page-14" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    additional metadata.
@@ -921,9 +921,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 14]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 14]</span>
 </pre><pre class='newpage'><a name="page-15" id="page-15" href="#page-15" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
                  +--------+--------+=========+
@@ -977,9 +977,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 15]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 15]</span>
 </pre><pre class='newpage'><a name="page-16" id="page-16" href="#page-16" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    these differ by quite a bit.
@@ -1033,9 +1033,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 16]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 16]</span>
 </pre><pre class='newpage'><a name="page-17" id="page-17" href="#page-17" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
                  0        1
@@ -1089,9 +1089,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 17]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 17]</span>
 </pre><pre class='newpage'><a name="page-18" id="page-18" href="#page-18" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    lower case.  The length of each name must be greater than zero.  A
@@ -1145,9 +1145,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 18]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 18]</span>
 </pre><pre class='newpage'><a name="page-19" id="page-19" href="#page-19" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
               1: "cookie", "SOMELONGSTRINGHTATISMOSTLYOPAQUE;BLAJHBLA"
@@ -1201,9 +1201,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 19]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 19]</span>
 </pre><pre class='newpage'><a name="page-20" id="page-20" href="#page-20" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
               Stream-group level headers are implied.
@@ -1257,9 +1257,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 20]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 20]</span>
 </pre><pre class='newpage'><a name="page-21" id="page-21" href="#page-21" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
 <span class="h4"><a name="section-2.7.1">2.7.1</a>.  DATA Frames</span>
@@ -1313,9 +1313,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 21]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 21]</span>
 </pre><pre class='newpage'><a name="page-22" id="page-22" href="#page-22" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
 <span class="h4"><a name="section-2.7.3">2.7.3</a>.  RST_STREAM</span>
@@ -1369,9 +1369,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 22]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 22]</span>
 </pre><pre class='newpage'><a name="page-23" id="page-23" href="#page-23" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    extensions.  Unsupported or unrecognized settings MUST be ignored.
@@ -1425,9 +1425,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 23]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 23]</span>
 </pre><pre class='newpage'><a name="page-24" id="page-24" href="#page-24" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    Two flags are defined for the 8-bit flags field:
@@ -1481,9 +1481,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 24]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 24]</span>
 </pre><pre class='newpage'><a name="page-25" id="page-25" href="#page-25" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    IDs 4 and 5 with the FLAG_SETTINGS_PERSIST_VALUE in a subsequent
@@ -1537,9 +1537,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 25]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 25]</span>
 </pre><pre class='newpage'><a name="page-26" id="page-26" href="#page-26" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
          bit 0: http
@@ -1593,9 +1593,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 26]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 26]</span>
 </pre><pre class='newpage'><a name="page-27" id="page-27" href="#page-27" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    promised streams fully close as well. [[anchor11: Ed.  Note: We need
@@ -1649,9 +1649,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 27]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 27]</span>
 </pre><pre class='newpage'><a name="page-28" id="page-28" href="#page-28" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    server.  Once sent, the sender will ignore frames sent on new streams
@@ -1705,9 +1705,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 28]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 28]</span>
 </pre><pre class='newpage'><a name="page-29" id="page-29" href="#page-29" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    The last stream identifier in the GOAWAY frame contains the highest
@@ -1761,9 +1761,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 29]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 29]</span>
 </pre><pre class='newpage'><a name="page-30" id="page-30" href="#page-30" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
       a HEADERS frame for the same stream.  A receiver MUST treat the
@@ -1817,9 +1817,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 30]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 30]</span>
 </pre><pre class='newpage'><a name="page-31" id="page-31" href="#page-31" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    that the entire connection is the subject of the frame.
@@ -1873,9 +1873,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 31]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 31]</span>
 </pre><pre class='newpage'><a name="page-32" id="page-32" href="#page-32" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    size kept by the sender to prevent streams from stalling.
@@ -1929,9 +1929,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 32]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 32]</span>
 </pre><pre class='newpage'><a name="page-33" id="page-33" href="#page-33" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    1.  The receiver can immediately send RST_STREAM with
@@ -1985,9 +1985,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 33]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 33]</span>
 </pre><pre class='newpage'><a name="page-34" id="page-34" href="#page-34" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    client certificate to the server, it will send a CREDENTIAL frame
@@ -2041,9 +2041,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 34]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 34]</span>
 </pre><pre class='newpage'><a name="page-35" id="page-35" href="#page-35" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    message.  However, since the MD5+SHA1 signature type used in TLS 1.0
@@ -2097,9 +2097,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 35]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 35]</span>
 </pre><pre class='newpage'><a name="page-36" id="page-36" href="#page-36" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
 <span class="h3"><a name="section-3.2">3.2</a>.  HTTP Request/Response</span>
@@ -2153,9 +2153,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 36]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 36]</span>
 </pre><pre class='newpage'><a name="page-37" id="page-37" href="#page-37" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    All HTTP Requests MUST include the ":method", ":path", ":host", and
@@ -2209,9 +2209,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 37]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 37]</span>
 </pre><pre class='newpage'><a name="page-38" id="page-38" href="#page-38" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
       The response status line is unfolded into name-value pairs like
@@ -2265,9 +2265,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 38]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 38]</span>
 </pre><pre class='newpage'><a name="page-39" id="page-39" href="#page-39" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    <a href="./rfcmarkup?rfc=2617">RFC2617</a> [<a href="./rfcmarkup?rfc=2617" title='"HTTP Authentication: Basic and Digest Access Authentication"'>RFC2617</a>], and are stateless.  The second two options were
@@ -2321,9 +2321,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 39]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 39]</span>
 </pre><pre class='newpage'><a name="page-40" id="page-40" href="#page-40" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    SETTINGS_MAX_CONCURRENT_STREAMS setting from the client limits the
@@ -2377,9 +2377,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 40]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 40]</span>
 </pre><pre class='newpage'><a name="page-41" id="page-41" href="#page-41" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    always be different from the originally request resource.  The
@@ -2433,9 +2433,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 41]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 41]</span>
 </pre><pre class='newpage'><a name="page-42" id="page-42" href="#page-42" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
 <span class="h4"><a name="section-3.3.2">3.3.2</a>.  Client implementation</span>
@@ -2489,9 +2489,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 42]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 42]</span>
 </pre><pre class='newpage'><a name="page-43" id="page-43" href="#page-43" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
 <span class="h2"><a name="section-4">4</a>.  WebSocket Layering over SPDY</span>
@@ -2545,9 +2545,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 43]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 43]</span>
 </pre><pre class='newpage'><a name="page-44" id="page-44" href="#page-44" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
       ":sec-websocket-extensions" - the Sec-WebSocket-Extensions header
@@ -2601,9 +2601,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 44]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 44]</span>
 </pre><pre class='newpage'><a name="page-45" id="page-45" href="#page-45" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
 <span class="h5"><a name="section-4.1.2.1">4.1.2.1</a>.  Normal Termination</span>
@@ -2657,9 +2657,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 45]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 45]</span>
 </pre><pre class='newpage'><a name="page-46" id="page-46" href="#page-46" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
       ":length" - The WebSocket frame payload length in decimal (See
@@ -2713,9 +2713,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 46]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 46]</span>
 </pre><pre class='newpage'><a name="page-47" id="page-47" href="#page-47" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
 <span class="h3"><a name="section-5.2">5.2</a>.  Error handling - Framing Layer</span>
@@ -2769,9 +2769,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 47]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 47]</span>
 </pre><pre class='newpage'><a name="page-48" id="page-48" href="#page-48" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    encoding could reduce the overhead by 50%, the latency saved by using
@@ -2825,9 +2825,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 48]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 48]</span>
 </pre><pre class='newpage'><a name="page-49" id="page-49" href="#page-49" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    - it is better to compress twice than to not compress.
@@ -2881,9 +2881,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 49]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 49]</span>
 </pre><pre class='newpage'><a name="page-50" id="page-50" href="#page-50" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
 <span class="h2"><a name="section-7">7</a>.  Privacy Considerations</span>
@@ -2937,9 +2937,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 50]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 50]</span>
 </pre><pre class='newpage'><a name="page-51" id="page-51" href="#page-51" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
       DONE: Downsizing various fields in all messages... this will
@@ -2993,9 +2993,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 51]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 51]</span>
 </pre><pre class='newpage'><a name="page-52" id="page-52" href="#page-52" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
 <span class="h2"><a name="section-10">10</a>.  Requirements Notation</span>
@@ -3049,9 +3049,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 52]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 52]</span>
 </pre><pre class='newpage'><a name="page-53" id="page-53" href="#page-53" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
    [<a name="ref-HTTP-p7" id="ref-HTTP-p7">HTTP-p7</a>]          Fielding, R., Ed. and J. Reschke, Ed., "Hypertext
@@ -3105,9 +3105,9 @@ Table of Contents
 
 
 
-<span class="grey">Belshe &amp; Peon           Expires February 2, 2013               [Page 53]</span>
+<span class="grey">Belshe &amp; Peon           Expires December 6, 2013               [Page 53]</span>
 </pre><pre class='newpage'><a name="page-54" id="page-54" href="#page-54" class="invisible"> </a>
-<span class="grey">Internet-Draft                    SPDY                       August 2012</span>
+<span class="grey">Internet-Draft                    SPDY                         June 2013</span>
 
 
                       Methodology to Derive SPDY's Initial Dictionary
@@ -3161,7 +3161,7 @@ Authors' Addresses
 
 
 
-Belshe &amp; Peon           Expires February 2, 2013               [Page 54]
+Belshe &amp; Peon           Expires December 6, 2013               [Page 54]
 </pre><pre class='newpage'>
 
 </pre><br />
