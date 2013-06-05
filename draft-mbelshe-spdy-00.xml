@@ -156,7 +156,7 @@
           and to establish the default parameters for the SPDY connection.</t>
 
         <t>
-          The client connection header is a sequence of 25 octets (in hex notation)
+          The client connection header is a sequence of 24 octets (in hex notation)
         </t>
        <figure><artwork type="inline">
 464f4f202a20485454502f322e300d0a0d0a42410d0a0d0a</artwork></figure>
@@ -1406,10 +1406,10 @@
           </t>
 
           <t>
-            After sending a GOAWAY message, the sender can ignore frames for new streams.
+            After sending a GOAWAY frame, the sender can ignore frames for new streams.
           </t>
           <t>
-            <cref>Issue: connection state that is established by those "ignored" messages cannot be
+            <cref>Issue: connection state that is established by those "ignored" frames cannot be
             ignored without the state in the two peers becoming unsynchronized.</cref>
           </t>
 
