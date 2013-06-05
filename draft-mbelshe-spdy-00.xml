@@ -1720,80 +1720,185 @@
       </section>
     </section>
 
-    <section anchor="HTTPLayer" title="HTTP Layering over SPDY">
-      <t>SPDY is intended to be as compatible as possible with current web-based applications. This means that, from the perspective of the server business logic or application API, the features of HTTP are unchanged. To achieve this, all of the application request and response header semantics are preserved, although the syntax of conveying those semantics has changed.  Thus, the rules from the <xref target="RFC2616">HTTP/1.1 specification in RFC2616</xref> apply with the changes in the sections below.</t>
+    <section anchor="HTTPLayer" title="HTTP Message Exchanges">
+      <t>
+        SPDY is intended to be as compatible as possible with current web-based
+        applications. This means that, from the perspective of the server business logic or
+        application API, the features of HTTP are unchanged. To achieve this, all of the application
+        request and response header semantics are preserved, although the syntax of conveying those
+        semantics has changed.  Thus, the rules from HTTP/1.1 (<xref target="HTTP-p1"/>, <xref
+        target="HTTP-p2"/>, <xref target="HTTP-p4"/>, <xref target="HTTP-p5"/>, <xref
+        target="HTTP-p6"/>, and <xref target="HTTP-p7"/>) apply with the changes in the sections
+        below.
+      </t>
 
       <section title="Connection Management">
-        <t>Clients SHOULD NOT open more than one SPDY connection to a given <xref target="RFC6454">origin</xref> concurrently.</t>
-        <t>Note that it is possible for one SPDY connection to be finishing (e.g. a GOAWAY message has been sent, but not all streams have finished), while another SPDY connection is starting.</t>
-        <section title="Use of GOAWAY">
-          <t>SPDY provides a GOAWAY message which can be used when closing a connection from either the client or server.  Without a server GOAWAY message, HTTP has a race condition where the client sends a request (a new HEADERS+PRIORITY)  just as the server is closing the connection, and the client cannot know if the server received the stream or not.  By using the last-stream-id in the GOAWAY, servers can indicate to the client if a request was processed or not.</t>
-
-          <t>Note that some servers will choose to send the GOAWAY and immediately terminate the connection without waiting for active streams to finish.  The client will be able to determine this because SPDY streams are determinstically closed.  This abrupt termination will force the client to heuristically decide whether to retry the pending requests.  Clients always need to be capable of dealing with this case because they must deal with accidental connection termination cases, which are the same as the server never having sent a GOAWAY.</t>
-
-          <t>More sophisticated servers will use GOAWAY to implement a graceful teardown. They will send the GOAWAY and provide some time for the active streams to finish before terminating the connection.</t>
-
-          <t>If a SPDY client closes the connection, it should also send a GOAWAY message.  This allows the server to know if any server-push streams were received by the client.</t>
-
-          <t>If the endpoint closing the connection has not received any HEADERS+PRIORITY from the remote, the GOAWAY will contain a last-stream-id of 0.</t>
-
-        </section>
+        <t>
+          Clients SHOULD NOT open more than one SPDY connection to a given origin
+          (<xref target="RFC6454"/>) concurrently.
+        </t>
+        <t>
+          Note that it is possible for one SPDY connection to be finishing (e.g. a GOAWAY frame
+          has been sent, but not all streams have finished), while another SPDY connection is
+          starting.
+        </t>
       </section>
 
       <section title="HTTP Request/Response">
-        <section title="Request">
-          <t>The client initiates a request by sending a HEADERS+PRIORITY frame.  For requests which do not contain a body, the HEADERS+PRIORITY frame MUST set the FLAG_FIN, indicating that the client intends to send no further data on this stream.  For requests which do contain a body, the HEADERS+PRIORITY will not contain the FLAG_FIN, and the body will follow the HEADERS+PRIORITY in a series of DATA frames. The last DATA frame will set the FLAG_FIN to indicate the end of the body.</t>
 
-          <t>The HEADERS+PRIORITY Name/Value section will contain all of the HTTP headers which are associated with an HTTP request. The header block in SPDY is mostly unchanged from today's HTTP header block, with the following differences:
-            <list>
-              <t>The first line of the request is unfolded into name/value pairs like other HTTP headers and MUST be present:
-                <list>
-                  <t>":method" - the HTTP method for this request (e.g. "GET", "POST", "HEAD", etc)</t>
-                  <t>":path" - the url-path for this url with "/" prefixed. (See <xref target="RFC3986">RFC3986</xref>).  For example, for "http://www.google.com/search?q=dogs" the path would be "/search?q=dogs".</t>
-                  <t>":version" - the HTTP version of this request (e.g. "HTTP/1.1")</t>
-                </list>
-              </t>
-              <t>In addition, the following two name/value pairs must also be present in every request:
-                <list>
-                  <t>":host" - the hostport (See <xref target="RFC1738">RFC1738</xref>) portion of the URL for this request (e.g. "www.google.com:1234"). This header is the same as the HTTP 'Host' header. </t>
-                  <t>":scheme" - the scheme portion of the URL for this request (e.g. "https"))</t>
-              </list></t>
-              <t>Header names are all lowercase.</t>
-              <t>The Connection, Host, Keep-Alive, Proxy-Connection, and Transfer-Encoding headers are not valid and MUST not be sent.</t>
-              <t>User-agents MUST support gzip compression. Regardless of the Accept-Encoding sent by the user-agent, the server may always send content encoded with gzip or deflate encoding.</t>
-              <t>If a server receives a request where the sum of the data frame payload lengths does not equal the size of the Content-Length header, the server MUST return a 400 (Bad Request) error.</t>
-              <t>POST-specific changes:
-                <list>
-                  <t>Although POSTs are inherently chunked, POST requests SHOULD also be accompanied by a Content-Length header.  There are two reasons for this:  First, it assists with upload progress meters for an improved user experience.  But second, we know from early versions of SPDY that failure to send a content length header is incompatible with many existing HTTP server implementations.  Existing user-agents do not omit the Content-Length header, and server implementations have come to depend upon this.</t>
-                </list>
-              </t>
-            </list>
+        <section title="HTTP Header Fields and SPDY Headers">
+          <t>
+            At the application level, HTTP uses name-value pairs in its header fields.  Because
+            SPDY merges the existing HTTP header fields with SPDY headers, there is a
+            possibility that some HTTP applications already use a particular header field name.  To
+            avoid any conflicts, all header fields introduced for layering HTTP over SPDY are
+            prefixed with ":".  ":" is not a valid sequence in HTTP/1.* header field naming,
+            preventing any possible conflict.
           </t>
-
-          <t>The user-agent is free to prioritize requests as it sees fit. If the user-agent cannot make progress without receiving a resource, it should attempt to raise the priority of that resource. Resources such as images, SHOULD generally use the lowest priority.</t>
-
-          <t>If a client sends a HEADERS+PRIORITY without all of the method, host, path, scheme, and version headers, the server MUST reply with a HTTP 400 Bad Request reply.</t>
         </section>
 
-        <section title="Response">
-          <t>The server responds to a client request with a HEADERS frame. Symmetric to the client's upload stream, server will send data after the HEADERS frame via a series of DATA frames, and the last data frame will contain the FLAG_FIN to indicate successful end-of-stream.  If a response (like a 202 or 204 response) contains no body, the HEADERS frame may contain the FLAG_FIN flag to indicate no further data will be sent on the stream.</t>
+        <section anchor="HttpRequest" title="Request">
+          <t>
+            The client initiates a request by sending a HEADERS+PRIORITY frame.  Requests that do
+            not contain a body MUST set the FINAL flag, indicating that the client intends to send
+            no further data on this stream, unless the server intends to push resources (see <xref
+            target="PushResources"/>).  HEADERS+PRIORITY frame does not contain the FINAL flag for
+            requests that contain a body.  The body of a request follows as a series of DATA
+            frames. The last DATA frame sets the FINAL flag to indicate the end of the body.
+          </t>
+
+          <t>
+            The header fields included in the HEADERS+PRIORITY frame contain 
+            all of the HTTP header fields associated with an HTTP request.
+            The definitions of these headers are largely unchanged relative 
+            to HTTP/1.1, with a few notable exceptions:
+            <list style="symbols">
+              <t>The HTTP/1.1 request-line has been split into two separate
+                header fields named :method and :path, whose values 
+                specify the HTTP method for the request and the request-target,
+                respectively. The HTTP-version component of the request-line
+                is removed entirely from the headers.</t>
+              <t>The host and optional port portions of the request URI 
+                (see <xref target="RFC3986"/>, Section 3.2), is specified
+                using the new :host header field. <cref>Ed. Note: it 
+                needs to be clarified whether or not this replaces the
+                existing HTTP/1.1 Host header.</cref></t>
+              <t>A new :scheme header field has been added to specify the 
+                scheme portion of the request-target (e.g. "https")</t>
+              <t>All header field names MUST be lowercased, and the 
+                definitions of all header field names defined by 
+                HTTP/1.1 are updated to be all lowercase.</t>
+              <t>The Connection, Host, Keep-Alive, Proxy-Connection, and 
+                Transfer-Encoding header fields are no longer valid and 
+                MUST NOT be sent.</t>
+            </list>
+          </t>
+            
+          <t>All HTTP Requests MUST include the ":method", ":path", ":host",
+            and ":scheme" header fields.</t>
+                        
+          <t>Header fields whose names begin with ":" (whether defined in this 
+            document or future extensions to this document) MUST appear before 
+            any other header fields.</t>
+
+          <t>
+            If a client sends a HEADERS+PRIORITY frame that omits a mandatory 
+            header, the server MUST reply with a HTTP 400 Bad Request reply.  
+            <cref>Ed: why PROTOCOL_ERROR on missing ":status" in the response, 
+              but HTTP 400 here?</cref>
+          </t>
+
+          <t>
+             If a server receives a request where the sum of the data frame payload lengths does
+             not equal the size of the Content-Length header field, the server MUST return a 400
+             (Bad Request) error.
+          </t>
+          
+          <t>
+             Although POSTs are inherently chunked, POST requests SHOULD also be accompanied by a
+             Content-Length header field.  First, it informs the server of how much data to
+             expect, which the server can use to track overall progress and provide appropriate
+             user feedback.  More importantly, some HTTP server implementations fail to correctly
+             process requests that omit the Content-Length header field.  Many existing clients
+             send a Content-Length header field, and some server implementations have come to
+             depend upon its presence.
+          </t>
+
+          <t>
+            A client provides priority in requests as a hint to the server.  A server SHOULD attempt
+            to provide responses to higher priority requests before lower priority requests.  A
+            server could send lower priority responses during periods that higher priority responses
+            are unavailable to ensure better utilization of a connection.
+          </t>
+          <t>
+            If the server receives a data frame prior to a HEADERS+PRIORITY frame the server MUST
+            treat this as a <xref target="StreamErrorHandler">stream error</xref> of type
+            PROTOCOL_ERROR.
+          </t>
+        </section>
+
+        <section anchor="HttpResponse" title="Response">
+          <t>
+            The server responds to a client request using the same stream identifier that was used
+            by the request.  An HTTP response begins with a HEADERS frame. An HTTP response body
+            consists of a series of DATA frames.  The last data frame contains a FINAL flag to
+            indicate the end of the response.  A response that contains no body (such as a 204 or
+            304 response) consists only of a HEADERS frame that contains the FINAL flag to indicate
+            no further data will be sent on the stream.
+          </t>
 
           <t>
             <list>
-              <t>The response status line is unfolded into name/value pairs like other HTTP headers and must be present:
-                <list>
-                  <t>":status" - The HTTP response status code (e.g. "200" or "200 OK")</t>
-                  <t>":version" - The HTTP response version (e.g. "HTTP/1.1")</t>
+              <t>
+                The response status line is unfolded into name-value pairs like other HTTP header
+                fields and must be present:
+                <list style="hanging">
+                  <t hangText="&quot;:status&quot;:">
+                    The HTTP response status code (e.g. "200" or "200 OK")
+                  </t>
                 </list>
               </t>
-              <t>All header names must be lowercase.</t>
-              <t>The Connection, Keep-Alive, Proxy-Connection, and Transfer-Encoding headers are not valid and MUST not be sent.</t>
-              <t>Responses MAY be accompanied by a Content-Length header for advisory purposes.  (e.g. for UI progress meters)</t>
-              <t>If a client receives a response where the sum of the data frame payload lengths does not equal the size of the Content-Length header, the client MUST ignore the content length header.</t>
+              <t>
+                All header field names starting with ":" (whether defined in this document or future
+                extensions to this document) MUST appear before any other header fields.
+              </t>
+              <t>
+                All header field names MUST be all lowercase.
+              </t>
+              <t>
+                The Connection, Keep-Alive, Proxy-Connection, and Transfer-Encoding header fields
+                are not valid and MUST NOT be sent.
+              </t>
+              <t>
+                Responses MAY be accompanied by a Content-Length header field for advisory purposes.
+                This allows clients to learn the full size of an entity prior to receiving all the
+                data frames.  This can help in, for example, reporting progress.
+              </t>
+              <t>
+                If a client receives a response where the sum of the data frame payload length does
+                not equal the size of the Content-Length header field, the client MUST ignore the
+                content length header field. <cref>Ed: See <eref
+                target="https://github.com/http2/http2-spec/issues/46">issue 46</eref>.</cref>
+              </t>
             </list>
           </t>
 
-          <t>If a client receives a HEADERS frame without a status or without a version header, the client must reply with a RST_STREAM frame indicating a PROTOCOL ERROR.</t>
+          <t>
+            If a client receives a response with an absent or duplicated status header, the client
+            MUST treat this as a <xref target="StreamErrorHandler">stream error</xref> of type
+            PROTOCOL_ERROR.
+          </t>
+
+          <t>
+            If the client receives a data frame prior to a HEADERS frame the client MUST treat this
+            as a <xref target="StreamErrorHandler">stream error</xref> of type PROTOCOL_ERROR.
+          </t>
+
+          <t>
+            Clients MUST support gzip compression.  Regardless of the value of the Accept-Encoding
+            header field, a server MAY send responses with gzip or deflate encoding.  A compressed
+            response MUST still bear an appropriate Content-Encoding header field.
+          </t>
         </section>
 
         <section title="Authentication" anchor="Authentication">
@@ -1818,18 +1923,59 @@
         </section>
       </section>
 
-      <section title="Server Push Transactions">
-        <t>SPDY enables a server to send multiple replies to a client for a single request.  The rationale for this feature is that sometimes a server knows that it will need to send multiple resources in response to a single request and would otherwise be forced to inline the images into the document.  Without server push features, the server must inline, or the client must first download the primary resource, then discover the secondary resource(s), and request them.  Pushing of resources avoids the round-trip delay, but also creates a potential race where a server can be pushing content which a user-agent is in the process of requesting.  The following mechanics attempt to prevent the race condition while enabling the performance benefit. Server push is designed to be strictly better than inlining.</t>
+      <section anchor="PushResources" title="Server Push Transactions">
+        <t>
+          SPDY enables a server to send multiple replies to a client for a single request.  The
+          rationale for this feature is that sometimes a server knows that it will need to send
+          multiple resources in response to a single request.  Without server push features, the
+          client must first download the primary resource, then discover the secondary resource(s),
+          and request them.
+        </t>
+       
+        <t>
+          Server push is an optional feature.  The SETTINGS_MAX_CONCURRENT_STREAMS setting from the
+          client limits the number of resources that can be concurrently pushed by a server.  Server
+          push can be disabled by clients that do not wish to receive pushed resources by
+          advertising a SETTINGS_MAX_CONCURRENT_STREAMS <xref target="SETTINGS">SETTING</xref> of
+          zero.  This prevents servers from creating the streams necessary to push resources.
+        </t>
 
-        <t>Browsers receiving a pushed response MUST validate that the server is authorized to push the URL using the <xref target="RFC6454">browser same-origin</xref> policy, or by verifying that the server has proven (via SSL handshake or CERTIFICATE frame) that it has the certificate for the domain of the pushed content.  For example, a SPDY connection to www.foo.com is generally not permitted to push a response for www.evil.com. A SPDY connection to www.foo.com would be allowed to push images.foo.com, however, assuming the cert provided at the SSL handshake was a wildcard cert encoding *.foo.com</t>
+        <t>
+          Clients receiving a pushed response MUST validate that the server is authorized to push
+          the resource using the same-origin policy (<xref target="RFC6454" x:fmt="," x:sec="3"/>).
+          For example, a SPDY connection to <spanx style="verb">example.com</spanx> is generally
+          <cref>Ed: weaselly use of "generally", needs better definition</cref> not permitted to
+          push a response for <spanx style="verb">www.example.org</spanx>.
+        </t>
 
-        <t>If the browser accepts a pushed response (e.g. it does not send a RST_STREAM), the browser MUST attempt to cache the pushed response in same way that it would cache any other response.  This means validating the response headers and inserting into the cache.</t>
-
-        <t>Because pushed responses have no request, they have no request headers associated with them.  At the framing layer, SPDY pushed streams contain an "associated-stream-id" which indicates the requested stream for which the pushed stream is related.  The pushed stream inherits all of the headers from the associated-stream-id with the exception of ":host", ":scheme", and ":path", which are provided as part of the pushed response stream headers.  The browser MUST store these inherited and implied request headers with the cached resource.</t>
-
-        <t>Implementation note:  Similarly with inlining, with server push it is theoretically possible for servers to push large amounts of content or resources to the user-agent.  Browsers MUST implement throttles to protect against unreasonable push attacks, just as they must react reasonably to abuse of inlining. The server-push mechanism should make this easier to deal with than inlining in basically every case.</t>
+        <t>
+          A client that accepts pushed resources caches those resources as though they were
+          responses to GET requests.
+        </t>
+        <t>
+          Pushing of resources avoids the round-trip delay, but also creates a potential race where
+          a server can be pushing content which a client is in the process of requesting.  The
+          PUSH_PROMISE frame reduces the chances of this condition occurring, while retaining the
+          performance benefit.
+        </t>
+        <t>
+           Pushed responses are associated with a request at the SPDY framing layer.  The
+           PUSH_PROMISE is sent on the stream for the associated request, which allows a receiver to
+           correlate the pushed resource with a request.  The pushed stream inherits all of the
+           request header fields from the associated stream with the exception of resource
+           identification header fields (<spanx style="verb">:host</spanx>, <spanx
+           style="verb">:scheme</spanx>, and <spanx style="verb">:path</spanx>), which are provided
+           as part of the PUSH_PROMISE frame.
+        </t>
+        <t>
+          Pushed resources always have an associated <spanx style="verb">:method</spanx> of <spanx
+          style="verb">GET</spanx>.  A cache MUST store these inherited and implied request header
+          fields with the cached resource.
+        </t>
 
         <section title="Server implementation">
+          <t>NOTE(willchan): Resolve the MAX_CONCURRENT_STREAMS limit with HTTP2 which deletes the text in the paragraph below. This section will not be updated until we resolve that.</t>
+
           <t>When the server intends to push a resource to the user-agent, it promises that it will opens a new stream in the future (but not now) by sending a PUSH_PROMISE frame.  The PUSH_PROMISE frame MUST include an Associated-To-Stream-ID, Prmoised-Stream-ID, and MUST ensure that headers for ":scheme", ":host", ":path" representing the URL for the resource being pushed are either already present in the implied headers context (i.e. the request headers), or it must override the headers which do not match the pushed resource. The ":path" MUST always be different from the originally request resource.  The stream-IDs represented in the Promised-Stream-ID field MUST NOT count towards the MAX_CONCURRENT_STREAMS limit. When the server is ready to send the resource, it will send a HEADERS frame with the stream-ID indicated by the Promised-Stream-ID sent in the PUSH_PROMISE frame earlier. As with any other HEADERS frame, subsequent headers may follow in other HEADERS frames. The purpose of the association is so that the user-agent can differentiate which request induced the pushed stream; without it, if the user-agent had two tabs open to the same page, each pushing unique content under a fixed URL, the user-agent would not be able to differentiate the requests.</t>
 
           <t>The Associated-To-Stream-ID must be the ID of an existing, open stream.  The reason for this restriction is to have a clear endpoint for pushed content.  If the user-agent requested a resource on stream 11, the server replies on stream 11.  It can push any number of additional streams to the client before sending a FLAG_FIN on stream 11.  However, once the originating stream is closed no further push streams may be associated with it.  The pushed streams do not need to be closed (FIN set) before the originating stream is closed, they only need to be created before the originating stream closes.</t>
@@ -1846,28 +1992,70 @@
         </section>
 
         <section title="Client implementation">
-          <t>When fetching a resource the client has 3 possibilities:
-            <list>
-              <t>the resource is not being pushed</t>
-              <t>the resource is being pushed, but the data has not yet arrived</t>
-              <t>the resource is being pushed, and the data has started to arrive</t>
+          <t>
+            When fetching a resource the client has 3 possibilities:
+            <list style="numbers">
+              <t>
+                the resource is not being pushed
+              </t>
+              <t>
+                the resource is being pushed, but the data has not yet arrived
+              </t>
+              <t>
+                the resource is being pushed, and the data has started to arrive
+              </t>
             </list>
           </t>
 
-          <t>When a PUSH_PROMISE frame which contains an Associated-To-Stream-ID is received, the client must not issue GET requests for the resource in the pushed stream, and instead wait for the pushed stream to arrive.  </t>
+          <t>
+            A client SHOULD NOT issue GET requests for a resource that has been promised.  A client
+            is instead advised to wait for the pushed resource to arrive.
+          </t>
 
-          <t>If a client receives a server push stream with stream-id 0, it
-            MUST issue a <xref target="ConnectionErrorHandler">connection error</xref> with the status code PROTOCOL_ERROR.</t>
+          <t>
+            When a client receives a PUSH_PROMISE frame from the server without the <spanx
+            style="verb">:host</spanx>, <spanx style="verb">:scheme</spanx>, and <spanx
+            style="verb">:path</spanx> header fields, it MUST treat this as a <xref
+            target="StreamErrorHandler">stream error</xref> of type PROTOCOL_ERROR.
+          </t>
 
-          <t>When a client receives a HEADERS+PRIORITY from the server without a the ':host', ':scheme', and ':path' headers in the Name/Value section, it MUST reply with a RST_STREAM with error code HTTP_PROTOCOL_ERROR.</t>
+          <t>
+            To cancel individual server push streams, the client can issue a <xref
+            target="StreamErrorHandler">stream error</xref> of type CANCEL.  After receiving a
+            PUSH_PROMISE frame, the client is able to cancel the pushed resource before receiving
+            any frames on the promised stream.  The server ceases transmission of the pushed
+            resource; if the server has not commenced transmission, it does not start.
+          </t> 
 
-          <t>To cancel individual server push streams, the client can issue a <xref target="StreamErrorHandler">stream error</xref> with error code CANCEL.  Upon receipt, the server MUST stop sending on this stream immediately (this is an Abrupt termination).</t> 
+          <t>
+            To cancel all server push streams related to a request, the client may issue a <xref
+            target="StreamErrorHandler">stream error</xref> of type CANCEL on the
+            associated-stream-id.  By cancelling that stream, the server MUST immediately stop
+            sending frames for any streams with in-association-to for the original stream.
+            <cref>Ed: Triggering side-effects on stream reset is going to be problematic for the
+            framing layer.  Purely from a design perspective, it's a layering violation.  More
+            practically speaking, the base request stream might already be removed.  Special
+            handling logic would be required.</cref>
+          </t>
 
-          <t>To cancel all server push streams related to a request, the client may issue a <xref target="StreamErrorHandler">stream error</xref> with error code CANCEL on the associated-stream-id.  By cancelling that stream, the server MUST immediately stop sending frames for any streams with in-association-to for the original stream.</t>
+          <t>
+            A client can choose to time out pushed streams if the server does not provide the
+            resource in a timely fashion.  A <xref target="StreamErrorHandler">stream error</xref>
+            of type CANCEL can be used to stop a timed out push.
+          </t>
 
-          <t>If the server sends a HEADER frame containing duplicate headers with a previous HEADERS frame for the same stream, the client must issue a <xref target="StreamErrorHandler">stream error</xref> with error code PROTOCOL ERROR.</t>
+          <t>
+            If the server sends a HEADERS frame containing header fields that duplicate values on a
+            previous HEADERS or PUSH_PROMISE frames on the same stream, the client MUST treat this
+            as a <xref target="StreamErrorHandler">stream error</xref> of type PROTOCOL_ERROR.
+          </t>
 
-          <t>If the server sends a HEADERS frame after sending a data frame for the same stream, the client MAY ignore the HEADERS frame.  Ignoring the HEADERS frame after a data frame prevents handling of HTTP's trailing headers (http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.40).</t>
+          <t>
+            If the server sends a HEADERS frame after sending a data frame for the same stream, the
+            client MAY ignore the HEADERS frame.  Ignoring the HEADERS frame after a data frame
+            prevents handling of HTTP's trailing header fields (<xref target="HTTP-p1" x:fmt="of"
+            x:rel="#header.trailer"/>).
+          </t>
         </section>
       </section>
 
