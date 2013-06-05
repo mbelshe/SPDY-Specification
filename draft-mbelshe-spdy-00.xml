@@ -2278,6 +2278,96 @@
           <author initials="A." surname="Langley"> <organization/> </author>
         </front>
       </reference>
+      <reference anchor='HTTP-p1'>
+        <front>
+          <title>
+          Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing</title>
+          <author initials='R.' surname='Fielding' fullname='Roy Fielding'></author>
+          <author initials='J.' surname='Reschke' fullname='Julian Reschke'></author>
+          <date month='February' year='2013' />
+        </front>
+        <seriesInfo name='Internet-Draft' value='draft-ietf-httpbis-p1-messaging-22' />
+        <x:source href="refs/draft-ietf-httpbis-p1-messaging-22.xml" basename="https://svn.tools.ietf.org/svn/wg/httpbis/draft-ietf-httpbis/22/p1-messaging"/>
+      </reference>
+      <reference anchor='HTTP-p2'>
+        <front>
+          <title>
+          Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content</title>
+          <author initials='R.' surname='Fielding' fullname='Roy Fielding'></author>
+          <author initials='J.' surname='Reschke' fullname='Julian Reschke'></author>
+          <date month='February' year='2013' />
+        </front>
+        <seriesInfo name='Internet-Draft' value='draft-ietf-httpbis-p2-semantics-22' />
+        <x:source href="refs/draft-ietf-httpbis-p2-semantics-22.xml" basename="https://svn.tools.ietf.org/svn/wg/httpbis/draft-ietf-httpbis/22/p2-semantics"/>
+      </reference>
+      <reference anchor="HTTP-p4">
+        <front>
+          <title>Hypertext Transfer Protocol (HTTP/1.1): Conditional Requests</title>
+          <author fullname="Roy T. Fielding" initials="R." role="editor" surname="Fielding">
+            <organization abbrev="Adobe">Adobe Systems Incorporated</organization>
+            <address><email>fielding@gbiv.com</email></address>
+          </author>
+          <author fullname="Julian F. Reschke" initials="J. F." role="editor" surname="Reschke">
+            <organization abbrev="greenbytes">greenbytes GmbH</organization>
+            <address><email>julian.reschke@greenbytes.de</email></address>
+          </author>
+          <date month='February' year='2013' />
+        </front>
+        <seriesInfo name="Internet-Draft" value="draft-ietf-httpbis-p4-conditional-22" />
+      </reference>
+      <reference anchor="HTTP-p5">
+        <front>
+          <title>Hypertext Transfer Protocol (HTTP/1.1): Range Requests</title>
+          <author initials="R." surname="Fielding" fullname="Roy T. Fielding" role="editor">
+            <organization abbrev="Adobe">Adobe Systems Incorporated</organization>
+            <address><email>fielding@gbiv.com</email></address>
+          </author>
+          <author initials="Y." surname="Lafon" fullname="Yves Lafon" role="editor">
+            <organization abbrev="W3C">World Wide Web Consortium</organization>
+            <address><email>ylafon@w3.org</email></address>
+          </author>
+          <author initials="J. F." surname="Reschke" fullname="Julian F. Reschke" role="editor">
+            <organization abbrev="greenbytes">greenbytes GmbH</organization>
+            <address><email>julian.reschke@greenbytes.de</email></address>
+          </author>
+          <date month='February' year='2013' />
+        </front>
+        <seriesInfo name="Internet-Draft" value="draft-ietf-httpbis-p5-range-22"/>
+      </reference>
+      <reference anchor="HTTP-p6">
+        <front>
+          <title>Hypertext Transfer Protocol (HTTP/1.1): Caching</title>
+          <author initials="R." surname="Fielding" fullname="Roy T. Fielding" role="editor">
+            <organization abbrev="Adobe">Adobe Systems Incorporated</organization>
+            <address><email>fielding@gbiv.com</email></address>
+          </author>
+          <author initials="M." surname="Nottingham" fullname="Mark Nottingham" role="editor">
+            <organization>Akamai</organization>
+            <address><email>mnot@mnot.net</email></address>
+          </author>
+          <author initials="J. F." surname="Reschke" fullname="Julian F. Reschke" role="editor">
+            <organization abbrev="greenbytes">greenbytes GmbH</organization>
+            <address><email>julian.reschke@greenbytes.de</email></address>
+          </author>
+          <date month='February' year='2013' />
+        </front>
+        <seriesInfo name="Internet-Draft" value="draft-ietf-httpbis-p6-cache-22"/>
+      </reference>
+      <reference anchor="HTTP-p7">
+        <front>
+          <title>Hypertext Transfer Protocol (HTTP/1.1): Authentication</title>
+          <author initials="R." surname="Fielding" fullname="Roy T. Fielding" role="editor">
+            <organization abbrev="Adobe">Adobe Systems Incorporated</organization>
+            <address><email>fielding@gbiv.com</email></address>
+          </author>
+          <author initials="J. F." surname="Reschke" fullname="Julian F. Reschke" role="editor">
+            <organization abbrev="greenbytes">greenbytes GmbH</organization>
+            <address><email>julian.reschke@greenbytes.de</email></address>
+          </author>
+          <date month='February' year='2013' />
+        </front>
+        <seriesInfo name="Internet-Draft" value="draft-ietf-httpbis-p7-auth-22"/>
+      </reference>
       <reference anchor="ASCII">
         <front>
           <title>US-ASCII. Coded Character Set - 7-Bit American Standard Code for Information Interchange. Standard ANSI X3.4-1986, ANSI, 1986.</title>
