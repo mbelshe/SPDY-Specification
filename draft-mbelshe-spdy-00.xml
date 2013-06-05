@@ -19,6 +19,7 @@
 <?rfc rfcedstyle="yes"?>
 <?rfc-ext allow-markup-in-artwork="yes" ?>
 <?rfc-ext include-index="no" ?>
+
 <rfc ipr="trust200902" 
      category="std"
      docName="draft-mbelshe-httpbis-spdy-00"
@@ -39,16 +40,18 @@
         <email>fenix@google.com</email>
       </address>
     </author>
-    <date month="August" year="2012" />
+    <date year="2013" />
     <area>Applications</area>
     <keyword>HTTP</keyword>
+    <keyword>SPDY</keyword>
+    <keyword>Web</keyword>
     <abstract>
       <t>This document describes SPDY, a protocol designed for low-latency transport of content over the World Wide Web.  SPDY introduces two layers of protocol.  The lower layer is a general purpose framing layer which can be used atop a reliable transport (likely TCP) for multiplexed, prioritized, and compressed data communication of many concurrent streams.  The upper layer of the protocol provides HTTP-like semantics for compatibility with existing HTTP application servers.</t>
     </abstract>
   </front>
 
   <middle>
-    <section anchor="intro" title="Overview">
+    <section anchor="intro" title="Introduction">
       <t>One of the bottlenecks of HTTP implementations is that HTTP relies on multiple connections for concurrency. This causes several problems, including additional round trips for connection setup, slow-start delays, and connection rationing by the client, where it tries to avoid opening too many connections to any single server.  HTTP pipelining helps some, but only achieves partial multiplexing.  In addition, pipelining has proven non-deployable in existing browsers due to intermediary interference.</t>
 
       <t>SPDY adds a framing layer for multiplexing multiple, concurrent streams across a single TCP connection (or any reliable transport stream).  The framing layer is optimized for HTTP-like request-response streams, such that applications which run over HTTP today can work over SPDY with little or no change on behalf of the web application writer.</t>
